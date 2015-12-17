@@ -1,0 +1,59 @@
+option java_package = "domain.formats";
+option optimize_for = SPEED;
+
+message ResultAddedEvent {
+  required string teamName = 1;
+  required ResultFormat result = 2;
+}
+
+message TotalFormat {
+  required int32 minutes = 1;
+  optional string fgmA = 2;
+  optional string threePmA = 3;
+  optional string ftmA = 4;
+  optional string minusSlashPlus = 5;
+  optional int32  offReb = 6;
+  optional int32 defReb  = 7;
+  optional int32 totalReb = 8;
+  optional int32 ast = 9;
+  optional int32 pf = 10;
+  optional int32 steels = 11;
+  optional int32 to = 12;
+  optional int32 bs = 13;
+  optional int32 ba = 14;
+  optional int32 pts = 15;
+}
+
+message PlayerLine {
+  required string name = 1;
+  required string pos = 2;
+  optional string min = 3;
+  optional string fgmA = 4;
+  optional string threePmA = 5;
+  optional string ftmA = 6;
+  optional string minusSlashPlus = 7;
+  optional int32 offReb = 8;
+  optional int32 defReb = 9;
+  optional int32 totalReb = 10;
+  optional int32 ast = 11;
+  optional int32 pf = 12;
+  optional int32 steels = 13;
+  optional int32 to = 14;
+  optional int32 bs = 15;
+  optional int32 ba = 16;
+  optional int32 pts = 17;
+}
+
+message ResultFormat {
+  required string homeTeam = 1;
+  required int32 homeScore = 2;
+  required string awayTeam = 3;
+  required int32 awayScore = 4;
+  required int64 time = 5;
+  required string homeScoreLine = 6;
+  required string awayScoreLine = 7;
+  required TotalFormat homeTotal = 8;
+  required TotalFormat awayTotal = 9;
+  repeated PlayerLine homeScoreBox = 10;
+  repeated PlayerLine awayScoreBox = 11;
+}

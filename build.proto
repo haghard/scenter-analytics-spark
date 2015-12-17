@@ -1,0 +1,4 @@
+#!/bin/sh
+
+
+protoc src/main/protobuf/*.proto --java_out=src/main/java
