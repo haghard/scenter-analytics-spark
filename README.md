@@ -11,18 +11,18 @@ Run in local mode from sbt
 Get docker image
 =================
 
-`docker pull haghard/scenter-analytics:v0.1`
+`docker pull haghard/scenter-analytics-spark:v0.1`
 
 
 Run docker image in interactive mode
 ================
 
-`docker run --net="host" -it haghard/scenter-analytics:v0.1 --HTTP_PORT=8001 --DB_HOSTS=192.168.0.xxx` 
+`docker run --net="host" -it haghard/scenter-analytics-spark:v0.1 --HTTP_PORT=8001 --DB_HOSTS=192.168.0.xxx` 
 
 
-By default server will bind on "eth0" enterface. If you need to change it should pass additional parameter --NET_INTERFACE
+By default server is going to bind on "eth0" enterface. If you need to change it you should pass additional parameter --NET_INTERFACE
 
-`docker run --net="host" -it haghard/scenter-analytics:v0.1 --HTTP_PORT=8001 --DB_HOSTS=192.168.0.xxx --NET_INTERFACE=en0`
+`docker run --net="host" -it haghard/scenter-analytics-spark:v0.1 --HTTP_PORT=8001 --DB_HOSTS=192.168.0.xxx --NET_INTERFACE=en0`
 
 
 Example routes
