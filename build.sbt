@@ -95,15 +95,13 @@ libraryDependencies ++= Seq(
 
   "org.mindrot"            %   "jbcrypt"                        % "0.3m",
 
-  "com.haghard"             %% "nosql-join-stream"              % "0.1.5-SNAPSHOT",
+  "com.haghard"             %% "Update on ,
 
   "com.typesafe.akka"       %% "akka-slf4j"                     % "2.4.1",
   "ch.qos.logback"          %  "logback-classic"                % "1.1.2",
 
   "com.github.scribejava"   %   "scribejava-core"               % "2.0",
   "com.github.scribejava"   %   "scribejava-apis"               % "2.0",
-  //"org.twitter4j"           %   "twitter4j-core"                % "4.0.4",
-  //"org.scribe"              %   "scribe"                        % "1.3.7",
 
   ("org.apache.spark"        %% "spark-core"                     % Spark)
     .exclude("javax.xml.bind", "jsr173_api")

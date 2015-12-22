@@ -46,7 +46,7 @@ class Journal(config: Config, cassandraHosts: Array[InetSocketAddress],
               teams: scala.collection.mutable.HashMap[String, String],
               gameIntervals: java.util.LinkedHashMap[Period, String]) extends Actor with ActorHelper {
   import Journal._
-  import FlowGraph.Implicits._
+  import GraphDSL.Implicits._
   import scala.collection.JavaConverters._
 
   val bufferSize = 64
@@ -102,7 +102,7 @@ class Journal(config: Config, cassandraHosts: Array[InetSocketAddress],
   }
 
   private def flow(teams: Map[String, Long]) = Source.fromGraph(
-    FlowGraph.create() { implicit b ⇒
+    GraphDSL.create() { implicit b ⇒
       val merge = b.add(Merge[ResultAddedEvent](teams.size))
       teams.foreach { kv ⇒
         (eventlog.Log[CassandraSource] from (queryByKey(journal), kv._1, kv._2, targetPartitionSize))
@@ -114,7 +114,7 @@ class Journal(config: Config, cassandraHosts: Array[InetSocketAddress],
   )
 
   private def journalN(teams: Map[String, Long]): Graph[ClosedShape, Unit] = {
-    FlowGraph.create() { implicit b ⇒
+    GraphDSL.create() { implicit b ⇒
       flow(teams) ~> Sink.actorRef[ResultAddedEvent](self, 'UpdateCompleted)
       ClosedShape
     }
