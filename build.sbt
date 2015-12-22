@@ -21,7 +21,7 @@ scalaVersion := "2.11.7"
 
 val Spark = "1.5.2"
 val CassandaConnector = "1.5.0-M3-SNAPSHOT" //with local fixes (SSH was commented)
-val CassandraHost = "192.168.0.134"
+val CassandraHost = "192.168.0.82"
 val akkaStreams = "2.0-M2"
 
 enablePlugins(DockerPlugin)
@@ -97,6 +97,14 @@ libraryDependencies ++= Seq(
 
   "com.haghard"             %% "nosql-join-stream"              % "0.1.5-SNAPSHOT",
 
+  "com.typesafe.akka"       %% "akka-slf4j"                     % "2.4.1",
+  "ch.qos.logback"          %  "logback-classic"                % "1.1.2",
+
+  "com.github.scribejava"   %   "scribejava-core"               % "2.0",
+  "com.github.scribejava"   %   "scribejava-apis"               % "2.0",
+  //"org.twitter4j"           %   "twitter4j-core"                % "4.0.4",
+  //"org.scribe"              %   "scribe"                        % "1.3.7",
+
   ("org.apache.spark"        %% "spark-core"                     % Spark)
     .exclude("javax.xml.bind", "jsr173_api")
     .exclude("org.mortbay.jetty", "servlet-api")
@@ -165,10 +173,11 @@ javacOptions ++= Seq(
   "-Xlint:unchecked",
   "-Xlint:deprecation")
 
-addCommandAlias("lanalytics", "run-main  http.Bootstrap --HTTP_PORT=8001 --NET_INTERFACE=en0 --DB_HOSTS=" + CassandraHost)
+addCommandAlias("lanalytics", s"run-main  http.Bootstrap --HTTP_PORT=8001 --NET_INTERFACE=en0 --DB_HOSTS=$CassandraHost")
 
 
-//http GET http://192.168.0.62:8001/api/login?"login=haghard&password=qwerty"
+//http GET http://192.168.0.62:8001/api/login?"user=haghard&password=qwerty"
+//browser http GET http://192.168.0.62:8001/api/twitter-login"
 
 //http GET http://192.168.0.62:8001/api/standing/season-15-16 'Cookie:_sessiondata= ...'
 //http GET http://192.168.0.62:8001/api/standing/playoff-14-15 'Cookie:_sessiondata= ...'

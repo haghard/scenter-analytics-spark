@@ -26,6 +26,9 @@ object Bootstrap extends App {
     import scala.concurrent.duration._
     implicit val timeout = akka.util.Timeout(30 seconds)
     override val environment = "Spark"
+
+    override lazy val consumerKey = system.settings.config.getString("twitter.consumer-key")
+    override lazy val consumerSecret = system.settings.config.getString("twitter.consumer-secret")
   }
 
   SparkAnalytics.startup

@@ -1,6 +1,7 @@
 import java.net.{ NetworkInterface, InetAddress }
 import java.util.Date
 
+
 import akka.actor._
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.{ Route, Directive1, Directives }
@@ -16,8 +17,9 @@ import org.joda.time.{ DateTime, Interval }
 
 import scala.collection.JavaConversions._
 import scala.collection.mutable
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.{ Await, ExecutionContext, Future }
 import scala.reflect.ClassTag
+import scala.util.{ Failure, Success }
 import scalaz.{ -\/, \/-, \/ }
 import com.github.nscala_time.time.Imports._
 
@@ -30,6 +32,8 @@ package object http {
   private[http] val SEEDS_ENV = "SEED_NODES"
   private[http] val HTTP_PORT = "HTTP_PORT"
   private[http] val NET_INTERFACE = "NET_INTERFACE"
+  private[http] val TWITTER_CONSUMER_KEY = "TWITTER_CONSUMER_KEY"
+  private[http] val TWITTER_CONSUMER_SECRET = "TWITTER_CONSUMER_SECRET"
 
   case class NbaResultView(homeTeam: String, homeScore: Int, awayTeam: String, awayScore: Int, dt: Date)
   case class ResultAdded(team: String, r: NbaResult)
@@ -112,14 +116,12 @@ package object http {
 
     protected val httpDispatcher = HttpDispatcher
 
-    protected def installApi(api: Api, interface: String, httpPort: Int)(implicit mSet: akka.stream.ActorMaterializerSettings, system: ActorSystem) = {
+    protected def installApi(api: Api, interface: String, httpPort: Int)(implicit materializer: akka.stream.ActorMaterializer, system: ActorSystem) = {
       api.route.foreach { api ⇒
         implicit val ec = system.dispatchers.lookup(httpDispatcher)
         val route = api(ec)
 
-        implicit val materializer = ActorMaterializer(mSet)
         system.registerOnTermination { system.log.info("Http server was stopped") }
-
         Http().bindAndHandle(akka.http.scaladsl.server.RouteResult.route2HandlerFlow(route), interface, httpPort)
       }
 
@@ -199,7 +201,7 @@ package object http {
       asScalaBuffer(system.settings.config
         .getConfig("app-settings")
         .getObjectList("teams"))
-        .foldLeft(scala.collection.mutable.HashMap[String, String]()) { (acc, c) ⇒
+        ./:(scala.collection.mutable.HashMap[String, String]()) { (acc, c) ⇒
           val it = c.entrySet().iterator()
           if (it.hasNext) {
             val entry = it.next()
@@ -213,7 +215,7 @@ package object http {
       asScalaBuffer(system.settings.config
         .getConfig("app-settings")
         .getObjectList("arenas"))
-        .foldLeft(scala.collection.immutable.Vector.empty[(String, String)]) { (acc, c) ⇒
+        ./:(scala.collection.immutable.Vector.empty[(String, String)]) { (acc, c) ⇒
           val it = c.entrySet().iterator()
           if (it.hasNext) {
             val entry = it.next()
@@ -231,7 +233,7 @@ package object http {
 
       val stages = system.settings.config.getConfig("app-settings")
         .getObjectList("stages")
-        .foldLeft(scala.collection.mutable.LinkedHashMap[String, String]()) { (acc, c) ⇒
+        ./:(scala.collection.mutable.LinkedHashMap[String, String]()) { (acc, c) ⇒
           val it = c.entrySet().iterator()
           if (it.hasNext) {
             val entry = it.next()
@@ -277,11 +279,13 @@ package object http {
         .toString
 
       system.log.info(message)
-      installApi(api, localAddress, httpPort)(
-        akka.stream.ActorMaterializerSettings(system)
-          .withInputBuffer(32, 64)
-          .withDispatcher("akka.stream-dispatcher"), system)
 
+      val settings = akka.stream.ActorMaterializerSettings(system)
+        .withInputBuffer(32, 64)
+        .withDispatcher("akka.stream-dispatcher")
+      implicit val mat = ActorMaterializer(settings)(system)
+
+      installApi(api, localAddress, httpPort)(mat, system)
       JournalChangesIngestion.start(context, config, teams)
     }
 

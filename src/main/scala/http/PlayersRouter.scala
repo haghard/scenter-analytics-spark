@@ -52,12 +52,14 @@ trait PlayersRouter extends LeadersRouter with PlayersProtocol { mixin: MicroKer
 
   def playerRoute(implicit ex: ExecutionContext): Route =
     pathPrefix(pathPrefix) {
-      (get & path(playerServicePath / "stats")) {
-        parameters(('name.as[String]), ('period.as[String]), ('team.as[String])) { (name, period, team) ⇒
-          withUri { url ⇒
-            requiredHttpSession(ex) { session ⇒
-              system.log.info(s"[user:${session.user}] access [$httpPrefixAddress/$pathPrefix/$playerServicePath/stats]")
-              get(complete(playerStats(URLDecoder.decode(url, enc), URLDecoder.decode(name, enc), period, team)))
+      path(playerServicePath / "stats") {
+        get {
+          parameters(('name.as[String]), ('period.as[String]), ('team.as[String])) { (name, period, team) ⇒
+            withUri { url ⇒
+              requiredHttpSession(ex) { session ⇒
+                system.log.info(s"[user:${session.user}] access [$httpPrefixAddress/$pathPrefix/$playerServicePath/stats]")
+                get(complete(playerStats(URLDecoder.decode(url, enc), URLDecoder.decode(name, enc), period, team)))
+              }
             }
           }
         }
