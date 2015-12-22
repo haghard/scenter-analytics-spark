@@ -1,12 +1,10 @@
 import java.net.{ NetworkInterface, InetAddress }
 import java.util.Date
 
-
 import akka.actor._
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.{ Route, Directive1, Directives }
 import akka.stream.ActorMaterializer
-import com.softwaremill.session.{ SessionConfig, SessionManager }
 import ingestion.JournalChangesIngestion
 import org.apache.spark.SparkContext
 import spark.SparkQuery
@@ -17,9 +15,8 @@ import org.joda.time.{ DateTime, Interval }
 
 import scala.collection.JavaConversions._
 import scala.collection.mutable
-import scala.concurrent.{ Await, ExecutionContext, Future }
+import scala.concurrent.{ ExecutionContext, Future }
 import scala.reflect.ClassTag
-import scala.util.{ Failure, Success }
 import scalaz.{ -\/, \/-, \/ }
 import com.github.nscala_time.time.Imports._
 
