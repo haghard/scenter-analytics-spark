@@ -28,7 +28,7 @@ By default server is going to bind on "eth0" enterface. If you need to change it
 Example routes
 ===============
 
-Through browser http://192.168.0.62:8001/api/twitter-login"
+Through browser http://192.168.0.62:8001/api/login-twitter"
 
 http GET [host]:[port]/api/login?"user=...&password=..."
 

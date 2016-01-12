@@ -78,13 +78,13 @@ trait StandingRouter extends TeamsRouter with TypedAsk with StandingHttpProtocol
         withUri { url ⇒
           requiredHttpSession(ec) { session ⇒
             system.log.info(s"[user:${session.user}] access [$httpPrefixAddress/$pathPrefix/$standingServicePath/$stage]")
-            get(complete(search(url, stage)))
+            get(complete(searchResults(url, stage)))
           }
         }
       }
     }
 
-  private def search(url: String, stage: String)(implicit ex: ExecutionContext): Future[HttpResponse] = {
+  private def searchResults(url: String, stage: String)(implicit ex: ExecutionContext): Future[HttpResponse] = {
     system.log.info(s"incoming http GET $url")
     val interval = (for { (k, v) ← intervals if (v == stage) } yield k).headOption
     interval.fold(Future.successful(fail(s"Unsupported period has been received $stage"))) { interval0 ⇒

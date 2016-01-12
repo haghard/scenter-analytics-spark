@@ -107,10 +107,10 @@ package object spark {
     implicit def stats(implicit ex: ExecutionContext) = new PlayerStatsQuery[PlayerStatsView] {
       override val name: String = "[spark-query]: player-stats"
 
-      override def async(ctx: SparkContext, config: Config, name: String, period: String, team: String): Future[PlayerStatsView] = {
+      override def async(ctx: SparkContext, config: Config, playerName: String, period: String, team: String): Future[PlayerStatsView] = {
         val start = System.currentTimeMillis()
         val rdd: RDD[(String, Date, String, Int, Int, Int, String, String, String, Int, Int, Int, String, Int)] =
-          ctx.cassandraPlayerRdd(config, name, period, team).cache()
+          ctx.cassandraPlayerRdd(config, playerName, period, team).cache()
 
         rdd.collectAsync().map { batch ⇒
           val st = batch.map(r ⇒ Stats(r._1, r._2, r._3, r._4, r._5, r._6, r._7, r._8, r._9, r._10, r._11, r._12, r._13, r._14)).toList
@@ -126,7 +126,7 @@ package object spark {
     def apply[T <: SparkQueryView: RebLeadersQuery](implicit ex: ExecutionContext) = implicitly[RebLeadersQuery[T]]
 
     implicit def instance(implicit ex: ExecutionContext) = new RebLeadersQuery[RebLeadersView] {
-      override val name = "[spark-task]: rebound-leaders"
+      override val name = "[spark-query]: rebound-leaders"
 
       override def async(ctx: SparkContext, config: Config, period: String, depth: Int): Future[RebLeadersView] = {
         val start = System.currentTimeMillis()
@@ -209,7 +209,7 @@ package object spark {
     def apply[T <: SparkQueryView: StandingQuery](implicit ex: ExecutionContext) = implicitly[StandingQuery[T]]
 
     implicit def playoff(implicit ex: ExecutionContext) = new StandingQuery[PlayoffStandingView] {
-      override val name = "[spark-task]: standing-playoff"
+      override val name = "[spark-query]: standing-playoff"
 
       override def async(ctx: SparkContext, config: Config, teams: mutable.HashMap[String, String], period: String): Future[PlayoffStandingView] = {
         val start = System.currentTimeMillis()
@@ -255,7 +255,7 @@ package object spark {
     }
 
     implicit def season(implicit ex: ExecutionContext) = new StandingQuery[SeasonStandingView] {
-      override val name = "[spark-task]: season-standing"
+      override val name = "[spark-query]: season-standing"
 
       override def async(ctx: SparkContext, config: Config, teams: mutable.HashMap[String, String], period: String): Future[SeasonStandingView] = {
         val start = System.currentTimeMillis

@@ -104,7 +104,7 @@ object JournalChangesIngestion {
         PRIMARY KEY ((period, team), date)
     ) WITH CLUSTERING ORDER BY (date DESC);
 
-    select * from results_by_period where period = 'season-12-13' and team = 'sas'
+    select * from results_by_period where period = 'season-12-13' and team = 'sas';
 
     */
 
@@ -146,7 +146,7 @@ object JournalChangesIngestion {
       PRIMARY KEY (period, time, name)
     ) WITH CLUSTERING ORDER BY (time ASC, name ASC);
 
-    select  name, team, pts from leaders_by_period where period = 'season-15-16'
+    select name, team, pts from leaders_by_period where period = 'season-12-13' LIMIT 10;
 
     */
 
@@ -169,7 +169,7 @@ object JournalChangesIngestion {
      +------------------------+-------------+------------------+
 
 
-     CREATE TABLE player_by_name (
+     CREATE TABLE player_by_period_team (
         name text,
         period text,
         team text,
@@ -194,7 +194,7 @@ object JournalChangesIngestion {
         PRIMARY KEY ((name, period, team), time)
      ) WITH CLUSTERING ORDER BY (time ASC);
 
-     select name, pts, team, opponent, time from player_by_name where name = 'S. Curry' and period = 'season-12-13' and team = 'gsw';
+     select name, pts, team, opponent, time from player_by_period_team where name = 'S. Curry' and period = 'season-12-13' and team = 'gsw';
 
     */
 

@@ -134,7 +134,8 @@ package object cassandra {
     }
 
     /**
-     * select * from results_by_period where period = 'season-12-13' and home_team = 'sas'
+     *
+     * select * from results_by_period where period = 'season-12-13' and team in ('sas', 'cle', 'mia');
      */
     def cassandraStandingRdd(config: Config, teams: scala.collection.Set[String], period: String): RDD[NbaResult] = {
       val keyspace = config.getString("spark.cassandra.journal.keyspace")

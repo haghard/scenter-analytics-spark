@@ -4,8 +4,11 @@ import akka.http.scaladsl.model.StatusCodes
 import com.github.scribejava.core.model.Verb
 import com.softwaremill.session._
 import akka.http.scaladsl.server._
-import com.softwaremill.session.CsrfDirectives._
+import akka.http.scaladsl.server.Directives._
 import com.softwaremill.session.SessionDirectives._
+import com.softwaremill.session.CsrfDirectives._
+import com.softwaremill.session.CsrfOptions._
+import com.softwaremill.session.SessionOptions._
 
 import scala.concurrent.{ Future, ExecutionContext }
 import scala.util.Try
@@ -31,8 +34,11 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives
     def log(msg: String) = system.log.info(msg)
   }
 
-  def requiredHttpSession(implicit ec: ExecutionContext) = requiredSession(refreshable, usingCookies)
+  //refreshable
 
+  def requiredHttpSession(implicit ec: ExecutionContext) = requiredSession(oneOff, usingCookies)
+
+  //https://github.com/softwaremill/akka-http-session
   abstract override def configureApi() =
     super.configureApi() ~
       Api(route = Option { ec: ExecutionContext ⇒ securityRoute(ec) },
@@ -61,8 +67,7 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives
               }
             }
           }
-        } ~
-        path("login-twitter") {
+        } ~ path("login-twitter") {
           get {
             val service = oAuthService()
               .callback(s"http://$localAddress:$httpPort/$pathPrefix/twitter-sign-in")
