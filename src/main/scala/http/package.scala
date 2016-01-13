@@ -283,7 +283,9 @@ package object http {
       implicit val mat = ActorMaterializer(settings)(system)
 
       installApi(api, localAddress, httpPort)(mat, system)
-      //JournalChangesIngestion.start(context, config, teams)
+
+      //Streaming
+      JournalChangesIngestion.start(context, config, teams)
     }
 
     override def shutdown() = {

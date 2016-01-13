@@ -24,7 +24,7 @@ object Bootstrap extends App {
 
   object SparkAnalytics extends MicroKernel(httpPort = httpP, ethName = eth) with PlayersRouter {
     import scala.concurrent.duration._
-    implicit val timeout = akka.util.Timeout(60 seconds)
+    implicit val timeout = akka.util.Timeout(30 seconds)
     override val environment = "Spark"
 
     override lazy val consumerKey = system.settings.config.getString("twitter.consumer-key")

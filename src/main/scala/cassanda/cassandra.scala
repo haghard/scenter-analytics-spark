@@ -161,15 +161,15 @@ package object cassandra {
     }
 
     /**
-     * select  name, team, pts from leaders_by_period where period = 'season-15-16'
+     * select name, team, pts from leaders_by_period where period = 'season-15-16'
      */
     def cassandraPtsLeadersRdd(config: Config, period: String): RDD[((String, String), Float)] = {
       val keyspace = config.getString("spark.cassandra.journal.keyspace")
       val table = config.getString("spark.cassandra.journal.leaders")
       context.cassandraTable[(String, String, Float)](keyspace, table)
-        .select("name", "pts")
+        .select("name", "team", "pts")
         .where("period = ?", period)
-        .as((name: String, pts: Float) ⇒ ((name, "team"), pts))
+        .as((name: String, team: String, pts: Float) ⇒ ((name, team), pts))
     }
 
     /**
