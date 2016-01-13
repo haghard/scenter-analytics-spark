@@ -67,7 +67,7 @@ trait LeadersRouter extends StandingRouter with LeadersProtocol { mixin: MicroKe
           withUri { url ⇒
             requiredHttpSession(ex) { session ⇒
               system.log.info(s"[user:${session.user}] access [$httpPrefixAddress/$pathPrefix/$leadersServicePath/pts]")
-              get(complete(searchFor[PtsLeadersView](PtsLeadersSearchArgs(context, url, stage, teams, stage, depth), "pts-leaders")))
+              get(complete(searchFor[PtsLeadersView](PtsLeadersQueryArgs(context, url, stage, teams, stage, depth), "pts-leaders")))
             }
           }
         }
@@ -77,7 +77,7 @@ trait LeadersRouter extends StandingRouter with LeadersProtocol { mixin: MicroKe
             withUri { url ⇒
               requiredHttpSession(ex) { session ⇒
                 system.log.info(s"[user:${session.user}] access [$httpPrefixAddress/$pathPrefix/$leadersServicePath/reb]")
-                get(complete(searchFor[RebLeadersView](RebLeadersSearchArgs(context, url, period, depth), "reb-leaders")))
+                get(complete(searchFor[RebLeadersView](RebLeadersQueryArgs(context, url, period, depth), "reb-leaders")))
               }
             }
           }

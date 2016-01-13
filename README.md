@@ -38,6 +38,6 @@ http GET [host]:[port]/api/teams/season-15-16?teams=cle,okc 'Cookie:_sessiondata
 
 http GET [host]:[port]/api/player/stats?"name=S. Curry&period=season-15-16&team=gsw"
 
-http GET [host]:[port]/api/leaders/pts/season-14-15?teams=cle,okc 'Cookie:_sessiondata=...' 
+http GET [host]:[port]/api/leaders/pts/season-15-16 'Cookie:_sessiondata=...' 
 
-http GET [host]:[port]/api/leaders/reb/season-15-16?teams=cle,okc 'Cookie:_sessiondata=...'
+http GET [host]:[port]/api/leaders/reb/season-15-16 'Cookie:_sessiondata=...'

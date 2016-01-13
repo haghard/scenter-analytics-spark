@@ -6,7 +6,7 @@ import akka.http.scaladsl.model.HttpResponse
 import akka.http.scaladsl.server.Route
 import http.PlayersRouter.PlayersProtocol
 import http.StandingRouter.{ StandingHttpProtocols, SparkJobHttpResponse }
-import http.SparkJob.{ Stats, PlayerStatsView, PlayerStatsJobArgs }
+import http.SparkJob.{ Stats, PlayerStatsView, PlayerStatsQueryArgs }
 import spray.json._
 
 import scala.concurrent.{ Future, ExecutionContext }
@@ -68,7 +68,7 @@ trait PlayersRouter extends LeadersRouter with PlayersProtocol { mixin: MicroKer
 
   private def playerStats(url: String, name: String, period: String, team: String)(implicit ex: ExecutionContext): Future[HttpResponse] = {
     system.log.info(s"incoming http GET on $url")
-    fetch[PlayerStatsView](PlayerStatsJobArgs(context, url, name, period, team), playerJobSupervisor).map {
+    fetch[PlayerStatsView](PlayerStatsQueryArgs(context, url, name, period, team), playerJobSupervisor).map {
       case \/-(res)   ⇒ success(SparkJobHttpResponse(url, view = Option("player-stats"), body = Option(res), error = res.error))(PlayersResponseWriter)
       case -\/(error) ⇒ fail(error)
     }

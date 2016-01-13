@@ -281,7 +281,6 @@ package object spark {
             }
             SeasonStandingView(west.size + east.size, west.toList, east.toList, System.currentTimeMillis - start)
           }
-
       }
     }
   }

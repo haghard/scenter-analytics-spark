@@ -184,10 +184,9 @@ addCommandAlias("lanalytics", s"run-main  http.Bootstrap --HTTP_PORT=8001 --NET_
 
 //http GET http://192.168.0.62:8001/api/player/stats?"name=S. Curry&period=season-15-16&team=gsw"
 
-//http GET http://192.168.0.62:8001/api/leaders/pts/season-14-15
-//http GET http://192.168.0.62:8001/api/leaders/reb/season-15-16
+//http GET http://192.168.0.62:8001/api/leaders/pts/season-14-15 'Cookie:_sessiondata=...'
+//http GET http://192.168.0.62:8001/api/leaders/reb/season-15-16 'Cookie:_sessiondata=...'
 
-//??http GET http://192.168.0.62:8001/api/results/search?"from=2015-10-26&to=2015-11-03&teams=okc,cle"
 
 //docker
 

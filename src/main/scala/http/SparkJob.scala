@@ -16,7 +16,7 @@ object SparkJob {
   sealed trait JobManagerProtocol
   case class StreamJobSubmit(job: String) extends JobManagerProtocol
 
-  case class StandingSearchArgs(ctx: SparkContext, url: String, stage: String, teams: mutable.HashMap[String, String], period: String)
+  case class StandingQueryArgs(ctx: SparkContext, url: String, stage: String, teams: mutable.HashMap[String, String], period: String)
     extends JobManagerProtocol with DefaultJobArgs
 
   case class TeamStatQueryArgs(ctx: SparkContext, url: String, period: String,
@@ -25,13 +25,13 @@ object SparkJob {
                                allTeams: mutable.HashMap[String, String])
       extends JobManagerProtocol with DefaultJobArgs
 
-  case class PtsLeadersSearchArgs(ctx: SparkContext, url: String, stage: String, teams: mutable.HashMap[String, String], interval: String, depth: Int)
+  case class PtsLeadersQueryArgs(ctx: SparkContext, url: String, stage: String, teams: mutable.HashMap[String, String], interval: String, depth: Int)
     extends JobManagerProtocol with DefaultJobArgs
 
-  case class RebLeadersSearchArgs(ctx: SparkContext, url: String, period: String, depth: Int)
+  case class RebLeadersQueryArgs(ctx: SparkContext, url: String, period: String, depth: Int)
     extends JobManagerProtocol with DefaultJobArgs
 
-  case class PlayerStatsJobArgs(ctx: SparkContext, url: String, name: String, period: String, team: String) extends JobManagerProtocol with DefaultJobArgs
+  case class PlayerStatsQueryArgs(ctx: SparkContext, url: String, name: String, period: String, team: String) extends JobManagerProtocol with DefaultJobArgs
 
   case class Standing(team: String = "", hw: Int = 0, hl: Int = 0, aw: Int = 0, al: Int = 0, w: Int = 0, l: Int = 0) extends Serializable
   case class ResultView(lineup: String, score: String, time: String, arena: String) extends Serializable
@@ -69,11 +69,11 @@ class SparkJob(val config: Config) extends Actor with ActorLogging {
   implicit val Ex = context.dispatcher
 
   override def receive: Receive = {
-    case PtsLeadersSearchArgs(ctx, url, stage, teams, interval, depth) ⇒
+    case PtsLeadersQueryArgs(ctx, url, stage, teams, interval, depth) ⇒
       log.info(s"Start spark pts-leader query with [${interval.toString}] with $depth")
       (PtsLeadersQuery[PtsLeadersView] async (ctx, config, interval, depth)) to sender()
 
-    case StandingSearchArgs(ctx, _, stage, teams, period) ⇒
+    case StandingQueryArgs(ctx, _, stage, teams, period) ⇒
       log.info(s"Start spark standing query for [$stage]")
       if (stage contains Season) {
         (StandingQuery[SeasonStandingView] async (ctx, config, teams, period)) to sender()
@@ -81,11 +81,11 @@ class SparkJob(val config: Config) extends Actor with ActorLogging {
         (StandingQuery[PlayoffStandingView] async (ctx, config, teams, period)) to sender()
       }
 
-    case PlayerStatsJobArgs(ctx, url, name, period, team) ⇒
+    case PlayerStatsQueryArgs(ctx, url, name, period, team) ⇒
       log.info(s"Start spark player-stat query for [$name]:[$team]:[$period]")
       PlayerStatsQuery[PlayerStatsView] async (ctx, config, name, period, team) to sender()
 
-    case RebLeadersSearchArgs(ctx, url, period, depth) ⇒
+    case RebLeadersQueryArgs(ctx, url, period, depth) ⇒
       log.info(s"Start spark reb-leader query for [$period]")
       RebLeadersQuery[RebLeadersView] async (ctx, config, period, depth) to sender()
 

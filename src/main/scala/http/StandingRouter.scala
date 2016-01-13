@@ -88,7 +88,7 @@ trait StandingRouter extends TeamsRouter with TypedAsk with StandingHttpProtocol
     system.log.info(s"incoming http GET $url")
     val interval = (for { (k, v) ← intervals if (v == stage) } yield k).headOption
     interval.fold(Future.successful(fail(s"Unsupported period has been received $stage"))) { interval0 ⇒
-      fetch[SparkQueryView](StandingSearchArgs(context, url, stage, teams, stage), querySupervisor).map {
+      fetch[SparkQueryView](StandingQueryArgs(context, url, stage, teams, stage), querySupervisor).map {
         case \/-(res)   ⇒ success(SparkJobHttpResponse(url, view = Option("standing"), body = Option(res), error = res.error))
         case -\/(error) ⇒ fail(error)
       }
