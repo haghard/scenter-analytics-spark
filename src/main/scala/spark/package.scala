@@ -25,10 +25,6 @@ package object spark {
         .setMaster(config.getString("spark.master")))
   }
 
-  trait CassandraBatchUpdateTask[T] extends SparkQuery {
-    def asyncUpdate(ctx: SparkContext, config: Config, teams: mutable.HashMap[String, String]): Future[T]
-  }
-
   trait StandingQuery[T] extends SparkQuery {
     def async(ctx: SparkContext, config: Config, teams: mutable.HashMap[String, String], period: String): Future[T]
   }
@@ -37,25 +33,25 @@ package object spark {
     def async(ctx: SparkContext, config: Config, period: String, depth: Int): Future[T]
   }
 
-  trait PlayerStatsQuery[T] extends SparkQuery {
-    def async(ctx: SparkContext, config: Config, name: String, period: String, team: String): Future[T]
-  }
-
   trait RebLeadersQuery[T] extends SparkQuery {
     def async(ctx: SparkContext, config: Config, period: String, depth: Int): Future[T]
   }
 
-  trait TeamStatsQuery[T] extends SparkQuery {
+  trait PlayerStatsQuery[T] extends SparkQuery {
+    def async(ctx: SparkContext, config: Config, name: String, period: String, team: String): Future[T]
+  }
+
+  trait TeamsResultsQuery[T] extends SparkQuery {
     def async(ctx: SparkContext, config: Config, period: String, teams: scala.collection.Seq[String],
               arenas: Seq[(String, String)], allTeams: mutable.HashMap[String, String]): Future[T]
   }
 
-  object TeamStatsQuery {
+  object TeamsResultsQuery {
 
-    @implicitNotFound(msg = "Cannot find TeamStatsQuery type class for ${T}")
-    def apply[T <: SparkQueryView: TeamStatsQuery](implicit ex: ExecutionContext) = implicitly[TeamStatsQuery[T]]
+    @implicitNotFound(msg = "Cannot find TeamsResultsQuery type class for ${T}")
+    def apply[T <: SparkQueryView: TeamsResultsQuery](implicit ex: ExecutionContext) = implicitly[TeamsResultsQuery[T]]
 
-    implicit def teamStats(implicit ex: ExecutionContext) = new TeamStatsQuery[TeamStatsView] {
+    implicit def teamStats(implicit ex: ExecutionContext) = new TeamsResultsQuery[TeamStatsView] {
       override val name: String = "[spark-query]: team-stats"
       override def async(ctx: SparkContext, config: Config, period: String, teams: scala.collection.Seq[String],
                          arenas: Seq[(String, String)], allTeams: mutable.HashMap[String, String]): Future[TeamStatsView] = {

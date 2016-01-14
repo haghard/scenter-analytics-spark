@@ -33,13 +33,13 @@ object SparkJob {
 
   case class PlayerStatsQueryArgs(ctx: SparkContext, url: String, name: String, period: String, team: String) extends JobManagerProtocol with DefaultJobArgs
 
-  case class Standing(team: String = "", hw: Int = 0, hl: Int = 0, aw: Int = 0, al: Int = 0, w: Int = 0, l: Int = 0) extends Serializable
-  case class ResultView(lineup: String, score: String, time: String, arena: String) extends Serializable
-  case class PtsLeader(team: String, player: String, pts: Double, games: Long = 0) extends Serializable
-  case class RebLeader(team: String = "", player: String = "", offensive: Double, defensive: Double, total: Double, games: Long = 0) extends Serializable
+  case class Standing(team: String = "", hw: Int = 0, hl: Int = 0, aw: Int = 0, al: Int = 0, w: Int = 0, l: Int = 0)
+  case class ResultView(lineup: String, score: String, time: String, arena: String)
+  case class PtsLeader(team: String, player: String, pts: Double, games: Long = 0)
+  case class RebLeader(team: String = "", player: String = "", offensive: Double, defensive: Double, total: Double, games: Long = 0)
 
   case class Stats(VS: String, DT: Date, MIN: String, REB_DEF: Int, REB_OFF: Int, REB_TOTAL: Int, FGM_A: String, PM3_A: String, FTM_A: String,
-                   ASSISTS: Int, BL: Int, STEEL: Int, PLUS_MINUS: String, PTS: Int) extends Serializable
+                   ASSISTS: Int, BL: Int, STEEL: Int, PLUS_MINUS: String, PTS: Int)
 
   trait SparkQueryView extends DefaultResponseBody {
     def count: Int
@@ -91,7 +91,7 @@ class SparkJob(val config: Config) extends Actor with ActorLogging {
 
     case TeamStatQueryArgs(ctx, _, period, teams, arenas, allTeams) ⇒
       log.info(s"Start spark team-stats query for [$period] [$teams]")
-      TeamStatsQuery[TeamStatsView] async (ctx, config, period, teams, arenas, allTeams) to sender()
+      TeamsResultsQuery[TeamStatsView] async (ctx, config, period, teams, arenas, allTeams) to sender()
       context.stop(self)
   }
 }

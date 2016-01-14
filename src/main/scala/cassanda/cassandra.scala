@@ -148,6 +148,10 @@ package object cassandra {
         .as((team: String, score: Int, opponent: String, opponent_score: Int, date: Date) ⇒ NbaResult(team, score, opponent, opponent_score, date))
     }
 
+    /**
+     *
+     * select team, score, opponent, opponent_score, date from results_by_period where period = 'season-12-13' and team in ('sas', 'cle', 'mia');
+     */
     def cassandraResultByPeriodRdd(config: Config, teams: scala.collection.Set[String],
                                    period: String): RDD[(String, Int, String, Int, java.sql.Date)] = {
       val keyspace = config.getString("spark.cassandra.journal.keyspace")
