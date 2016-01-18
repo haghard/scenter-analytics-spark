@@ -48,7 +48,7 @@ trait PlayersRouter extends LeadersRouter with PlayersProtocol { mixin: MicroKer
     super.configureApi() ~
       Api(route = Option { ec: ExecutionContext ⇒ playerRoute(ec) },
         postAction = Option(() ⇒ system.log.info(s"\n★ ★ ★ [${playerServicePath}-routes] was stopped on $httpPrefixAddress ★ ★ ★")),
-        urls = s"[$httpPrefixAddress/$pathPrefix/$playerServicePath/ppg/{stage}]")
+        urls = s"[$httpPrefixAddress/$pathPrefix/$playerServicePath/pts/{stage} 'Cookie:_sessiondata= ...']")
 
   def playerRoute(implicit ex: ExecutionContext): Route =
     pathPrefix(pathPrefix) {

@@ -58,7 +58,7 @@ trait LeadersRouter extends StandingRouter with LeadersProtocol { mixin: MicroKe
     super.configureApi() ~
       Api(route = Option { ec: ExecutionContext ⇒ leadersRoute(ec) },
         postAction = Option(() ⇒ system.log.info(s"\n★ ★ ★ [${leadersServicePath}-routes] was stopped on $httpPrefixAddress ★ ★ ★")),
-        urls = s"[$httpPrefixAddress/$pathPrefix/$leadersServicePath/pts/{stage}]\n[$httpPrefixAddress/$pathPrefix/$leadersServicePath/reb/{stage}]")
+        urls = s"[$httpPrefixAddress/$pathPrefix/$leadersServicePath/pts/{stage} 'Cookie:_sessiondata= ...']\n[$httpPrefixAddress/$pathPrefix/$leadersServicePath/reb/{stage} 'Cookie:_sessiondata= ...']")
 
   private def leadersRoute(implicit ex: ExecutionContext): Route =
     pathPrefix(pathPrefix) {

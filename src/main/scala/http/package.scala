@@ -29,8 +29,6 @@ package object http {
   private[http] val SEEDS_ENV = "SEED_NODES"
   private[http] val HTTP_PORT = "HTTP_PORT"
   private[http] val NET_INTERFACE = "NET_INTERFACE"
-  private[http] val TWITTER_CONSUMER_KEY = "TWITTER_CONSUMER_KEY"
-  private[http] val TWITTER_CONSUMER_SECRET = "TWITTER_CONSUMER_SECRET"
 
   case class NbaResultView(homeTeam: String, homeScore: Int, awayTeam: String, awayScore: Int, dt: Date)
   case class ResultAdded(team: String, r: NbaResult)
@@ -156,6 +154,8 @@ package object http {
 
     def localAddress: String
 
+    def domain: String
+
     def httpPort: Int
 
     def httpPrefixAddress = s"http://$localAddress:$httpPort"
@@ -191,6 +191,8 @@ package object http {
 
     lazy val api = configureApi()
     override lazy val system = ActorSystem(ActorSystemName, config)
+
+    override val domain = "haghard.com"
 
     override def localAddress = addresses.map(_.getHostAddress).getOrElse("0.0.0.0")
 
@@ -285,7 +287,7 @@ package object http {
       installApi(api, localAddress, httpPort)(mat, system)
 
       //Streaming
-      JournalChangesIngestion.start(context, config, teams)
+      //JournalChangesIngestion.start(context, config, teams)
     }
 
     override def shutdown() = {

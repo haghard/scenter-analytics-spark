@@ -2,6 +2,7 @@ package http
 
 import scala.util.Try
 import scala.collection._
+import scala.concurrent.duration._
 
 object Bootstrap extends App {
   val opt = """--(\S+)=(\S+)""".r
@@ -22,13 +23,32 @@ object Bootstrap extends App {
   val httpP = Try(System.getProperty(HTTP_PORT).toInt).getOrElse(DefaultHttpPort)
   val eth = Option(System.getProperty(NET_INTERFACE)).filter(_ != "null").getOrElse(DefaultEth)
 
+  /*
+  import scalaz._, Scalaz._
+  import akka.http.scaladsl.server.RouteConcatenation._
+  val rest = new http.modules.PlayersModule with http.modules.RestModule {
+    override implicit val timeout: akka.util.Timeout = akka.util.Timeout(30 seconds)
+    override val system: ActorSystem = ???
+    override val context: SparkContext = ???
+  }
+
+  val routes = (rest.api1 |@| rest.api2)((a, b) ⇒ (ec: ExecutionContext) ⇒ a(ec) ~ b(ec))
+  */
+
+  //https://github.com/akka/akka/blob/master/akka-http-tests/src/test/scala/akka/http/scaladsl/server/directives/SecurityDirectivesSpec.scala
+
   object SparkAnalytics extends MicroKernel(httpPort = httpP, ethName = eth) with PlayersRouter {
-    import scala.concurrent.duration._
     implicit val timeout = akka.util.Timeout(30 seconds)
     override val environment = "Spark"
 
-    override lazy val consumerKey = system.settings.config.getString("twitter.consumer-key")
-    override lazy val consumerSecret = system.settings.config.getString("twitter.consumer-secret")
+    override lazy val googleApiKey = system.settings.config.getString("google.consumer-key")
+    override lazy val googleApiSecret = system.settings.config.getString("google.consumer-secret")
+
+    override lazy val twitterApiKey = system.settings.config.getString("twitter.consumer-key")
+    override lazy val twitterApiSecret = system.settings.config.getString("twitter.consumer-secret")
+
+    override lazy val githubApiKey = system.settings.config.getString("github.consumer-key")
+    override lazy val githubApiSecret = system.settings.config.getString("github.consumer-secret")
   }
 
   SparkAnalytics.startup

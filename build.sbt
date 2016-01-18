@@ -172,10 +172,16 @@ javacOptions ++= Seq(
   "-Xlint:deprecation")
 
 //run-main  http.Bootstrap --HTTP_PORT=8001 --NET_INTERFACE=en0 --DB_HOSTS=109.234.39.32 --TWITTER_CONSUMER_KEY= --TWITTER_CONSUMER_SECRET=
+//run-main  http.Bootstrap --HTTP_PORT=8001 --NET_INTERFACE=en0 --DB_HOSTS=109.234.39.32 --GOOGLE_CONSUMER_KEY= --GOOGLE_CONSUMER_SECRET=
+//run-main http.Bootstrap --HTTP_PORT=8001 --NET_INTERFACE=en0 --DB_HOSTS=109.234.39.32  --GITHUB_CONSUMER_KEY= --GITHUB_CONSUMER_SECRET=
 addCommandAlias("lanalytics", s"run-main  http.Bootstrap --HTTP_PORT=8001 --NET_INTERFACE=en0 --DB_HOSTS=$CassandraHost")
 
 //http GET http://192.168.0.62:8001/api/login?"user=haghard&password=qwerty"
-//browser http GET http://192.168.0.62:8001/api/login-twitter"
+
+//browser
+//http://haghard.com:8001/api/login-twitter
+//http://haghard.com:8001/api/login-google
+//http://haghard.com:8001/api/login-github
 
 //http GET http://192.168.0.62:8001/api/standing/season-15-16 'Cookie:_sessiondata= ...'
 //http GET http://192.168.0.62:8001/api/standing/playoff-14-15 'Cookie:_sessiondata= ...'
