@@ -75,7 +75,7 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
               service.signRequest(accessToken, request)
 
               val response = request.send
-              if(response.getCode == 200) {
+              if (response.getCode == 200) {
                 import spray.json._
                 val json = response.getBody.parseJson.asJsObject
                 val user = json.fields("name").toString().replace("\"", "")
@@ -114,7 +114,7 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
               val response = request.send
 
               import spray.json._
-              if(response.getCode == 200) {
+              if (response.getCode == 200) {
                 val googleResponse = response.getBody
                 val json = googleResponse.parseJson.asJsObject
                 val user = json.fields("displayName").toString().replace("\"", "")
@@ -159,7 +159,7 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
               val oAuthRequest = new com.github.scribejava.core.model.OAuthRequest(Verb.GET, twitter.protectedUrl, service)
               service.signRequest(accessToken, oAuthRequest)
               val twitterResponse = oAuthRequest.send()
-              if(twitterResponse.getCode == 200) {
+              if (twitterResponse.getCode == 200) {
                 import spray.json._
                 val json = twitterResponse.getBody.parseJson.asJsObject
                 val user = json.getFields("name").head.toString().replace("\"", "")
