@@ -24,19 +24,10 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
 
   val salt = BCrypt.gensalt()
 
-  lazy val googleOauth = {
-    val local = http.oauth.Oauth[com.github.scribejava.apis.GoogleApi20]
-    local.setKeySecret(googleApiKey, googleApiSecret)
-  }
-
-  lazy val twitterOauth = {
-    val local = http.oauth.Oauth[com.github.scribejava.apis.TwitterApi]
-    local.setKeySecret(twitterApiKey, twitterApiSecret)
-  }
-
-  lazy val githubOauth = {
-    val local = http.oauth.Oauth[com.github.scribejava.apis.GitHubApi]
-    local.setKeySecret(githubApiKey, githubApiSecret)
+  lazy val (google, twitter, github) = {
+    (http.oauth.Oauth[com.github.scribejava.apis.GoogleApi20].setKeySecret(googleApiKey, googleApiSecret),
+      http.oauth.Oauth[com.github.scribejava.apis.TwitterApi].setKeySecret(twitterApiKey, twitterApiSecret),
+      http.oauth.Oauth[com.github.scribejava.apis.GitHubApi].setKeySecret(githubApiKey, githubApiSecret))
   }
 
   implicit def serializer: SessionSerializer[ServerSession, String] =
@@ -52,8 +43,6 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
     def log(msg: String) = system.log.info(msg)
   }
 
-  //refreshable
-
   def requiredHttpSession(implicit ec: ExecutionContext) = requiredSession(oneOff, usingCookies)
 
   //https://github.com/softwaremill/akka-http-session
@@ -63,9 +52,9 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
         postAction = Option(() ⇒ system.log.info(s"\n★ ★ ★ [$httpPrefixAddress/login|logout] routes was stopped on $httpPrefixAddress ★ ★ ★")),
         urls = s"[$httpPrefixAddress/$pathPrefix/login, $httpPrefixAddress/$pathPrefix/login-twitter, $httpPrefixAddress/$pathPrefix/logout]")
 
-  private def github(implicit ec: ExecutionContext): Route =
+  private def githubR(implicit ec: ExecutionContext): Route =
     path("login-github") {
-      val service = githubOauth.oAuthService.callback(s"http://$domain:$httpPort/$pathPrefix/github-sign-in").build()
+      val service = github.oAuthService.callback(s"http://$domain:$httpPort/$pathPrefix/github-sign-in").build()
       // Obtain the Authorization URL
       val url = service.getAuthorizationUrl(null)
       redirect(akka.http.scaladsl.model.Uri(url), StatusCodes.PermanentRedirect)
@@ -74,7 +63,7 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
         parameterMap { params ⇒
           complete {
             Future {
-              val service = githubOauth.oAuthService.callback(s"http://$domain:$httpPort/$pathPrefix/github-sign-in").build()
+              val service = github.oAuthService.callback(s"http://$domain:$httpPort/$pathPrefix/github-sign-in").build()
               val (k, v) = params.head
               val verifier = new com.github.scribejava.core.model.Verifier(v)
 
@@ -82,24 +71,27 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
               val accessToken = service.getAccessToken(null, verifier)
               val token = accessToken.getToken
 
-              val request = new OAuthRequest(Verb.GET, githubOauth.protectedUrl, service)
+              val request = new OAuthRequest(Verb.GET, github.protectedUrl, service)
               service.signRequest(accessToken, request)
 
               val response = request.send
-
-              import spray.json._
-              val json = response.getBody.parseJson.asJsObject
-              val user = json.fields("name").toString().replace("\"", "")
-              s"$user has been authorized by github\nAuthorizationUrl: http://$localAddress:$httpPort/$pathPrefix/login?user=$user:github&password=$token"
+              if(response.getCode == 200) {
+                import spray.json._
+                val json = response.getBody.parseJson.asJsObject
+                val user = json.fields("name").toString().replace("\"", "")
+                s"$user has been authorized by github\nAuthorizationUrl: http://$localAddress:$httpPort/$pathPrefix/login?user=$user:github&password=$token"
+              } else {
+                response.getBody
+              }
             }(ec)
           }
         }
       }
     }
 
-  private def google(implicit ec: ExecutionContext): Route =
+  private def googleR(implicit ec: ExecutionContext): Route =
     path("login-google") {
-      val service = googleOauth.oAuthService.callback(s"http://$domain:$httpPort/$pathPrefix/google-sign-in").build()
+      val service = google.oAuthService.callback(s"http://$domain:$httpPort/$pathPrefix/google-sign-in").build()
       // Obtain the Authorization URL
       val url = service.getAuthorizationUrl(null)
       redirect(akka.http.scaladsl.model.Uri(url), StatusCodes.PermanentRedirect)
@@ -108,7 +100,7 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
         parameterMap { params ⇒
           complete {
             Future {
-              val service = googleOauth.oAuthService.callback(s"http://$domain:$httpPort/$pathPrefix/google-sign-in").build()
+              val service = google.oAuthService.callback(s"http://$domain:$httpPort/$pathPrefix/google-sign-in").build()
               val (k, v) = params.head
               val verifier = new com.github.scribejava.core.model.Verifier(v)
 
@@ -116,28 +108,30 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
               val accessToken = service.getAccessToken(null, verifier)
               val token = accessToken.getToken
 
-              val request = new OAuthRequest(Verb.GET, googleOauth.protectedUrl, service)
+              val request = new OAuthRequest(Verb.GET, google.protectedUrl, service)
               service.signRequest(accessToken, request)
 
               val response = request.send
 
               import spray.json._
-              val googleResponse = response.getBody
-
-              val json = googleResponse.parseJson.asJsObject
-              val user = json.fields("displayName").toString().replace("\"", "")
-
-              s"$user has been authorized by google\nAuthorizationUrl: http://$localAddress:$httpPort/$pathPrefix/login?user=$user:google&password=$token"
+              if(response.getCode == 200) {
+                val googleResponse = response.getBody
+                val json = googleResponse.parseJson.asJsObject
+                val user = json.fields("displayName").toString().replace("\"", "")
+                s"$user has been authorized by google\nAuthorizationUrl: http://$localAddress:$httpPort/$pathPrefix/login?user=$user:google&password=$token"
+              } else {
+                response.getBody
+              }
             }(ec)
           }
         }
       }
     }
 
-  private def twitter(implicit ec: ExecutionContext): Route =
+  private def twitterR(implicit ec: ExecutionContext): Route =
     path("login-twitter") {
       get {
-        val service = twitterOauth.oAuthService.callback(s"http://$localAddress:$httpPort/$pathPrefix/twitter-sign-in").build()
+        val service = twitter.oAuthService.callback(s"http://$localAddress:$httpPort/$pathPrefix/twitter-sign-in").build()
         val requestToken = service.getRequestToken
         val url = service.getAuthorizationUrl(requestToken)
         redirect(akka.http.scaladsl.model.Uri(url), StatusCodes.PermanentRedirect)
@@ -158,17 +152,21 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
            */
           complete {
             Future {
-              val service = twitterOauth.oAuthService.build()
+              val service = twitter.oAuthService.build()
               val requestToken = new com.github.scribejava.core.model.Token(oauthToken, oauthVerifier)
               val verifier = new com.github.scribejava.core.model.Verifier(oauthVerifier)
               val accessToken = service.getAccessToken(requestToken, verifier)
-              val oAuthRequest = new com.github.scribejava.core.model.OAuthRequest(Verb.GET, twitterOauth.protectedUrl, service)
+              val oAuthRequest = new com.github.scribejava.core.model.OAuthRequest(Verb.GET, twitter.protectedUrl, service)
               service.signRequest(accessToken, oAuthRequest)
               val twitterResponse = oAuthRequest.send()
-              import spray.json._
-              val json = twitterResponse.getBody.parseJson.asJsObject
-              val user = json.getFields("name").head.toString().replace("\"", "")
-              s"$user has been authorized by twitter\nAuthorizationUrl: http://$localAddress:$httpPort/$pathPrefix/login?user=$user:twitter&password=$oauthToken"
+              if(twitterResponse.getCode == 200) {
+                import spray.json._
+                val json = twitterResponse.getBody.parseJson.asJsObject
+                val user = json.getFields("name").head.toString().replace("\"", "")
+                s"$user has been authorized by twitter\nAuthorizationUrl: http://$localAddress:$httpPort/$pathPrefix/login?user=$user:twitter&password=$oauthToken"
+              } else {
+                twitterResponse.getBody
+              }
             }(ec)
           }
         }
@@ -197,7 +195,7 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
               }
             }
           }
-        } ~ twitter ~ google ~ github ~
+        } ~ twitterR ~ googleR ~ githubR ~
         path("test-secret") {
           get {
             requiredHttpSession(ec) { session ⇒
