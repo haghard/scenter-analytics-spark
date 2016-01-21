@@ -154,11 +154,13 @@ package object http {
 
     def localAddress: String
 
+    def externalAddress: String
+
     def domain: String
 
     def httpPort: Int
 
-    def httpPrefixAddress = s"http://$localAddress:$httpPort"
+    def httpPrefixAddress = s"http://$externalAddress:$httpPort"
   }
 
   private[http] trait AddressResolver {
@@ -195,6 +197,8 @@ package object http {
     override val domain = "haghard.com"
 
     override def localAddress = addresses.map(_.getHostAddress).getOrElse("0.0.0.0")
+
+    override def externalAddress = System.getenv("HOST")
 
     override val teams = {
       asScalaBuffer(system.settings.config
@@ -267,7 +271,7 @@ package object http {
       val message = new StringBuilder().append('\n')
         .append("=====================================================================================================================================")
         .append('\n')
-        .append(s"★ ★ ★ ★ ★ ★  Web service env: $environment ★ ★ ★ ★ ★ ★")
+        .append(s"★ ★ ★ ★ ★ ★  Web service env: $environment [ext: $externalAddress - docker: $localAddress] ★ ★ ★ ★ ★ ★")
         .append('\n')
         .append(s"★ ★ ★ ★ ★ ★  Cassandra contact points: ${system.settings.config.getString("db.cassandra.seeds")}  ★ ★ ★ ★ ★ ★")
         .append('\n')
@@ -284,7 +288,7 @@ package object http {
         .withDispatcher("akka.stream-dispatcher")
       implicit val mat = ActorMaterializer(settings)(system)
 
-      installApi(api, localAddress, httpPort)(mat, system)
+      installApi(api, externalAddress, httpPort)(mat, system)
 
       //Streaming
       JournalChangesIngestion.start(context, config, teams)
