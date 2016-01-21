@@ -50,7 +50,7 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
     super.configureApi() ~
       Api(route = Option { ec: ExecutionContext ⇒ securityRoute(ec) },
         postAction = Option(() ⇒ system.log.info(s"\n★ ★ ★ [$httpPrefixAddress/login|logout] routes was stopped on $httpPrefixAddress ★ ★ ★")),
-        urls = s"[$httpPrefixAddress/$pathPrefix/login, $httpPrefixAddress/$pathPrefix/login-twitter, $httpPrefixAddress/$pathPrefix/logout]")
+        urls = s"[$httpPrefixAddress/$pathPrefix/login, $httpPrefixAddress/$pathPrefix/login-twitter, $httpPrefixAddress/$pathPrefix/login-github, $httpPrefixAddress/$pathPrefix/login-google, $httpPrefixAddress/$pathPrefix/logout]")
 
   private def githubR(implicit ec: ExecutionContext): Route =
     path("login-github") {
