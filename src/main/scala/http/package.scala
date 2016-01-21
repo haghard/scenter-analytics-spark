@@ -158,6 +158,7 @@ package object http {
 
     //def externalAddress: String
 
+    //https://www.digitalocean.com/community/tutorials/how-to-set-up-a-host-name-with-digitalocean
     def domain: String
 
     def httpPort: Int

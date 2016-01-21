@@ -54,7 +54,7 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
 
   private def githubR(implicit ec: ExecutionContext): Route =
     path("login-github") {
-      val service = github.oAuthService.callback(s"http://$externalAddress:$httpPort/$pathPrefix/github-sign-in").build()
+      val service = github.oAuthService.callback(s"http://$domain:$httpPort/$pathPrefix/github-sign-in").build()
       // Obtain the Authorization URL
       val url = service.getAuthorizationUrl(null)
       redirect(akka.http.scaladsl.model.Uri(url), StatusCodes.PermanentRedirect)
