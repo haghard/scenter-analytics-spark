@@ -156,13 +156,13 @@ package object http {
 
     def localAddress: String
 
-    def externalAddress: String
+    //def externalAddress: String
 
     def domain: String
 
     def httpPort: Int
 
-    def httpPrefixAddress = s"http://$externalAddress:$httpPort"
+    def httpPrefixAddress = s"http://$domain:$httpPort"
   }
 
   private[http] trait AddressResolver {
