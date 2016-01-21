@@ -29,7 +29,8 @@ package object http {
   private[http] val SEEDS_ENV = "SEED_NODES"
   private[http] val HTTP_PORT = "HTTP_PORT"
   private[http] val NET_INTERFACE = "NET_INTERFACE"
-  private[http] val HOST = "HTTP_PORT"
+  //private[http] val HOST = "HOST"
+  private[http] val DOMAIN = "HTTP_PORT"
 
   case class NbaResultView(homeTeam: String, homeScore: Int, awayTeam: String, awayScore: Int, dt: Date)
   case class ResultAdded(team: String, r: NbaResult)
@@ -195,11 +196,12 @@ package object http {
     lazy val api = configureApi()
     override lazy val system = ActorSystem(ActorSystemName, config)
 
-    override val domain = System.getProperty("DOMAIN")
-
     override def localAddress = addresses.map(_.getHostAddress).getOrElse("0.0.0.0")
 
-    override def externalAddress = System.getProperty("HOST")
+    override val domain = Option(System.getProperty(DOMAIN))
+      .fold(throw new Exception(s"$DOMAIN ENV variable should be defined"))(identity)
+
+    //override def domain = Option(System.getProperty(HOST)).fold(throw new Exception(s"$HOST ENV variable should be defined"))(identity)
 
     override val teams = {
       asScalaBuffer(system.settings.config
@@ -272,7 +274,7 @@ package object http {
       val message = new StringBuilder().append('\n')
         .append("=====================================================================================================================================")
         .append('\n')
-        .append(s"★ ★ ★ ★ ★ ★  Web service env: $environment [ext: $externalAddress - docker: $localAddress] ★ ★ ★ ★ ★ ★")
+        .append(s"★ ★ ★ ★ ★ ★  Web service env: $environment [ext: $domain - docker: $localAddress] ★ ★ ★ ★ ★ ★")
         .append('\n')
         .append(s"★ ★ ★ ★ ★ ★  Cassandra contact points: ${system.settings.config.getString("db.cassandra.seeds")}  ★ ★ ★ ★ ★ ★")
         .append('\n')
