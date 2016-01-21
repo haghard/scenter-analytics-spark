@@ -79,7 +79,7 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
                 import spray.json._
                 val json = response.getBody.parseJson.asJsObject
                 val user = json.fields("name").toString().replace("\"", "")
-                s"$user has been authorized by github\nAuthorizationUrl: http://$localAddress:$httpPort/$pathPrefix/login?user=$user:github&password=$token"
+                s"$user has been authorized by github\nAuthorizationUrl: http://$externalAddress:$httpPort/$pathPrefix/login?user=$user:github&password=$token"
               } else {
                 response.getBody
               }
@@ -163,7 +163,7 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
                 import spray.json._
                 val json = twitterResponse.getBody.parseJson.asJsObject
                 val user = json.getFields("name").head.toString().replace("\"", "")
-                s"$user has been authorized by twitter\nAuthorizationUrl: http://$localAddress:$httpPort/$pathPrefix/login?user=$user:twitter&password=$oauthToken"
+                s"$user has been authorized by twitter\nAuthorizationUrl: http://$externalAddress:$httpPort/$pathPrefix/login?user=$user:twitter&password=$oauthToken"
               } else {
                 twitterResponse.getBody
               }
