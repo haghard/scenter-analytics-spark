@@ -54,7 +54,7 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
 
   private def githubR(implicit ec: ExecutionContext): Route =
     path("login-github") {
-      val service = github.oAuthService.callback(s"http://$domain:$httpPort/$pathPrefix/github-sign-in").build()
+      val service = github.oAuthService.callback(s"http://$externalAddress:$httpPort/$pathPrefix/github-sign-in").build()
       // Obtain the Authorization URL
       val url = service.getAuthorizationUrl(null)
       redirect(akka.http.scaladsl.model.Uri(url), StatusCodes.PermanentRedirect)
@@ -63,7 +63,7 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
         parameterMap { params ⇒
           complete {
             Future {
-              val service = github.oAuthService.callback(s"http://$domain:$httpPort/$pathPrefix/github-sign-in").build()
+              val service = github.oAuthService.callback(s"http://$externalAddress:$httpPort/$pathPrefix/github-sign-in").build()
               val (k, v) = params.head
               val verifier = new com.github.scribejava.core.model.Verifier(v)
 
@@ -131,7 +131,7 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
   private def twitterR(implicit ec: ExecutionContext): Route =
     path("login-twitter") {
       get {
-        val service = twitter.oAuthService.callback(s"http://$localAddress:$httpPort/$pathPrefix/twitter-sign-in").build()
+        val service = twitter.oAuthService.callback(s"http://$externalAddress:$httpPort/$pathPrefix/twitter-sign-in").build()
         val requestToken = service.getRequestToken
         val url = service.getAuthorizationUrl(requestToken)
         redirect(akka.http.scaladsl.model.Uri(url), StatusCodes.PermanentRedirect)

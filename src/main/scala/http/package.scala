@@ -29,6 +29,7 @@ package object http {
   private[http] val SEEDS_ENV = "SEED_NODES"
   private[http] val HTTP_PORT = "HTTP_PORT"
   private[http] val NET_INTERFACE = "NET_INTERFACE"
+  private[http] val HOST = "HTTP_PORT"
 
   case class NbaResultView(homeTeam: String, homeScore: Int, awayTeam: String, awayScore: Int, dt: Date)
   case class ResultAdded(team: String, r: NbaResult)
