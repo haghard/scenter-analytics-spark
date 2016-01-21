@@ -288,7 +288,7 @@ package object http {
         .withDispatcher("akka.stream-dispatcher")
       implicit val mat = ActorMaterializer(settings)(system)
 
-      installApi(api, externalAddress, httpPort)(mat, system)
+      installApi(api, localAddress, httpPort)(mat, system)
 
       //Streaming
       JournalChangesIngestion.start(context, config, teams)
