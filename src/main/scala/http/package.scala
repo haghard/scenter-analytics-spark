@@ -198,7 +198,7 @@ package object http {
 
     override def localAddress = addresses.map(_.getHostAddress).getOrElse("0.0.0.0")
 
-    override def externalAddress = System.getenv("HOST")
+    override def externalAddress = System.getProperty("HOST")
 
     override val teams = {
       asScalaBuffer(system.settings.config
