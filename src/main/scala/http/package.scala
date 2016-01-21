@@ -195,7 +195,7 @@ package object http {
     lazy val api = configureApi()
     override lazy val system = ActorSystem(ActorSystemName, config)
 
-    override val domain = "haghard.com"
+    override val domain = System.getProperty("DOMAIN")
 
     override def localAddress = addresses.map(_.getHostAddress).getOrElse("0.0.0.0")
 
