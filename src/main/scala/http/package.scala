@@ -17,6 +17,7 @@ import scala.collection.JavaConversions._
 import scala.collection.mutable
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.reflect.ClassTag
+import scala.util.{Failure, Success}
 import scalaz.{ -\/, \/-, \/ }
 import com.github.nscala_time.time.Imports._
 
@@ -46,6 +47,30 @@ package object http {
                         threePmA: String = "", ftmA: String = "", minusSlashPlus: String = "",
                         offReb: Int = 0, defReb: Int = 0, totalReb: Int = 0, ast: Int = 0, pf: Int = 0, steels: Int = 0,
                         to: Int = 0, bs: Int = 0, ba: Int = 0, pts: Int = 0)
+
+  import util.Try
+  import scalaz.concurrent.{Task => ZTask}
+  import scala.concurrent.{ExecutionContext, Future => SFuture, Promise}
+
+  //Integration code between Scalaz and Scala standard concurrency libraries
+  object Task2Future {
+
+    def fromScala[A](future: SFuture[A])(implicit ec: ExecutionContext): ZTask[A] =
+      scalaz.concurrent.Task.async(handlerConversion andThen future.onComplete)
+
+    def fromScalaDeferred[A](future: => SFuture[A])(implicit ec: ExecutionContext): ZTask[A] =
+      scalaz.concurrent.Task.delay(fromScala(future)(ec)).flatMap(identity)
+
+    def unsafeToScala[A](task: ZTask[A]): SFuture[A] = {
+      val p = Promise[A]
+      task.runAsync { _ fold (p failure _, p success _) }
+      p.future
+    }
+
+    private def handlerConversion[A]: ((Throwable \/ A) => Unit) => Try[A] => Unit =
+      callback => { t: Try[A] => \/.fromTryCatchNonFatal(t.get) } andThen callback
+  }
+
 
   trait DefaultJobArgs {
     def url: String
@@ -116,9 +141,17 @@ package object http {
       api.route.foreach { api ⇒
         implicit val ec = system.dispatchers.lookup(httpDispatcher)
         val route = api(ec)
-
         system.registerOnTermination { system.log.info("Http server was stopped") }
-        Http().bindAndHandle(akka.http.scaladsl.server.RouteResult.route2HandlerFlow(route), interface, httpPort)
+
+        val startFuture = Http().bindAndHandle(akka.http.scaladsl.server.RouteResult.route2HandlerFlow(route), interface, httpPort)
+        startFuture.onComplete {
+          case Success(binding) =>
+            system.log.info("\r\n\r\nHttpService started, ready to service requests on {}", binding.localAddress)
+          case Failure(ex) =>
+            system.log.error(ex.getMessage)
+            ex.printStackTrace()
+            sys.exit(1)
+        }
       }
 
       api.preAction.foreach(action ⇒ action())
@@ -200,8 +233,6 @@ package object http {
 
     override val domain = Option(System.getProperty(DOMAIN))
       .fold(throw new Exception(s"$DOMAIN ENV variable should be defined"))(identity)
-
-    //override def domain = Option(System.getProperty(HOST)).fold(throw new Exception(s"$HOST ENV variable should be defined"))(identity)
 
     override val teams = {
       asScalaBuffer(system.settings.config

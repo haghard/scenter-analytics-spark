@@ -63,26 +63,26 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
         parameterMap { params ⇒
           complete {
             Future {
-              val service = github.oAuthService.callback(s"http://$domain:$httpPort/$pathPrefix/github-sign-in").build()
-              val (k, v) = params.head
-              val verifier = new com.github.scribejava.core.model.Verifier(v)
+                val service = github.oAuthService.callback(s"http://$domain:$httpPort/$pathPrefix/github-sign-in").build()
+                val (k, v) = params.head
+                val verifier = new com.github.scribejava.core.model.Verifier(v)
 
-              // Obtain the AccessToken
-              val accessToken = service.getAccessToken(null, verifier)
-              val token = accessToken.getToken
+                // Obtain the AccessToken
+                val accessToken = service.getAccessToken(null, verifier)
+                val token = accessToken.getToken
 
-              val request = new OAuthRequest(Verb.GET, github.protectedUrl, service)
-              service.signRequest(accessToken, request)
+                val request = new OAuthRequest(Verb.GET, github.protectedUrl, service)
+                service.signRequest(accessToken, request)
 
-              val response = request.send
-              if (response.getCode == 200) {
-                import spray.json._
-                val json = response.getBody.parseJson.asJsObject
-                val user = json.fields("name").toString().replace("\"", "")
-                s"$user has been authorized by github\nAuthorizationUrl: http://$domain:$httpPort/$pathPrefix/login?user=$user:github&password=$token"
-              } else {
-                response.getBody
-              }
+                val response = request.send
+                if (response.getCode == 200) {
+                  import spray.json._
+                  val json = response.getBody.parseJson.asJsObject
+                  val user = json.fields("name").toString().replace("\"", "")
+                  s"$user has been authorized by github\nAuthorizationUrl: http://$domain:$httpPort/$pathPrefix/login?user=$user:github&password=$token"
+                } else {
+                  response.getBody
+                }
             }(ec)
           }
         }
