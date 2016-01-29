@@ -113,7 +113,7 @@ class Journal(config: Config, cassandraHosts: Array[InetSocketAddress],
     }
   )
 
-  private def teamsJournal(teams: Map[String, Long]): Graph[ClosedShape, Unit] = {
+  private def teamsJournal(teams: Map[String, Long]): Graph[ClosedShape, akka.NotUsed] = {
     GraphDSL.create() { implicit b ⇒
       flow(teams) ~> Sink.actorRef[ResultAddedEvent](self, 'UpdateCompleted)
       ClosedShape
