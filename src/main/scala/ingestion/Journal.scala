@@ -84,7 +84,7 @@ class Journal(config: Config, cassandraHosts: Array[InetSocketAddress],
   override def preStart(): Unit = {
     progresses = loadProgress(session)
     println(progresses)
-    akka.stream.scaladsl.RunnableGraph.fromGraph(journalN(progresses)).run()(Mat)
+    akka.stream.scaladsl.RunnableGraph.fromGraph(teamsJournal(progresses)).run()(Mat)
   }
 
   private def loadProgress(session: Session): Map[String, Long] = {
@@ -113,7 +113,7 @@ class Journal(config: Config, cassandraHosts: Array[InetSocketAddress],
     }
   )
 
-  private def journalN(teams: Map[String, Long]): Graph[ClosedShape, Unit] = {
+  private def teamsJournal(teams: Map[String, Long]): Graph[ClosedShape, Unit] = {
     GraphDSL.create() { implicit b ⇒
       flow(teams) ~> Sink.actorRef[ResultAddedEvent](self, 'UpdateCompleted)
       ClosedShape
@@ -127,7 +127,7 @@ class Journal(config: Config, cassandraHosts: Array[InetSocketAddress],
       store(event, counter)
     case 'UpdateCompleted ⇒
       context.system.scheduler.scheduleOnce(RefreshEvery)(
-        akka.stream.scaladsl.RunnableGraph.fromGraph(journalN(progresses)).run()(Mat)
+        akka.stream.scaladsl.RunnableGraph.fromGraph(teamsJournal(progresses)).run()(Mat)
       )
   }
 }

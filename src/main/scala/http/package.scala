@@ -146,7 +146,7 @@ package object http {
         val startFuture = Http().bindAndHandle(akka.http.scaladsl.server.RouteResult.route2HandlerFlow(route), interface, httpPort)
         startFuture.onComplete {
           case Success(binding) =>
-            system.log.info("\r\n\r\nHttpService started, ready to service requests on {}", binding.localAddress)
+            system.log.info("\n\r\nHttpService started, ready to service requests on {}", binding.localAddress)
           case Failure(ex) =>
             system.log.error(ex.getMessage)
             ex.printStackTrace()
