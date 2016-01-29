@@ -97,7 +97,7 @@ libraryDependencies ++= Seq(
 
   "com.haghard"             %% "nosql-join-stream"              % "0.1.11",
 
-  "com.typesafe.akka"       %% "akka-slf4j"                     % "2.4.1",
+  "com.typesafe.akka"       %% "akka-slf4j"                     % "2.4.2-RC1",
   "ch.qos.logback"          %  "logback-classic"                % "1.1.2",
 
   "com.github.scribejava"   %   "scribejava-core"               % "2.0",
