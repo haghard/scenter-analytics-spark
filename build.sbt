@@ -97,7 +97,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka"      %%    "akka-http-core"               % Akka,
   "com.typesafe.akka"      %%    "akka-http-experimental"       % Akka,
 
-  "com.haghard"             %% "nosql-join-stream"              % "0.1.8",
+  "com.haghard"             %% "nosql-join-stream"              % "0.1.12",
 
   "com.softwaremill.akka-http-session"  %%  "core"              % "0.2.3",
 
