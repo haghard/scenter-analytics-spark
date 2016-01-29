@@ -97,11 +97,9 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka"      %%    "akka-http-core"               % Akka,
   "com.typesafe.akka"      %%    "akka-http-experimental"       % Akka,
 
-  "com.haghard"             %% "nosql-join-stream"              % "0.1.11",
+  "com.haghard"             %% "nosql-join-stream"              % "0.1.8",
 
-  ("com.softwaremill.akka-http-session"  %%  "core"              % "0.2.3"),
-    //.exclude("com.typesafe.akka", "akka-stream-experimental")
-    //.exclude("com.typesafe.akka", "akka-stream-experimental"),
+  "com.softwaremill.akka-http-session"  %%  "core"              % "0.2.3",
 
   "com.typesafe.akka"       %% "akka-slf4j"                     % "2.4.2-RC1",
   "ch.qos.logback"          %  "logback-classic"                % "1.1.2",
@@ -203,3 +201,5 @@ addCommandAlias("lanalytics", s"run-main  http.Bootstrap --HTTP_PORT=8001 --NET_
 //docker
 
 //docker run --net="host" -d haghard/scenter-analytics-spark:v0.1 --HTTP_PORT=8001 --DB_HOSTS=192.168.0.xxx
+
+//dependencyBrowseGraph

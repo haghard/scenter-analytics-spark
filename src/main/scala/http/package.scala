@@ -146,7 +146,6 @@ package object http {
         val startFuture = Http().bindAndHandle(akka.http.scaladsl.server.RouteResult.route2HandlerFlow(route), interface, httpPort)
         startFuture.onComplete {
           case Success(binding) =>
-            system.log.info("\n\r\nHttpService started, ready to service requests on {}", binding.localAddress)
           case Failure(ex) =>
             system.log.error(ex.getMessage)
             ex.printStackTrace()
@@ -187,8 +186,6 @@ package object http {
     def ethName: String
 
     def localAddress: String
-
-    //def externalAddress: String
 
     //https://www.digitalocean.com/community/tutorials/how-to-set-up-a-host-name-with-digitalocean
     def domain: String

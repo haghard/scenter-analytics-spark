@@ -73,7 +73,7 @@ class Journal(config: Config, cassandraHosts: Array[InetSocketAddress],
 
   implicit val session = (cassandraClient(ConsistencyLevel.QUORUM) connect config.getString("spark.cassandra.journal.keyspace"))
 
-  def cassandraClient(cl: ConsistencyLevel): CassandraSource#Client = {
+  private def cassandraClient(cl: ConsistencyLevel): CassandraSource#Client = {
     val qs = new QueryOptions().setConsistencyLevel(cl).setFetchSize(1000)
     Cluster.builder()
       .addContactPointsWithPorts(asJavaCollectionConverter(cassandraHosts.toIterable).asJavaCollection)
