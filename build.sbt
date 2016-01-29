@@ -20,8 +20,9 @@ version := "0.0.1-SNAPSHOT"
 scalaVersion := "2.11.7"
 
 val Spark = "1.5.2"
-val CassandaConnector = "1.5.0-RC1" //"1.5.0-M3-SNAPSHOT" with local fixes (SSH was commented)
+val CassandaConnector = "1.5.0-RC1"
 val CassandraHost = "109.234.39.32"
+val Akka = "2.4.2-RC1"
 
 enablePlugins(DockerPlugin)
 
@@ -91,12 +92,16 @@ libraryDependencies ++= Seq(
   "org.json4s"              %% "json4s-native"                  % "3.2.10",
   "io.spray"                %% "spray-json"                     % "1.2.6",
 
-  ("com.softwaremill.akka-http-session"  %%  "core"              % "0.2.3")
-    .exclude("com.typesafe.akka", "akka-stream-experimental"),
-
   "org.mindrot"            %   "jbcrypt"                        % "0.3m",
 
+  "com.typesafe.akka"      %%    "akka-http-core"               % Akka,
+  "com.typesafe.akka"      %%    "akka-http-experimental"       % Akka,
+
   "com.haghard"             %% "nosql-join-stream"              % "0.1.11",
+
+  ("com.softwaremill.akka-http-session"  %%  "core"              % "0.2.3"),
+    //.exclude("com.typesafe.akka", "akka-stream-experimental")
+    //.exclude("com.typesafe.akka", "akka-stream-experimental"),
 
   "com.typesafe.akka"       %% "akka-slf4j"                     % "2.4.2-RC1",
   "ch.qos.logback"          %  "logback-classic"                % "1.1.2",
