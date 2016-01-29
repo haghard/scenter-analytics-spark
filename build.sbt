@@ -91,7 +91,8 @@ libraryDependencies ++= Seq(
   "org.json4s"              %% "json4s-native"                  % "3.2.10",
   "io.spray"                %% "spray-json"                     % "1.2.6",
 
-  "com.softwaremill.akka-http-session"  %%  "core"              % "0.2.3",   //already has dependencies on akka-http
+  ("com.softwaremill.akka-http-session"  %%  "core"              % "0.2.3")
+    .exclude("com.typesafe.akka", "akka-stream-experimental"),
 
   "org.mindrot"            %   "jbcrypt"                        % "0.3m",
 
