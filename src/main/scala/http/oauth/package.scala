@@ -15,7 +15,7 @@ package object oauth {
 
     def oAuthService: com.github.scribejava.core.builder.ServiceBuilder
 
-    def setKeySecret(apiKey0: String, apiSecret0: String): Oauth[T] = {
+    def withKeySecret(apiKey0: String, apiSecret0: String): Oauth[T] = {
       apiKey = apiKey0
       apiSecret = apiSecret0
       this

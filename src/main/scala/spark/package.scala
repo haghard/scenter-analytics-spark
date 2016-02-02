@@ -22,6 +22,7 @@ package object spark {
         .setAppName(name)
         .set("spark.cassandra.connection.host", host)
         .set("spark.cassandra.connection.timeout_ms", "8000")
+        .set("spark.cleaner.ttl", "3600")
         .setMaster(config.getString("spark.master")))
   }
 

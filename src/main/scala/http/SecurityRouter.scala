@@ -25,9 +25,9 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
   val salt = BCrypt.gensalt()
 
   lazy val (google, twitter, github) = {
-    (http.oauth.Oauth[com.github.scribejava.apis.GoogleApi20].setKeySecret(googleApiKey, googleApiSecret),
-      http.oauth.Oauth[com.github.scribejava.apis.TwitterApi].setKeySecret(twitterApiKey, twitterApiSecret),
-      http.oauth.Oauth[com.github.scribejava.apis.GitHubApi].setKeySecret(githubApiKey, githubApiSecret))
+    (http.oauth.Oauth[com.github.scribejava.apis.GoogleApi20].withKeySecret(googleApiKey, googleApiSecret),
+      http.oauth.Oauth[com.github.scribejava.apis.TwitterApi].withKeySecret(twitterApiKey, twitterApiSecret),
+      http.oauth.Oauth[com.github.scribejava.apis.GitHubApi].withKeySecret(githubApiKey, githubApiSecret))
   }
 
   implicit def serializer: SessionSerializer[ServerSession, String] =
@@ -63,26 +63,24 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
         parameterMap { params ⇒
           complete {
             Future {
-                val service = github.oAuthService.callback(s"http://$domain:$httpPort/$pathPrefix/github-sign-in").build()
-                val (k, v) = params.head
-                val verifier = new com.github.scribejava.core.model.Verifier(v)
+              val service = github.oAuthService.callback(s"http://$domain:$httpPort/$pathPrefix/github-sign-in").build()
+              val (k, v) = params.head
+              val verifier = new com.github.scribejava.core.model.Verifier(v)
 
-                // Obtain the AccessToken
-                val accessToken = service.getAccessToken(null, verifier)
-                val token = accessToken.getToken
+              // Obtain the AccessToken
+              val accessToken = service.getAccessToken(null, verifier)
+              val token = accessToken.getToken
 
-                val request = new OAuthRequest(Verb.GET, github.protectedUrl, service)
-                service.signRequest(accessToken, request)
+              val request = new OAuthRequest(Verb.GET, github.protectedUrl, service)
+              service.signRequest(accessToken, request)
 
-                val response = request.send
-                if (response.getCode == 200) {
-                  import spray.json._
-                  val json = response.getBody.parseJson.asJsObject
-                  val user = json.fields("name").toString().replace("\"", "")
-                  s"$user has been authorized by github\nAuthorizationUrl: http://$domain:$httpPort/$pathPrefix/login?user=$user:github&password=$token"
-                } else {
-                  response.getBody
-                }
+              val response = request.send
+              if (response.getCode == 200) {
+                import spray.json._
+                val json = response.getBody.parseJson.asJsObject
+                val user = json.fields("name").toString().replace("\"", "")
+                s"$user has been authorized by github\nAuthorizationUrl: http://$domain:$httpPort/$pathPrefix/login?user=$user:github&password=$token"
+              } else response.getBody
             }(ec)
           }
         }
@@ -119,9 +117,7 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
                 val json = googleResponse.parseJson.asJsObject
                 val user = json.fields("displayName").toString().replace("\"", "")
                 s"$user has been authorized by google\nAuthorizationUrl: http://$domain:$httpPort/$pathPrefix/login?user=$user:google&password=$token"
-              } else {
-                response.getBody
-              }
+              } else response.getBody
             }(ec)
           }
         }
@@ -141,7 +137,6 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
         parameters(('oauth_token.as[String]), ('oauth_verifier.as[String])) { (oauthToken, oauthVerifier) ⇒
           /**
            * Converting the request token to an access token
-           *
            * To render the request token into a usable access token,
            * your application must make a request to the POST oauth / access_token endpoint,
            * containing the oauth_verifier value obtained in prev step.
@@ -164,9 +159,7 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
                 val json = twitterResponse.getBody.parseJson.asJsObject
                 val user = json.getFields("name").head.toString().replace("\"", "")
                 s"$user has been authorized by twitter\nAuthorizationUrl: http://$domain:$httpPort/$pathPrefix/login?user=$user:twitter&password=$oauthToken"
-              } else {
-                twitterResponse.getBody
-              }
+              } else twitterResponse.getBody
             }(ec)
           }
         }
