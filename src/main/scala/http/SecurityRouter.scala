@@ -174,7 +174,7 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
         get {
           parameters(('user.as[String]), ('password.as[String])) { (user, password) ⇒
             withUri { url ⇒
-              setSession(refreshable, usingCookies, ServerSession(user, BCrypt.hashpw(password, salt))) {
+              setSession(oneOff, usingHeaders, ServerSession(user, BCrypt.hashpw(password, salt))) {
                 setNewCsrfToken(checkHeader) { ctx ⇒ ctx.complete(s"$user was logged in") }
               }
             }
@@ -185,7 +185,7 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
           get {
             withUri { url ⇒
               requiredHttpSession(ec) { session ⇒
-                invalidateSession(refreshable, usingCookies)
+                invalidateSession(oneOff, usingHeaders)
                 complete(s"Invalidated: $session")
               }
             }
