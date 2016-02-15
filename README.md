@@ -39,12 +39,12 @@ http://192.168.0.62:8001/api/login-github
 
 http GET [host]:[port]/api/login?"user=...&password=..."
 
-http GET [host]:[port]/api/standing/playoff-14-15?teams=cle,okc 'Cookie:_sessiondata=...'
+http GET [host]:[port]/api/standing/playoff-14-15?"teams=cle,okc" Authorization:...
 
-http GET [host]:[port]/api/teams/season-15-16?teams=cle,okc 'Cookie:_sessiondata=...'
+http GET [host]:[port]/api/teams/season-15-16?"teams=cle,okc" Authorization:...
 
-http GET [host]:[port]/api/player/stats?"name=S. Curry&period=season-15-16&team=gsw"
+http GET [host]:[port]/api/player/stats?"name=S. Curry&period=season-15-16&team=gsw" Authorization:...
 
-http GET [host]:[port]/api/leaders/pts/season-15-16 'Cookie:_sessiondata=...' 
+http GET [host]:[port]/api/leaders/pts/season-15-16 Authorization:... 
 
-http GET [host]:[port]/api/leaders/reb/season-15-16 'Cookie:_sessiondata=...'
+http GET [host]:[port]/api/leaders/reb/season-15-16 Authorization:...
