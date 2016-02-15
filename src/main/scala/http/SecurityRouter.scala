@@ -43,7 +43,9 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
     def log(msg: String) = system.log.info(msg)
   }
 
-  def requiredHttpSession(implicit ec: ExecutionContext) = requiredSession(oneOff, usingCookies)
+  //oneOff vs refreshable; specifies what should happen when the session expires.
+  //If refreshable and a refresh token is present, the session will be re-created
+  def requiredHttpSession(implicit ec: ExecutionContext) = requiredSession(oneOff, usingHeaders)
 
   //https://github.com/softwaremill/akka-http-session
   abstract override def configureApi() =
