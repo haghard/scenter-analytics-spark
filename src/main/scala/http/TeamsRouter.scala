@@ -53,7 +53,7 @@ trait TeamsRouter extends SecurityRouter with TypedAsk with TeamsHttpProtocols {
     super.configureApi() ~
       Api(route = Option { ec: ExecutionContext ⇒ resultsRoute(ec) },
         postAction = Option(() ⇒ system.log.info(s"\n★ ★ ★ $teamsServicePath-routes was stopped on $httpPrefixAddress ★ ★ ★")),
-        urls = s"[$httpPrefixAddress/$pathPrefix/$teamsServicePath/{stage} 'Cookie:_sessiondata=]")
+        urls = s"[$httpPrefixAddress/$pathPrefix/$teamsServicePath/{stage}?teams=...,... Authorization:...]")
 
   private def resultsRoute(implicit ec: ExecutionContext): Route =
     pathPrefix(pathPrefix) {

@@ -70,7 +70,7 @@ trait StandingRouter extends TeamsRouter with TypedAsk with StandingHttpProtocol
     super.configureApi() ~
       Api(route = Option { ec: ExecutionContext ⇒ resultsRoute(ec) },
         postAction = Option(() ⇒ system.log.info(s"\n★ ★ ★ $standingServicePath-routes was stopped on $httpPrefixAddress ★ ★ ★")),
-        urls = s"[$httpPrefixAddress/$pathPrefix/$standingServicePath/{stage} 'Cookie:_sessiondata= ...']")
+        urls = s"[$httpPrefixAddress/$pathPrefix/$standingServicePath/{stage} Authorization:...']")
 
   private def resultsRoute(implicit ec: ExecutionContext): Route =
     pathPrefix(pathPrefix) {
