@@ -143,7 +143,7 @@ package object spark {
           .take(depth)
 
         Future {
-          RebLeadersView(array.length, array.map(kv ⇒ RebLeader(team = kv._1._1, player = kv._1._2,
+          RebLeadersView(array.length, array.map(kv ⇒ RebLeader(team = kv._1._2, player = kv._1._1,
             offensive = kv._2._1._1.scale(2), defensive = kv._2._1._2.scale(2), total = kv._2._1._3.scale(2),
             games = kv._2._2)).toList, System.currentTimeMillis() - start)
         }
@@ -185,7 +185,7 @@ package object spark {
           .take(depth)
 
         Future {
-          PtsLeadersView(array.length, array.map(kv ⇒ PtsLeader(team = kv._1._1, player = kv._1._2, pts = kv._2._1.scale(2), games = kv._2._2)).toList,
+          PtsLeadersView(array.length, array.map(kv ⇒ PtsLeader(team = kv._1._2, player = kv._1._1, pts = kv._2._1.scale(2), games = kv._2._2)).toList,
             System.currentTimeMillis() - start)
         }
       }

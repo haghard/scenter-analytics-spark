@@ -11,7 +11,7 @@ Run in local mode from sbt
 Get docker image
 =================
 
-`docker pull haghard/scenter-analytics-spark:v0.1`
+`docker pull haghard/scenter-analytics-spark:v0.2`
 
 
 Run docker image in interactive mode
@@ -30,11 +30,11 @@ Example routes
 
 Open browser to get Authorization url
 
-http://192.168.0.62:8001/api/login-twitter
+http://[host]:[port]/api/login-twitter
 
-http://192.168.0.62:8001/api/login-google
+http://[host]:[port]/api/login-google
 
-http://192.168.0.62:8001/api/login-github
+http://[host]:[port]/api/login-github
 
 
 http GET [host]:[port]/api/login?"user=...&password=..."

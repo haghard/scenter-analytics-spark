@@ -22,7 +22,7 @@ scalaVersion := "2.11.7"
 val Spark = "1.5.2"
 val CassandaConnector = "1.5.0-RC1"
 val CassandraHost = "109.234.39.32"
-val Akka = "2.4.2-RC1"
+val Akka = "2.4.2"
 
 enablePlugins(DockerPlugin)
 
@@ -73,7 +73,7 @@ assemblyExcludedJars in assembly := {
 }
 
 imageNames in docker := Seq(ImageName(namespace = Some("haghard"),
-  repository = "scenter-analytics-spark", tag = Some("v0.1")))
+  repository = "scenter-analytics-spark", tag = Some("v0.2")))
 
 buildOptions in docker := BuildOptions(cache = false,
   removeIntermediateContainers = BuildOptions.Remove.Always,
@@ -92,14 +92,11 @@ libraryDependencies ++= Seq(
   "org.json4s"              %% "json4s-native"                  % "3.2.10",
   "io.spray"                %% "spray-json"                     % "1.2.6",
 
-  "org.mindrot"            %   "jbcrypt"                        % "0.3m",
-
-  "com.typesafe.akka"      %%    "akka-http-core"               % Akka,
-  "com.typesafe.akka"      %%    "akka-http-experimental"       % Akka,
+  "org.mindrot"             %  "jbcrypt"                        % "0.3m",
 
   "com.haghard"             %% "nosql-join-stream"              % "0.1.12",
 
-  "com.softwaremill.akka-http-session"  %%  "core"              % "0.2.3",
+  "com.softwaremill.akka-http-session"  %%  "core"              % "0.2.4",
 
   "com.typesafe.akka"       %% "akka-slf4j"                     % "2.4.2-RC1",
   "ch.qos.logback"          %  "logback-classic"                % "1.1.2",
