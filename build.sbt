@@ -43,7 +43,7 @@ dockerfile in docker := {
     from("java:8u45")
     add(jarFile, jarTargetPath)
     workDir(appDirPath)
-    entryPoint("java", "-Xmx1512m", "-XX:MaxMetaspaceSize=1256m", "-XX:+HeapDumpOnOutOfMemoryError", "XX:+DoEscapeAnalysis", "-XX:+UseStringDeduplication",
+    entryPoint("java", "-Xmx1512m", "-XX:MaxMetaspaceSize=1256m", "-XX:+HeapDumpOnOutOfMemoryError", "-XX:+DoEscapeAnalysis", "-XX:+UseStringDeduplication",
       "-XX:+UseCompressedOops", "-XX:+UseG1GC", "-jar", jarTargetPath)
   }
 }
