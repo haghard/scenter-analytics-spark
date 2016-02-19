@@ -72,7 +72,7 @@ trait DailyResultsRouter extends PlayersRouter with DailyResultsProtocol {
   def findPeriod(yyyyMmdd: (Int, Int, Int)) =
     (for {
       (interval, v) ← intervals
-      if (interval contains new DateTime(yyyyMmdd._1, yyyyMmdd._2, yyyyMmdd._3).withZone(cassandra.SCENTER_TIME_ZONE))
+      if (interval contains new DateTime(yyyyMmdd._1, yyyyMmdd._2, yyyyMmdd._3, 0, 0).withZone(cassandra.SCENTER_TIME_ZONE))
     } yield v).headOption
 
   private def searchResults(url: String, stage: String)(implicit ex: ExecutionContext): Future[HttpResponse] = {
