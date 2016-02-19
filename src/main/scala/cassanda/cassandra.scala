@@ -175,7 +175,7 @@ package object cassandra {
       val table = (config getString "spark.cassandra.journal.daily")
       context.cassandraTable[(Int, Int, Int, String, Int, String, Int, String)](keyspace, table)
         .select("year", "month", "day", "opponents", "score", "guest_score", "score_line", "guest_score_line")
-        .where("period = ? year = ? and month = ? and day = ?", stage, year, month, day)
+        .where("period = ? and year = ? and month = ? and day = ?", stage, year, month, day)
         .as((year: Int, month: Int, day: Int, opponents: String, hScore: Int, aScore: Int, hLine: String, aLine: String) ⇒ {
           val teams = opponents.split("-")
           (teams(0), teams(1), new DateTime(year, month, day, 0, 0).withZone(SCENTER_TIME_ZONE).toDate, hScore, aScore, hLine, aLine)
