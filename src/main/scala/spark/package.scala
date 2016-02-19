@@ -66,7 +66,7 @@ package object spark {
         val results = ctx.cassandraDailyResults(config, yyyyMMDD._1, yyyyMMDD._2, yyyyMMDD._3).cache()
         results.collectAsync().map { seq =>
           val results = seq.map { el =>
-            ResultView(s"${el._2} @ ${el._1}", s" ${el._5} : ${el._4}",
+            ResultView(s" ${el._2} @ ${el._1}", s"${el._7}:${el._5} - ${el._6}:${el._4}",
               cassandra.formatter.format(el._3),
               arenas.find(_._1 == el._1.trim).map(_._2).getOrElse(el._1)
             )
