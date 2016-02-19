@@ -59,18 +59,22 @@ trait DailyResultsRouter extends PlayersRouter with DailyResultsProtocol { mixin
     }
 
   private def searchResults(url: String, stage: String)(implicit ex: ExecutionContext): Future[HttpResponse] = {
+    import scalaz._, Scalaz._
     system.log.info(s"incoming http GET on $url")
 
-    val interval = Try {
-      val fields = stage.split("-")
-      (fields(0).toInt, fields(1).toInt, fields(2).toInt)
-    }.toOption
+    val args = for {
+      x <- (for { (k, v) ← intervals if (v == stage) } yield v).headOption \/> (s"Couldn't parse date $stage")
+      y <- Try {
+        val fields = stage.split("-")
+        (fields(0).toInt, fields(1).toInt, fields(2).toInt)
+      }.toOption \/>(s"Couldn't find stage for $stage")
+    } yield (x, y)
 
-    interval.fold(Future.successful(fail(s"Unsupported stage has been received: $stage"))) { yyyyMMdd ⇒
-      fetch[DailyView](DailyResultsQueryArgs(context, url, yyyyMMdd, arenas, teams), dailyJobSupervisor).map {
+    args.fold({ error => Future.successful(fail(error)) }, { args =>
+      fetch[DailyView](DailyResultsQueryArgs(context, url, args._1, args._2, arenas, teams), dailyJobSupervisor).map {
         case \/-(res)   ⇒ success(SparkJobHttpResponse(url, view = Option("daily-results"), body = Option(res), error = res.error))(DailyResultsWriter)
         case -\/(error) ⇒ fail(error)
       }
-    }
+    })
   }
 }

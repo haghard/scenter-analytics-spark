@@ -32,7 +32,7 @@ object SparkJob {
     extends JobManagerProtocol with DefaultJobArgs
 
   case class PlayerStatsQueryArgs(ctx: SparkContext, url: String, name: String, period: String, team: String) extends JobManagerProtocol with DefaultJobArgs
-  case class DailyResultsQueryArgs(ctx: SparkContext, url: String, yyyyMMdd: (Int, Int, Int), arenas: Vector[(String, String)], teams: mutable.HashMap[String, String]) extends JobManagerProtocol with DefaultJobArgs
+  case class DailyResultsQueryArgs(ctx: SparkContext, url: String, stage: String, yyyyMMdd: (Int, Int, Int), arenas: Vector[(String, String)], teams: mutable.HashMap[String, String]) extends JobManagerProtocol with DefaultJobArgs
 
   case class Standing(team: String = "", hw: Int = 0, hl: Int = 0, aw: Int = 0, al: Int = 0, w: Int = 0, l: Int = 0)
   case class ResultView(lineup: String, score: String, time: String, arena: String)
@@ -100,9 +100,9 @@ class SparkJob(val config: Config) extends Actor with ActorLogging {
       (TeamsResultsQuery[TeamStatsView] async (ctx, config, period, teams, arenas, allTeams) to sender())
         .future.onComplete(_ => context.system.stop(self))
 
-    case DailyResultsQueryArgs(ctx, url, yyyyMMDD, arenas, teams) ⇒
+    case DailyResultsQueryArgs(ctx, url, stage, yyyyMMDD, arenas, teams) ⇒
       log.info(s"Start spark daily-results query for [$yyyyMMDD]")
-      (DailyResultsQuery[DailyView] async (ctx, config, yyyyMMDD, arenas, teams) to sender())
+      (DailyResultsQuery[DailyView] async (ctx, config, stage, yyyyMMDD, arenas, teams) to sender())
         .future.onComplete(_ => context.system.stop(self))
   }
 }

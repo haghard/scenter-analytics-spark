@@ -48,7 +48,7 @@ package object spark {
   }
 
   trait DailyResultsQuery[T] extends SparkQuery {
-    def async(ctx: SparkContext, config: Config, yyyyMMDD: (Int, Int, Int),
+    def async(ctx: SparkContext, config: Config, stage: String, yyyyMMDD: (Int, Int, Int),
               arenas: Seq[(String, String)], allTeams: mutable.HashMap[String, String]): Future[T]
   }
 
@@ -60,10 +60,10 @@ package object spark {
     implicit def teamStats(implicit ex: ExecutionContext) = new DailyResultsQuery[DailyView] {
       override val name: String = "[spark-query]: daily-results"
 
-      override def async(ctx: SparkContext, config: Config, yyyyMMDD: (Int, Int, Int),
+      override def async(ctx: SparkContext, config: Config, stage: String, yyyyMMDD: (Int, Int, Int),
                          arenas: Seq[(String, String)], teams: mutable.HashMap[String, String]): Future[DailyView] = {
         val startTs = System.currentTimeMillis()
-        val results = ctx.cassandraDailyResults(config, yyyyMMDD._1, yyyyMMDD._2, yyyyMMDD._3).cache()
+        val results = ctx.cassandraDailyResults(config, stage, yyyyMMDD._1, yyyyMMDD._2, yyyyMMDD._3).cache()
         results.collectAsync().map { seq =>
           val results = seq.map { el =>
             ResultView(s" ${el._2} @ ${el._1}", s"${el._7}:${el._5} - ${el._6}:${el._4}",
