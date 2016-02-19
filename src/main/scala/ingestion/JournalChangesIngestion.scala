@@ -242,7 +242,7 @@ object JournalChangesIngestion {
     */
 
     journal.map(ev => transformResult2(ev._1))
-      .saveToCassandra(keySpace, playersTable,
+      .saveToCassandra(keySpace, dailyResultsTable,
         SomeColumns("period", "opponents", "year", "month", "day", "score", "guest_score", "score_line", "guest_score_line"))
 
     streaming.start()

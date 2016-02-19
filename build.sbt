@@ -95,7 +95,7 @@ libraryDependencies ++= Seq(
 
   "org.mindrot"             %  "jbcrypt"                        % "0.3m",
 
-  "com.haghard"             %% "nosql-join-stream"              % "0.1.14",
+  "com.haghard"             %% "nosql-join-stream"              % "0.1.12",
 
   "com.softwaremill.akka-http-session"  %%  "core"              % "0.2.4",
 
