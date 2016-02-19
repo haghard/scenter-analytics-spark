@@ -15,7 +15,7 @@ import org.joda.time.{ DateTime, Interval }
 
 import scala.collection.JavaConversions._
 import scala.collection.mutable
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.Future
 import scala.reflect.ClassTag
 import scala.util.{Failure, Success}
 import scalaz.{ -\/, \/-, \/ }

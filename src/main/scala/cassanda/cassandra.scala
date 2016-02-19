@@ -1,4 +1,3 @@
-
 import java.nio.ByteBuffer
 import java.text.SimpleDateFormat
 import java.util.{ Date, TimeZone }
@@ -63,40 +62,6 @@ package object cassandra {
       }
     val bts = message.array()
     loop(bts.slice(offset, bts.length))
-  }
-
-  import com.github.nscala_time.time.TypeImports._
-  def intervals(config: Config): scala.collection.mutable.LinkedHashMap[Interval, String] = {
-    import scala.collection.JavaConverters._
-    import com.github.nscala_time.time.Imports._
-    var views = scala.collection.mutable.LinkedHashMap[Interval, String]()
-    var start: Option[DateTime] = None
-    var end: Option[DateTime] = None
-    var period: Option[String] = None
-
-    val stages = config.getConfig("app-settings").getObjectList("stages").asScala
-      ./:(scala.collection.mutable.LinkedHashMap[String, String]()) { (acc, c) ⇒
-        val it = c.entrySet().iterator()
-        if (it.hasNext) {
-          val entry = it.next()
-          acc += (entry.getKey -> entry.getValue.render().replace("\"", ""))
-        }
-        acc
-      }
-
-    for ((k, v) ← stages) {
-      if (start.isEmpty) {
-        start = Some(new DateTime(v).midnight)
-        period = Some(k)
-      } else {
-        end = Some(new DateTime(v).midnight)
-        val interval = (start.get to end.get)
-        views = views += (interval -> period.get)
-        start = Some(end.get.withTime(23, 59, 59, 0))
-        period = Some(k)
-      }
-    }
-    views
   }
 
   implicit class SparkContextOps(context: SparkContext) {

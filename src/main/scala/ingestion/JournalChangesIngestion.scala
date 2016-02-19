@@ -30,6 +30,7 @@ object JournalChangesIngestion {
     val resultsTable = config.getString("spark.cassandra.journal.results")
     val leadersPlayers = config.getString("spark.cassandra.journal.leaders")
     val playersTable = config.getString("spark.cassandra.journal.player")
+    val dailyResultsTable = config.getString("spark.cassandra.journal.daily")
     val keySpace = config.getString("spark.cassandra.journal.keyspace")
 
     val gameIntervals = intervals(config.getConfig("app-settings").getObjectList("stages").asScala
@@ -42,12 +43,23 @@ object JournalChangesIngestion {
         acc
       }, est, Pattern)
 
+    val transformResult2: (ResultAddedEvent) ⇒ ((String, String, Int, Int, Int, Int, Int, String, String)) =
+      (event) ⇒ {
+        val periodFinder = findPeriod
+        val intervals = gameIntervals
+        val eventTime = ZonedDateTime.of(LocalDateTime.ofInstant(new Date(event.getResult.getTime).toInstant(), est), est)
+        (periodFinder(intervals.entrySet().iterator(), eventTime),
+          s"${event.getResult.getHomeTeam} - ${event.getResult.getAwayTeam}",
+          eventTime.getYear, eventTime.getMonthValue, eventTime.getDayOfMonth,
+          event.getResult.getHomeScore, event.getResult.getAwayScore, event.getResult.getHomeScoreLine, event.getResult.getAwayScoreLine)
+      }
+
     val transformResult: (ResultAddedEvent, Long) ⇒ ((String, String, String, Int, String, String, Int, Date, Long)) =
       (event, count) ⇒ {
-        val loopLocal = loop
+        val local = findPeriod
         val intervalsLocal = gameIntervals
         val eventTime = ZonedDateTime.of(LocalDateTime.ofInstant(new Date(event.getResult.getTime).toInstant(), est), est)
-        (loopLocal(intervalsLocal.entrySet().iterator(), eventTime),
+        (local(intervalsLocal.entrySet().iterator(), eventTime),
           event.getResult.getHomeTeam, event.getResult.getHomeScoreLine, event.getResult.getHomeScore,
           event.getResult.getAwayTeam, event.getResult.getAwayScoreLine, event.getResult.getAwayScore,
           new Date(event.getResult.getTime), count)
@@ -55,10 +67,10 @@ object JournalChangesIngestion {
 
     val transformLeaders: (ResultAddedEvent) ⇒ ((String, mutable.Buffer[((String, String, String, String, String, String, String, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, String, String, Date))])) =
       (event) ⇒ {
-        val loopLocal = loop
+        val local = findPeriod
         val intervalsLocal = gameIntervals
         val eventTime = ZonedDateTime.of(LocalDateTime.ofInstant(new Date(event.getResult.getTime).toInstant(), est), est)
-        val period = loopLocal(intervalsLocal.entrySet().iterator(), eventTime)
+        val period = local(intervalsLocal.entrySet().iterator(), eventTime)
 
         val scoreBoxes = event.getResult.getHomeScoreBoxList.asScala.map(l ⇒ (l.getName, l.getPos, l.getMin, l.getFgmA, l.getThreePmA, l.getFtmA, l.getMinusSlashPlus, l.getOffReb, l.getDefReb,
           l.getTotalReb, l.getAst, l.getPf, l.getSteels, l.getTo, l.getBs, l.getBa, l.getPts, event.getResult.getHomeTeam, event.getResult.getAwayTeam, new Date(event.getResult.getTime))) ++
@@ -70,10 +82,10 @@ object JournalChangesIngestion {
 
     val transformPlayers: (ResultAddedEvent) ⇒ ((String, mutable.Buffer[(String, String, Date, String, String, String, String, String, String, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, String)])) =
       event ⇒ {
-        val loopLocal = loop
+        val local = findPeriod
         val intervalsLocal = gameIntervals
         val eventTime = ZonedDateTime.of(LocalDateTime.ofInstant(new Date(event.getResult.getTime).toInstant(), est), est)
-        val period = loopLocal(intervalsLocal.entrySet().iterator(), eventTime)
+        val period = local(intervalsLocal.entrySet().iterator(), eventTime)
         val r = event.getResult
 
         val playersBox = r.getHomeScoreBoxList.asScala.map(b ⇒ (b.getName, r.getHomeTeam, new Date(r.getTime), b.getPos, b.getMin, b.getFgmA, b.getThreePmA, b.getFtmA,
@@ -205,6 +217,33 @@ object JournalChangesIngestion {
       }.saveToCassandra(keySpace, playersTable,
         SomeColumns("name", "period", "team", "time", "pos", "min", "fgma", "threepma", "ftma", "minusslashplus", "offreb", "defreb", "totalreb",
           "ast", "pf", "steel", "to0", "blockshoot", "ba", "pts", "opponent"))
+
+    /*
+
+                  +--------------------------+--------------------------------+--------------------------+
+                  |2015:10:29:"okc-hou":score|2015:10:29:"okc-hou":guest_score|2015:10:29:"mia-cle":score|
+     +---------------------------------------+--------------------------------+--------------------------+
+     |season-15-16|89                        |89                              | 67                       |
+     +---------------------------------------+-----------------------------------------------------------+
+
+
+    CREATE TABLE daily_results (
+        period text,
+        opponents text,
+        year int,
+        month int,
+        day int,
+        score int,
+        guest_score int,
+        score_line text,
+        guest_score_line text,
+        PRIMARY KEY ((period), year, month, day, opponents)
+    ) WITH CLUSTERING ORDER BY (year DESC, month DESC, day DESC, opponents ASC);
+    */
+
+    journal.map(ev => transformResult2(ev._1))
+      .saveToCassandra(keySpace, playersTable,
+        SomeColumns("period", "opponents", "year", "month", "day", "score", "guest_score", "score_line", "guest_score_line"))
 
     streaming.start()
   }

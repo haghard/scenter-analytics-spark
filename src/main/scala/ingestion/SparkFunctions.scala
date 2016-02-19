@@ -9,13 +9,13 @@ object SparkFunctions extends Serializable {
 
   case class Period(start: ZonedDateTime, end: ZonedDateTime) extends Serializable
 
-  val loop: (java.util.Iterator[java.util.Map.Entry[Period, String]], ZonedDateTime) ⇒ String =
+  val findPeriod: (java.util.Iterator[java.util.Map.Entry[Period, String]], ZonedDateTime) ⇒ String =
     (iter: java.util.Iterator[java.util.Map.Entry[Period, String]], eventTime: ZonedDateTime) ⇒ {
       if (iter.hasNext) {
         val entry = iter.next()
         val period = entry.getKey
         if (period.start.isBefore(eventTime) && period.end.isAfter(eventTime)) entry.getValue
-        else loop(iter, eventTime)
+        else findPeriod(iter, eventTime)
       } else "unknown"
     }
 
