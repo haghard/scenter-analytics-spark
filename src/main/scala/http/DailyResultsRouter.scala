@@ -68,8 +68,8 @@ trait DailyResultsRouter extends PlayersRouter with DailyResultsProtocol {
     val args = (for {
       dt <- Try {
         val fields = stage.split("-")
-        (fields(0).toInt, fields(1).toInt, fields(2).toInt)
-      }.toOption
+        Option((fields(0).toInt, fields(1).toInt, fields(2).toInt))
+      }.getOrElse(None)
       x <- for {
         (interval, v) ← intervals
         if (interval contains new DateTime(dt._1, dt._2, dt._3).withZone(cassandra.SCENTER_TIME_ZONE))
