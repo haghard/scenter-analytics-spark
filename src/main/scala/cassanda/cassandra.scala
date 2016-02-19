@@ -181,7 +181,7 @@ package object cassandra {
         .where("year = ? and month = ? and day = ?", year, month, day)
         .as((year: Int, month: Int, day: Int, opponents: String, hScore: Int, aScore: Int, hLine: String, aLine: String) ⇒ {
           val teams = opponents.split("-")
-          (teams(0), teams(1), new DateTime(year, month, day, 0, 0).toDate, hScore, aScore, hLine, aLine)
+          (teams(0), teams(1), new DateTime(year, month, day, 0, 0).withZone(SCENTER_TIME_ZONE).toDate, hScore, aScore, hLine, aLine)
         })
     }
 

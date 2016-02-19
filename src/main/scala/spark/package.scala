@@ -62,16 +62,13 @@ package object spark {
 
       override def async(ctx: SparkContext, config: Config, yyyyMMDD: (Int, Int, Int),
                          arenas: Seq[(String, String)], teams: mutable.HashMap[String, String]): Future[DailyView] = {
-        //val sqlContext = new SQLContext(ctx)
-        //import sqlContext.implicits._
         val startTs = System.currentTimeMillis()
-        //val arenasDF = ctx.parallelize(arenas).toDF("home-team", "arena")
         val results = ctx.cassandraDailyResults(config, yyyyMMDD._1, yyyyMMDD._2, yyyyMMDD._3).cache()
         results.collectAsync().map { seq =>
           val results = seq.map { el =>
-            ResultView(s"${el._2} @ ${el._1}", s" ${el._4} : ${el._4}",
+            ResultView(s"${el._2} @ ${el._1}", s" ${el._4} : ${el._3}",
               cassandra.formatter.format(el._3),
-              arenas.find(_._1 == el._1).map(_._2).getOrElse(el._1)
+              arenas.find(_._1 == el._1).map(_._2.trim).getOrElse(el._1)
             )
           }
           DailyView(results.size, results.toList, System.currentTimeMillis() - startTs)
