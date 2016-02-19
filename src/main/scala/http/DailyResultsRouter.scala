@@ -2,7 +2,7 @@ package http
 
 import akka.http.scaladsl.model.HttpResponse
 import akka.http.scaladsl.server._
-import http.DailyResultsRouter.DailyResultsProtocol
+import http.DailyResultsRouter.{Args, DailyResultsProtocol}
 import http.SparkJob._
 import http.StandingRouter.{SparkJobHttpResponse, StandingHttpProtocols}
 import org.joda.time.DateTime
@@ -36,6 +36,8 @@ object DailyResultsRouter {
 
   }
 
+  case class Args(period: String, yearMMdd: (Int, Int, Int))
+
 }
 
 trait DailyResultsRouter extends PlayersRouter with DailyResultsProtocol {
@@ -62,22 +64,29 @@ trait DailyResultsRouter extends PlayersRouter with DailyResultsProtocol {
       }
     }
 
+  def parseStage(stage: String): Option[(Int,Int,Int)] = Try {
+      val fields = stage.split("-")
+      Option((fields(0).toInt, fields(1).toInt, fields(2).toInt))
+    }.getOrElse(None)
+
+  def findPeriod(yyyyMmdd: (Int,Int,Int)) =
+    (for {
+      (interval, v) ← intervals
+      if (interval contains new DateTime(yyyyMmdd._1, yyyyMmdd._2, yyyyMmdd._3).withZone(cassandra.SCENTER_TIME_ZONE))
+    } yield v).headOption
+
+
+
   private def searchResults(url: String, stage: String)(implicit ex: ExecutionContext): Future[HttpResponse] = {
     import scalaz._
     system.log.info(s"incoming http GET on $url")
-    val args = (for {
-      dt <- Try {
-        val fields = stage.split("-")
-        Option((fields(0).toInt, fields(1).toInt, fields(2).toInt))
-      }.getOrElse(None)
-      x <- for {
-        (interval, v) ← intervals
-        if (interval contains new DateTime(dt._1, dt._2, dt._3).withZone(cassandra.SCENTER_TIME_ZONE))
-      } yield v
-    } yield (x, dt)).headOption
+    val args: Option[Args] = for {
+      dt <- parseStage(stage)
+      per <- findPeriod(dt)
+    } yield (per |@| dt)(Args(_, _))
 
-    args.fold(Future.successful(fail(s"Period error $stage"))) { args: ((String, (Int, Int, Int))) =>
-      fetch[DailyView](DailyResultsQueryArgs(context, url, args._1,  args._2, arenas, teams), dailyJobSupervisor).map {
+    args.fold(Future.successful(fail(s"Period error $stage"))) { args: Args =>
+      fetch[DailyView](DailyResultsQueryArgs(context, url, args.period,  args.yearMMdd, arenas, teams), dailyJobSupervisor).map {
         case \/-(res) ⇒ success(SparkJobHttpResponse(url, view = Option("daily-results"), body = Option(res), error = res.error))(DailyResultsWriter)
         case -\/(error) ⇒ fail(error)
       }
