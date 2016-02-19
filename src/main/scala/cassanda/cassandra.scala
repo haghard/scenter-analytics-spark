@@ -170,13 +170,6 @@ package object cassandra {
     /**
      * select * from daily_results where period = 'season-15-16' and year=2016 and month=2 and day=8;
      */
-
-      new CassandraSQLContext(context)
-        .sql("select year, month, day, opponents, score, guest_score, score_line, guest_score_line where year = ? and month = ? and day = ?")
-
-
-    //UUIDs.timeBased()
-
     def cassandraDailyResults(config: Config, year: Int, month: Int, day: Int): RDD[(String, String, Date, Int, Int, String, String)] = {
       val keyspace = (config getString "spark.cassandra.journal.keyspace")
       val table = (config getString "spark.cassandra.journal.daily")
@@ -188,6 +181,5 @@ package object cassandra {
           (teams(0), teams(1), new DateTime(year, month, day, 0, 0).withZone(SCENTER_TIME_ZONE).toDate, hScore, aScore, hLine, aLine)
         })
     }
-
   }
 }
