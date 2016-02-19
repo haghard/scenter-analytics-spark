@@ -5,6 +5,7 @@ import akka.http.scaladsl.server._
 import http.DailyResultsRouter.DailyResultsProtocol
 import http.SparkJob._
 import http.StandingRouter.{ SparkJobHttpResponse, StandingHttpProtocols }
+import org.joda.time.DateTime
 import spray.json._
 
 import scala.concurrent.{ Future, ExecutionContext }
@@ -61,16 +62,15 @@ trait DailyResultsRouter extends PlayersRouter with DailyResultsProtocol { mixin
   private def searchResults(url: String, stage: String)(implicit ex: ExecutionContext): Future[HttpResponse] = {
     import scalaz._, Scalaz._
     system.log.info(s"incoming http GET on $url")
-
-    val args = for {
-      x <- (for { (k, v) ← intervals if (v == stage) } yield v).headOption \/> (s"Couldn't parse date $stage")
-      y <- Try {
+    val period = for {
+      dt <- Try {
         val fields = stage.split("-")
         (fields(0).toInt, fields(1).toInt, fields(2).toInt)
-      }.toOption \/>(s"Couldn't find stage for $stage")
-    } yield (x, y)
+      }.toOption
+      x <- (for { (k, v) ← intervals if (k.contains(new DateTime(dt._1,dt._2,dt._3).withZone(cassandra.SCENTER_TIME_ZONE))) } yield v)
+    } yield x
 
-    args.fold({ error => Future.successful(fail(error)) }, { args =>
+    period.fold({ error => Future.successful(fail(s"Period error $stage")) }, { args =>
       fetch[DailyView](DailyResultsQueryArgs(context, url, args._1, args._2, arenas, teams), dailyJobSupervisor).map {
         case \/-(res)   ⇒ success(SparkJobHttpResponse(url, view = Option("daily-results"), body = Option(res), error = res.error))(DailyResultsWriter)
         case -\/(error) ⇒ fail(error)
