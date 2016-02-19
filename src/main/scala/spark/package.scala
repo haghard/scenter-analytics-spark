@@ -71,7 +71,7 @@ package object spark {
           val results = seq.map { el =>
             ResultView(s"${el._2} @ ${el._1}", s" ${el._4} : ${el._4}",
               cassandra.formatter.format(el._3),
-              arenas.find(_._1 == el._1).map(_._2).get
+              arenas.find(_._1 == el._1).map(_._2).getOrElse(el._1)
             )
           }
           DailyView(results.size, results.toList, System.currentTimeMillis() - startTs)

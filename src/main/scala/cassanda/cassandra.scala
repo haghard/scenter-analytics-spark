@@ -6,6 +6,7 @@ import com.typesafe.config.Config
 import http.NbaResult
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.cassandra.CassandraSQLContext
 import org.joda.time.{ DateTime, DateTimeZone }
 import domain.formats.DomainEventFormats._
 import scala.collection.JavaConverters._
@@ -171,6 +172,11 @@ package object cassandra {
     def cassandraDailyResults(config: Config, year: Int, month: Int, day: Int): RDD[(String, String, Date, Int, Int, String, String)] = {
       val keyspace = (config getString "spark.cassandra.journal.keyspace")
       val table = (config getString "spark.cassandra.journal.daily")
+
+      /*new CassandraSQLContext(context)
+        .sql("select year, month, day, opponents, score, guest_score, score_line, guest_score_line where year = ? and month = ? and day = ?")
+      */    .
+
       context.cassandraTable[(Int, Int, Int, String, Int, String, Int, String)](keyspace, table)
         .select("year", "month", "day", "opponents", "score", "guest_score", "score_line", "guest_score_line")
         .where("year = ? and month = ? and day = ?", year, month, day)
