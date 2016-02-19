@@ -73,7 +73,7 @@ trait DailyResultsRouter extends PlayersRouter with DailyResultsProtocol {
       x <- (for {(k, v) ← intervals if (k.contains(new DateTime(dt._1, dt._2, dt._3).withZone(cassandra.SCENTER_TIME_ZONE)))} yield v)
     } yield (x, dt)).headOption
 
-    args.fold(Future.successful(fail(s"Period error $stage")), { (p: String, ymd: (Int, Int, Int)) =>
+    args.fold({ _ => Future.successful(fail(s"Period error $stage")) }, { (p: String, ymd: (Int, Int, Int)) =>
       fetch[DailyView](DailyResultsQueryArgs(context, url, p, ymd, arenas, teams), dailyJobSupervisor).map {
         case \/-(res) ⇒ success(SparkJobHttpResponse(url, view = Option("daily-results"), body = Option(res), error = res.error))(DailyResultsWriter)
         case -\/(error) ⇒ fail(error)
