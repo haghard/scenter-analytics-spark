@@ -55,10 +55,8 @@ object SparkJob {
   case class PtsLeadersView(count: Int = 0, leaders: List[PtsLeader] = List.empty, latency: Long = 0l, error: Option[String] = None) extends SparkQueryView
   case class RebLeadersView(count: Int = 0, leaders: List[RebLeader] = List.empty, latency: Long = 0l, error: Option[String] = None) extends SparkQueryView
   case class PlayerStatsView(count: Int = 0, stats: List[Stats] = List.empty, latency: Long = 0l, error: Option[String] = None) extends SparkQueryView
-  case class DailyView(count: Int = 0, results: List[ResultView] = List.empty, latency: Long = 0l, error: Option[String] = None) extends SparkQueryView
-
-  case class ResultView0(home: String, hs: Int, away: String, as: Int, dt: Date)
   case class TeamStatsView(count: Int = 0, stats: List[ResultView] = List.empty, latency: Long = 0l, error: Option[String] = None) extends SparkQueryView
+  case class DailyView(count: Int = 0, results: List[ResultView] = List.empty, latency: Long = 0l, error: Option[String] = None) extends SparkQueryView
 
   val Season = "season"
   val PlayOff = "playoff"
