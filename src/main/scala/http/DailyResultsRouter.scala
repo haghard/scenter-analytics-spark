@@ -70,7 +70,10 @@ trait DailyResultsRouter extends PlayersRouter with DailyResultsProtocol {
         val fields = stage.split("-")
         (fields(0).toInt, fields(1).toInt, fields(2).toInt)
       }.toOption
-      x <- (for {(k, v) ← intervals if (k.contains(new DateTime(dt._1, dt._2, dt._3).withZone(cassandra.SCENTER_TIME_ZONE)))} yield v)
+      x <- for {
+        (interval, v) ← intervals
+        if (interval contains new DateTime(dt._1, dt._2, dt._3).withZone(cassandra.SCENTER_TIME_ZONE))
+      } yield v
     } yield (x, dt)).headOption
 
     args.fold(Future.successful(fail(s"Period error $stage"))) { args: ((String, (Int, Int, Int))) =>
