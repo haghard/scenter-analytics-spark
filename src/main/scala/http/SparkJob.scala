@@ -72,37 +72,36 @@ class SparkJob(val config: Config) extends Actor with ActorLogging {
     case PtsLeadersQueryArgs(ctx, url, stage, teams, interval, depth) ⇒
       log.info(s"Start spark pts-leader query with [${interval.toString}] with $depth")
       ((PtsLeadersQuery[PtsLeadersView] async (ctx, config, interval, depth)) to sender())
-        .future.onComplete(_ => context.system.stop(self))
+        .future.onComplete(_ ⇒ context.system.stop(self))
 
     case StandingQueryArgs(ctx, _, stage, teams, period) ⇒
       log.info(s"Start spark standing query for [$stage]")
       if (stage contains Season)
         ((StandingQuery[SeasonStandingView] async (ctx, config, teams, period)) to sender())
-          .future.onComplete(_ => context.system.stop(self))
+          .future.onComplete(_ ⇒ context.system.stop(self))
 
       else if (stage contains PlayOff)
         ((StandingQuery[PlayoffStandingView] async (ctx, config, teams, period)) to sender())
-          .future.onComplete(_ => context.system.stop(self))
-
+          .future.onComplete(_ ⇒ context.system.stop(self))
 
     case PlayerStatsQueryArgs(ctx, url, name, period, team) ⇒
       log.info(s"Start spark player-stat query for [$name]:[$team]:[$period]")
       (PlayerStatsQuery[PlayerStatsView] async (ctx, config, name, period, team) to sender())
-        .future.onComplete(_ => context.system.stop(self))
+        .future.onComplete(_ ⇒ context.system.stop(self))
 
     case RebLeadersQueryArgs(ctx, url, period, depth) ⇒
       log.info(s"Start spark reb-leader query for [$period]")
       (RebLeadersQuery[RebLeadersView] async (ctx, config, period, depth) to sender())
-        .future.onComplete(_ => context.system.stop(self))
+        .future.onComplete(_ ⇒ context.system.stop(self))
 
     case TeamStatQueryArgs(ctx, _, period, teams, arenas, allTeams) ⇒
       log.info(s"Start spark team-stats query for [$period] [$teams]")
       (TeamsResultsQuery[TeamStatsView] async (ctx, config, period, teams, arenas, allTeams) to sender())
-        .future.onComplete(_ => context.system.stop(self))
+        .future.onComplete(_ ⇒ context.system.stop(self))
 
     case DailyResultsQueryArgs(ctx, url, stage, yyyyMMDD, arenas, teams) ⇒
       log.info(s"Start spark daily-results query for [$yyyyMMDD]")
       (DailyResultsQuery[DailyView] async (ctx, config, stage, yyyyMMDD, arenas, teams) to sender())
-        .future.onComplete(_ => context.system.stop(self))
+        .future.onComplete(_ ⇒ context.system.stop(self))
   }
 }
