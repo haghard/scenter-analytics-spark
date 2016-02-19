@@ -32,6 +32,7 @@ object SparkJob {
     extends JobManagerProtocol with DefaultJobArgs
 
   case class PlayerStatsQueryArgs(ctx: SparkContext, url: String, name: String, period: String, team: String) extends JobManagerProtocol with DefaultJobArgs
+  case class DailyResultsQueryArgs(ctx: SparkContext, url: String, yyyyMMdd: (Int, Int, Int), arenas: Vector[(String, String)], teams: mutable.HashMap[String, String]) extends JobManagerProtocol with DefaultJobArgs
 
   case class Standing(team: String = "", hw: Int = 0, hl: Int = 0, aw: Int = 0, al: Int = 0, w: Int = 0, l: Int = 0)
   case class ResultView(lineup: String, score: String, time: String, arena: String)
@@ -54,6 +55,7 @@ object SparkJob {
   case class PtsLeadersView(count: Int = 0, leaders: List[PtsLeader] = List.empty, latency: Long = 0l, error: Option[String] = None) extends SparkQueryView
   case class RebLeadersView(count: Int = 0, leaders: List[RebLeader] = List.empty, latency: Long = 0l, error: Option[String] = None) extends SparkQueryView
   case class PlayerStatsView(count: Int = 0, stats: List[Stats] = List.empty, latency: Long = 0l, error: Option[String] = None) extends SparkQueryView
+  case class DailyView(count: Int = 0, results: List[ResultView] = List.empty, latency: Long = 0l, error: Option[String] = None) extends SparkQueryView
 
   case class ResultView0(home: String, hs: Int, away: String, as: Int, dt: Date)
   case class TeamStatsView(count: Int = 0, stats: List[ResultView] = List.empty, latency: Long = 0l, error: Option[String] = None) extends SparkQueryView
@@ -92,6 +94,9 @@ class SparkJob(val config: Config) extends Actor with ActorLogging {
     case TeamStatQueryArgs(ctx, _, period, teams, arenas, allTeams) ⇒
       log.info(s"Start spark team-stats query for [$period] [$teams]")
       TeamsResultsQuery[TeamStatsView] async (ctx, config, period, teams, arenas, allTeams) to sender()
-      context.stop(self)
+
+    case DailyResultsQueryArgs(ctx, url, yyyyMMDD, arenas, teams) ⇒
+      log.info(s"Start spark daily-results query for [$yyyyMMDD]")
+      DailyResultsQuery[DailyView] async (ctx, config, yyyyMMDD, arenas, teams) to sender()
   }
 }

@@ -46,11 +46,11 @@ trait PlayersRouter extends LeadersRouter with PlayersProtocol { mixin: MicroKer
 
   abstract override def configureApi() =
     super.configureApi() ~
-      Api(route = Option { ec: ExecutionContext ⇒ playerRoute(ec) },
+      Api(route = Option { ec: ExecutionContext ⇒ dailyRoute(ec) },
         postAction = Option(() ⇒ system.log.info(s"\n★ ★ ★ [${playerServicePath}-routes] was stopped on $httpPrefixAddress ★ ★ ★")),
         urls = s"[$httpPrefixAddress/$pathPrefix/$playerServicePath/pts/{stage}?name=...&period=...&team=... Authorization:...']")
 
-  def playerRoute(implicit ex: ExecutionContext): Route =
+  def dailyRoute(implicit ex: ExecutionContext): Route =
     pathPrefix(pathPrefix) {
       path(playerServicePath / "stats") {
         get {

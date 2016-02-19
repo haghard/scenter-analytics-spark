@@ -165,13 +165,19 @@ package object cassandra {
         .sortBy(_._2)
     }
 
-    def cassandraPlayerRdd2(config: Config, name: String, period: String, team: String): RDD[(Date, Int, String, String, String, Int, Int, Int, Int)] = {
+    /**
+     * select * from daily_results where period = 'season-15-16' and year=2016 and month=2 and day = 8;
+     */
+    def cassandraDailyResults(config: Config, year: Int, month: Int, day: Int): RDD[(String, String, Date, Int, Int, String, String)] = {
       val keyspace = (config getString "spark.cassandra.journal.keyspace")
-      val table = (config getString "spark.cassandra.journal.player")
-      context.cassandraTable[(Date, Int, String, String, String, Int, Int, Int, Int)](keyspace, table)
-        .select("time", "totalreb", "fgma", "threepma", "ftma", "ast", "blockshoot", "steel", "pts")
-        .where("name = ? and period = ? and team = ?", name, period, team)
-        .sortBy(_._2)
+      val table = (config getString "spark.cassandra.journal.daily")
+      context.cassandraTable[(Int, Int, Int, String, Int, String, Int, String)](keyspace, table)
+        .select("year", "month", "day", "opponents", "score", "guest_score", "score_line", "guest_score_line")
+        .where("year = ? and month = ? and day = ?", year, month, day)
+        .as((year: Int, month: Int, day: Int, opponents: String, hScore: Int, aScore: Int, hLine: String, aLine: String) ⇒ {
+          val teams = opponents.split("-")
+          (teams(0), teams(1), new DateTime(year, month, day, 0, 0).toDate, hScore, aScore, hLine, aLine)
+        })
     }
 
   }

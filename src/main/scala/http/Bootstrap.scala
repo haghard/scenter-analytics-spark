@@ -37,7 +37,7 @@ object Bootstrap extends App {
 
   //https://github.com/akka/akka/blob/master/akka-http-tests/src/test/scala/akka/http/scaladsl/server/directives/SecurityDirectivesSpec.scala
 
-  object SparkAnalytics extends MicroKernel(httpPort = httpP, ethName = eth) with PlayersRouter {
+  object SparkAnalytics extends MicroKernel(httpPort = httpP, ethName = eth) with DailyResultsRouter {
     implicit val timeout = akka.util.Timeout(30 seconds)
     override val environment = "Spark"
 

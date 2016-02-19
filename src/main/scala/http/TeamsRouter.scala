@@ -73,7 +73,7 @@ trait TeamsRouter extends SecurityRouter with TypedAsk with TeamsHttpProtocols {
     system.log.info(s"incoming http GET $url")
     val interval = (for { (k, v) ← intervals if (v == stage) } yield k).headOption
     interval.fold(Future.successful(fail(s"Unsupported period has been received $stage"))) { interval0 ⇒
-      fetch[SparkQueryView](TeamStatQueryArgs(context, url, stage, searchTeams.split(",").toSeq, arenas, teams), jobSupervisor).map {
+      fetch[TeamStatsView](TeamStatQueryArgs(context, url, stage, searchTeams.split(",").toSeq, arenas, teams), jobSupervisor).map {
         case \/-(res)   ⇒ success(SparkJobHttpResponse(url, view = Option("team-stats"), body = Option(res), error = res.error))
         case -\/(error) ⇒ fail(error)
       }

@@ -239,9 +239,11 @@ object JournalChangesIngestion {
         guest_score_line text,
         PRIMARY KEY ((period), year, month, day, opponents)
     ) WITH CLUSTERING ORDER BY (year DESC, month DESC, day DESC, opponents ASC);
+
+    select * from daily_results where period = 'season-12-13' and year=2012  and month=11 and day=29;
     */
 
-    journal.map(ev => transformResult2(ev._1))
+    journal.map(ev ⇒ transformResult2(ev._1))
       .saveToCassandra(keySpace, dailyResultsTable,
         SomeColumns("period", "opponents", "year", "month", "day", "score", "guest_score", "score_line", "guest_score_line"))
 
