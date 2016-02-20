@@ -133,7 +133,7 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
           println(host)
           //domain httpPort
           //val service = twitter.oAuthService.callback(s"http://$domain:$httpPort/$pathPrefix/twitter-sign-in").build()
-          val service = twitter.oAuthService.callback(s"http://host:9000/twitter-sign-in").build()
+          val service = twitter.oAuthService.callback(s"http://$host:9000/twitter-sign-in").build()
           val requestToken = service.getRequestToken
           val url = service.getAuthorizationUrl(requestToken)
           redirect(akka.http.scaladsl.model.Uri(url), StatusCodes.PermanentRedirect)
