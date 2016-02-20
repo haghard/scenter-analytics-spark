@@ -130,13 +130,10 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
     path("login-twitter") {
       get {
         extractHost { host =>
-          ///domain httpPort
           system.log.info(s" login-twitter from: $host")
-          //val service = twitter.oAuthService.callback(s"http://$host:9000/twitter-sign-in").build()
           val service = twitter.oAuthService.callback(s"http://$domain:$httpPort/$pathPrefix/twitter-sign-in").build()
           val requestToken = service.getRequestToken
           val url = service.getAuthorizationUrl(requestToken)
-          system.log.info(s" login-twitter url: $url")
           redirect(akka.http.scaladsl.model.Uri(url), StatusCodes.PermanentRedirect)
         }
       }
@@ -153,9 +150,9 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
            *
            * Source https://dev.twitter.com/web/sign-in/implementing
            */
+          import spray.json._
           complete {
             Future {
-              system.log.info(s" tokens: $oauthToken $oauthVerifier")
               val service = twitter.oAuthService.build()
               val requestToken = new com.github.scribejava.core.model.Token(oauthToken, oauthVerifier)
               val verifier = new com.github.scribejava.core.model.Verifier(oauthVerifier)
@@ -164,10 +161,9 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
               service.signRequest(accessToken, oAuthRequest)
               val twitterResponse = oAuthRequest.send()
               if (twitterResponse.getCode == 200) {
-                import spray.json._
                 val json = twitterResponse.getBody.parseJson.asJsObject
                 val user = json.getFields("name").head.toString().replace("\"", "")
-                s"$user has been authorized by twitter\nAuthorizationUrl: http://$domain:$httpPort/$pathPrefix/login?user=$user:twitter&password=$oauthToken"
+                s"""{ "authorization-url": "http://$domain:$httpPort/$pathPrefix/login?user=$user:twitter&password=$oauthToken" }"""
               } else twitterResponse.getBody
             }(ec)
           }
