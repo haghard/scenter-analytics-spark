@@ -1,6 +1,7 @@
 package http
 
 import akka.http.scaladsl.model.StatusCodes
+import com.github.scribejava.apis.{GoogleApi, TwitterApi, GitHubApi}
 import com.github.scribejava.core.model.{ OAuthRequest, Verb }
 import com.softwaremill.session._
 import akka.http.scaladsl.server._
@@ -56,18 +57,18 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
 
   private def githubR(implicit ec: ExecutionContext): Route =
     path("login-github") {
-      val service = github.oAuthService.callback(s"http://$domain:$httpPort/$pathPrefix/github-sign-in").build()
+      val service = github.oAuthService.callback(s"http://$domain:$httpPort/$pathPrefix/github-sign-in").build(GitHubApi.instance)
       // Obtain the Authorization URL
-      val url = service.getAuthorizationUrl(null)
+      val url = service.getAuthorizationUrl()
       redirect(akka.http.scaladsl.model.Uri(url), StatusCodes.PermanentRedirect)
     } ~ path("frontend-login-github") {
       get {
         extractHost { host =>
           system.log.info(s"frontend-login-github from: $host")
           //FIXME port 9000 put address in the params
-          val service = github.oAuthService.callback(s"http://$host:9000/github-callback").build()
-          val requestToken = service.getRequestToken
-          val url = service.getAuthorizationUrl(null)
+          val service = github.oAuthService.callback(s"http://$host:9000/github-callback").build(GitHubApi.instance)
+          //val requestToken = service.getRequestToken
+          val url = service.getAuthorizationUrl()
           system.log.info(s"frontend-login-github url: $url")
           redirect(akka.http.scaladsl.model.Uri(url), StatusCodes.PermanentRedirect)
         }
@@ -77,12 +78,12 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
         parameterMap { params ⇒
           complete {
             Future {
-              val service = github.oAuthService.callback(s"http://$domain:$httpPort/$pathPrefix/github-sign-in").build()
+              val service = github.oAuthService.callback(s"http://$domain:$httpPort/$pathPrefix/github-sign-in").build(GitHubApi.instance)
               val (k, v) = params.head
               val verifier = new com.github.scribejava.core.model.Verifier(v)
 
               // Obtain the AccessToken
-              val accessToken = service.getAccessToken(null, verifier)
+              val accessToken = service.getAccessToken(verifier)
               val token = accessToken.getToken
 
               val request = new OAuthRequest(Verb.GET, github.protectedUrl, service)
@@ -103,16 +104,18 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
 
   private def googleR(implicit ec: ExecutionContext): Route =
     path("login-google") {
-      val service = google.oAuthService.callback(s"http://$domain:$httpPort/$pathPrefix/google-sign-in").build()
+      val service = google.oAuthService.callback(s"http://$domain:$httpPort/$pathPrefix/google-sign-in").build(GoogleApi.instance)
       // Obtain the Authorization URL
-      val url = service.getAuthorizationUrl(null)
+
+      val requestToken = service.getRequestToken
+      val url = service.getAuthorizationUrl(requestToken)
       redirect(akka.http.scaladsl.model.Uri(url), StatusCodes.PermanentRedirect)
     } ~ path("google-sign-in") {
       get {
         parameterMap { params ⇒
           complete {
             Future {
-              val service = google.oAuthService.callback(s"http://$domain:$httpPort/$pathPrefix/google-sign-in").build()
+              val service = google.oAuthService.callback(s"http://$domain:$httpPort/$pathPrefix/google-sign-in").build(GoogleApi.instance)
               val (k, v) = params.head
               val verifier = new com.github.scribejava.core.model.Verifier(v)
 
@@ -142,7 +145,7 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
     path("login-twitter") {
       get {
         extractHost { host =>
-          val service = twitter.oAuthService.callback(s"http://$domain:$httpPort/twitter-sign-in").build()
+          val service = twitter.oAuthService.callback(s"http://$domain:$httpPort/twitter-sign-in").build(TwitterApi.instance())
           val requestToken = service.getRequestToken
           val url = service.getAuthorizationUrl(requestToken)
           system.log.info(s"login-twitter: $host")
@@ -154,7 +157,7 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
         extractHost { host =>
           system.log.info(s"frontend-login-twitter from: $host")
           //FIXME port 9000
-          val service = twitter.oAuthService.callback(s"http://$host:9000/twitter-callback").build()
+          val service = twitter.oAuthService.callback(s"http://$host:9000/twitter-callback").build(TwitterApi.instance())
           val requestToken = service.getRequestToken
           val url = service.getAuthorizationUrl(requestToken)
           redirect(akka.http.scaladsl.model.Uri(url), StatusCodes.PermanentRedirect)
@@ -176,7 +179,7 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
           import spray.json._
           complete {
             Future {
-              val service = twitter.oAuthService.build()
+              val service = twitter.oAuthService.build(TwitterApi.instance())
               val requestToken = new com.github.scribejava.core.model.Token(oauthToken, oauthVerifier)
               val verifier = new com.github.scribejava.core.model.Verifier(oauthVerifier)
               val accessToken = service.getAccessToken(requestToken, verifier)
