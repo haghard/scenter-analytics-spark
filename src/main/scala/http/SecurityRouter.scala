@@ -2,6 +2,7 @@ package http
 
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{HttpRequest, StatusCodes}
+import akka.http.scaladsl.server.directives.BasicDirectives._
 import com.github.scribejava.core.model.{ OAuthRequest, Verb }
 import com.softwaremill.session._
 import akka.http.scaladsl.server._
@@ -127,15 +128,31 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
       }
     }
 
+
+  extract(_.request.uri.authority.host.inetAddresses)
+
+  private def twitterFrontend(implicit ec: ExecutionContext): Route =
+    path("frontend-login-twitter") {
+      get {
+        extractHost { host =>
+          system.log.info(s"frontend-login-twitter from: $host")
+          //FIXME port 9000
+          val service = twitter.oAuthService.callback(s"http://$host:9000/twitter-callback").build()
+          val requestToken = service.getRequestToken
+          val url = service.getAuthorizationUrl(requestToken)
+          redirect(akka.http.scaladsl.model.Uri(url), StatusCodes.PermanentRedirect)
+        }
+      }
+    }
+
   private def twitterR(implicit ec: ExecutionContext): Route =
     path("login-twitter") {
       get {
         extractHost { host =>
-          //val service = twitter.oAuthService.callback(s"http://$domain:$httpPort/$pathPrefix/twitter-sign-in").build()
-          val service = twitter.oAuthService.callback(s"http://$host:9000/$pathPrefix/twitter-sign-in").build()
+          val service = twitter.oAuthService.callback(s"http://$domain:$httpPort/$pathPrefix/twitter-sign-in").build()
           val requestToken = service.getRequestToken
           val url = service.getAuthorizationUrl(requestToken)
-          system.log.info(s"login-twitter: $host: $url")
+          system.log.info(s"login-twitter: $host")
           redirect(akka.http.scaladsl.model.Uri(url), StatusCodes.PermanentRedirect)
         }
       }
@@ -195,7 +212,7 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
               }
             }
           }
-        } ~ twitterR ~ googleR ~ githubR ~
+        } ~ twitterR ~ twitterFrontend ~ googleR ~ githubR ~
         path("test-secret") {
           get {
             requiredHttpSession(ec) { session ⇒
