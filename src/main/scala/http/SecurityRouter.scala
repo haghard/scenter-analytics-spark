@@ -10,7 +10,7 @@ import com.softwaremill.session.CsrfOptions._
 import com.softwaremill.session.SessionOptions._
 
 import scala.concurrent.{ Future, ExecutionContext }
-import scala.util.{Failure, Success, Try}
+import scala.util.Try
 import org.mindrot.jbcrypt.BCrypt
 
 trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: MicroKernel ⇒
@@ -137,8 +137,6 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
       }
     }
 
-
-
   private def twitterR(implicit ec: ExecutionContext): Route =
     path("login-twitter") {
       get {
@@ -150,7 +148,7 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
           redirect(akka.http.scaladsl.model.Uri(url), StatusCodes.PermanentRedirect)
         }
       }
-    } ~ path("frontend-login-twitter") {
+    } /*~ path("frontend-login-twitter") {
       get {
         extractHost { host =>
           system.log.info(s"frontend-login-twitter from: $host")
@@ -161,7 +159,7 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
           redirect(akka.http.scaladsl.model.Uri(url), StatusCodes.PermanentRedirect)
         }
       }
-    } ~ path("twitter-sign-in") {
+    }*/ ~ path("twitter-sign-in") {
       get {
         parameters(('oauth_token.as[String]), ('oauth_verifier.as[String])) { (oauthToken, oauthVerifier) ⇒
           /**
@@ -187,7 +185,7 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
               if (twitterResponse.getCode == 200) {
                 val json = twitterResponse.getBody.parseJson.asJsObject
                 val user = json.getFields("name").head.toString().replace("\"", "")
-                s"""{ "authorization-url": "http://$domain:$httpPort/$pathPrefix/login?user=$user:twitter&password=$oauthToken" }"""
+                s""" { "authorization-url": "http://$domain:$httpPort/$pathPrefix/login?user=$user:twitter&password=$oauthToken" }"""
               } else s"""{ "authorization-error": "${twitterResponse.getCode}" } """
             }(ec)
           }
