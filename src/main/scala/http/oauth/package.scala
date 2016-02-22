@@ -54,7 +54,6 @@ package object oauth {
         new com.github.scribejava.core.builder.ServiceBuilder().provider(classOf[com.github.scribejava.apis.GitHubApi])
           .apiKey(apiKey)
           .apiSecret(apiSecret)
-          .state(secretState)
     }
   }
 }

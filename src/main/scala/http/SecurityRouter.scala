@@ -68,6 +68,7 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
           val service = github.oAuthService.callback(s"http://$host:9000/github-callback").build()
           val requestToken = service.getRequestToken
           val url = service.getAuthorizationUrl(requestToken)
+          system.log.info(s"frontend-login-github url: $url")
           redirect(akka.http.scaladsl.model.Uri(url), StatusCodes.PermanentRedirect)
         }
       }
