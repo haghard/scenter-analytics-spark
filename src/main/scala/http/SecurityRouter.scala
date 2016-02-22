@@ -54,8 +54,13 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
         postAction = Option(() ⇒ system.log.info(s"\n★ ★ ★ [$httpPrefixAddress/login|logout] routes was stopped on $httpPrefixAddress ★ ★ ★")),
         urls = s"[$httpPrefixAddress/$pathPrefix/login, $httpPrefixAddress/$pathPrefix/login-twitter, $httpPrefixAddress/$pathPrefix/login-github, $httpPrefixAddress/$pathPrefix/login-google, $httpPrefixAddress/$pathPrefix/logout]")
 
-  /**
-  ~ path("frontend-login-github") {
+  private def githubR(implicit ec: ExecutionContext): Route =
+    path("login-github") {
+      val service = github.oAuthService.callback(s"http://$domain:$httpPort/$pathPrefix/github-sign-in").build()
+      // Obtain the Authorization URL
+      val url = service.getAuthorizationUrl(null)
+      redirect(akka.http.scaladsl.model.Uri(url), StatusCodes.PermanentRedirect)
+    } ~ path("frontend-login-github") {
       get {
         extractHost { host =>
           system.log.info(s"frontend-login-github from: $host")
@@ -66,15 +71,6 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
           redirect(akka.http.scaladsl.model.Uri(url), StatusCodes.PermanentRedirect)
         }
       }
-    }
-  */
-
-  private def githubR(implicit ec: ExecutionContext): Route =
-    path("login-github") {
-      val service = github.oAuthService.callback(s"http://$domain:$httpPort/$pathPrefix/github-sign-in").build()
-      // Obtain the Authorization URL
-      val url = service.getAuthorizationUrl(null)
-      redirect(akka.http.scaladsl.model.Uri(url), StatusCodes.PermanentRedirect)
     } ~ path("github-sign-in") {
       get {
         parameterMap { params ⇒
@@ -141,20 +137,6 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
       }
     }
 
-
-  /*~ path("frontend-login-twitter") {
-      get {
-        extractHost { host =>
-          system.log.info(s"frontend-login-twitter from: $host")
-          //FIXME port 9000
-          val service = twitter.oAuthService.callback(s"http://$host:9000/twitter-callback").build()
-          val requestToken = service.getRequestToken
-          val url = service.getAuthorizationUrl(requestToken)
-          redirect(akka.http.scaladsl.model.Uri(url), StatusCodes.PermanentRedirect)
-        }
-      }
-    }*/
-
   private def twitterR(implicit ec: ExecutionContext): Route =
     path("login-twitter") {
       get {
@@ -163,6 +145,17 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
           val requestToken = service.getRequestToken
           val url = service.getAuthorizationUrl(requestToken)
           system.log.info(s"login-twitter: $host")
+          redirect(akka.http.scaladsl.model.Uri(url), StatusCodes.PermanentRedirect)
+        }
+      }
+    } ~ path("frontend-login-twitter") {
+      get {
+        extractHost { host =>
+          system.log.info(s"frontend-login-twitter from: $host")
+          //FIXME port 9000
+          val service = twitter.oAuthService.callback(s"http://$host:9000/twitter-callback").build()
+          val requestToken = service.getRequestToken
+          val url = service.getAuthorizationUrl(requestToken)
           redirect(akka.http.scaladsl.model.Uri(url), StatusCodes.PermanentRedirect)
         }
       }
@@ -222,7 +215,7 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
               }
             }
           }
-        } ~ twitterR ~ githubR ~ googleR
+        } ~ twitterR ~ githubR ~ googleR ~
         path("test-secret") {
           get {
             requiredHttpSession(ec) { session ⇒
