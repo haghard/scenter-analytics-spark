@@ -137,6 +137,20 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
       }
     }
 
+
+  /*~ path("frontend-login-twitter") {
+      get {
+        extractHost { host =>
+          system.log.info(s"frontend-login-twitter from: $host")
+          //FIXME port 9000
+          val service = twitter.oAuthService.callback(s"http://$host:9000/twitter-callback").build()
+          val requestToken = service.getRequestToken
+          val url = service.getAuthorizationUrl(requestToken)
+          redirect(akka.http.scaladsl.model.Uri(url), StatusCodes.PermanentRedirect)
+        }
+      }
+    }*/
+
   private def twitterR(implicit ec: ExecutionContext): Route =
     path("login-twitter") {
       get {
@@ -148,18 +162,7 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
           redirect(akka.http.scaladsl.model.Uri(url), StatusCodes.PermanentRedirect)
         }
       }
-    } /*~ path("frontend-login-twitter") {
-      get {
-        extractHost { host =>
-          system.log.info(s"frontend-login-twitter from: $host")
-          //FIXME port 9000
-          val service = twitter.oAuthService.callback(s"http://$host:9000/twitter-callback").build()
-          val requestToken = service.getRequestToken
-          val url = service.getAuthorizationUrl(requestToken)
-          redirect(akka.http.scaladsl.model.Uri(url), StatusCodes.PermanentRedirect)
-        }
-      }
-    }*/ ~ path("twitter-sign-in") {
+    } ~ path("twitter-sign-in") {
       get {
         parameters(('oauth_token.as[String]), ('oauth_verifier.as[String])) { (oauthToken, oauthVerifier) ⇒
           /**
