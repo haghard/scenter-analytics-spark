@@ -131,11 +131,11 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
     path("login-twitter") {
       get {
         extractHost { host =>
-          system.log.info(s" login-twitter from: $host")
           //val service = twitter.oAuthService.callback(s"http://$domain:$httpPort/$pathPrefix/twitter-sign-in").build()
           val service = twitter.oAuthService.callback(s"http://$host:9000/$pathPrefix/$twitter-sign-in").build()
           val requestToken = service.getRequestToken
           val url = service.getAuthorizationUrl(requestToken)
+          system.log.info(s"login-twitter: $host: $url")
           redirect(akka.http.scaladsl.model.Uri(url), StatusCodes.PermanentRedirect)
         }
       }
