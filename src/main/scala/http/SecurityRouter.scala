@@ -188,7 +188,7 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
                 val json = twitterResponse.getBody.parseJson.asJsObject
                 val user = json.getFields("name").head.toString().replace("\"", "")
                 s"""{ "authorization-url": "http://$domain:$httpPort/$pathPrefix/login?user=$user:twitter&password=$oauthToken" }"""
-              } else s"""{ "authorization-error": "${twitterResponse.getCode}" """
+              } else s"""{ "authorization-error": "${twitterResponse.getCode}" } """
             }(ec)
           }
         }
