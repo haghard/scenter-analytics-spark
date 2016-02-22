@@ -128,9 +128,6 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
       }
     }
 
-
-  extract(_.request.uri.authority.host.inetAddresses)
-
   private def twitterFrontend(implicit ec: ExecutionContext): Route =
     path("frontend-login-twitter") {
       get {
