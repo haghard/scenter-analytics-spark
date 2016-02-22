@@ -1,8 +1,6 @@
 package http
 
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.{HttpRequest, StatusCodes}
-import akka.http.scaladsl.server.directives.BasicDirectives._
+import akka.http.scaladsl.model.StatusCodes
 import com.github.scribejava.core.model.{ OAuthRequest, Verb }
 import com.softwaremill.session._
 import akka.http.scaladsl.server._
@@ -87,6 +85,20 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
               } else response.getBody
             }(ec)
           }
+        }
+      }
+    }
+
+  private def githubFrontend(implicit ec: ExecutionContext): Route =
+    path("frontend-login-github") {
+      get {
+        extractHost { host =>
+          system.log.info(s"frontend-login-github from: $host")
+          //FIXME port 9000 put address in the params
+          val service = twitter.oAuthService.callback(s"http://$host:9000/github-callback").build()
+          val requestToken = service.getRequestToken
+          val url = service.getAuthorizationUrl(requestToken)
+          redirect(akka.http.scaladsl.model.Uri(url), StatusCodes.PermanentRedirect)
         }
       }
     }
@@ -209,7 +221,7 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
               }
             }
           }
-        } ~ twitterR ~ twitterFrontend ~ googleR ~ githubR ~
+        } ~ twitterR ~ twitterFrontend ~ googleR ~ githubR ~ githubFrontend
         path("test-secret") {
           get {
             requiredHttpSession(ec) { session ⇒
