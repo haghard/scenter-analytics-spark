@@ -42,7 +42,7 @@ package object oauth {
       override val protectedUrl = "https://api.twitter.com/1.1/account/verify_credentials.json"
 
       override def oAuthService() =
-        new com.github.scribejava.core.builder.ServiceBuilder()//.r(classOf[com.github.scribejava.apis.TwitterApi])
+        new com.github.scribejava.core.builder.ServiceBuilder()
           .apiKey(apiKey)
           .apiSecret(apiSecret)
     }
@@ -51,7 +51,7 @@ package object oauth {
       override val protectedUrl = "https://api.github.com/user"
 
       override def oAuthService() =
-        new com.github.scribejava.core.builder.ServiceBuilder()//.provider(classOf[com.github.scribejava.apis.GitHubApi])
+        new com.github.scribejava.core.builder.ServiceBuilder()
           .apiKey(apiKey)
           .apiSecret(apiSecret)
           .state(secretState)
