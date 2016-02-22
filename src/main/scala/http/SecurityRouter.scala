@@ -54,13 +54,8 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
         postAction = Option(() ⇒ system.log.info(s"\n★ ★ ★ [$httpPrefixAddress/login|logout] routes was stopped on $httpPrefixAddress ★ ★ ★")),
         urls = s"[$httpPrefixAddress/$pathPrefix/login, $httpPrefixAddress/$pathPrefix/login-twitter, $httpPrefixAddress/$pathPrefix/login-github, $httpPrefixAddress/$pathPrefix/login-google, $httpPrefixAddress/$pathPrefix/logout]")
 
-  private def githubR(implicit ec: ExecutionContext): Route =
-    path("login-github") {
-      val service = github.oAuthService.callback(s"http://$domain:$httpPort/$pathPrefix/github-sign-in").build()
-      // Obtain the Authorization URL
-      val url = service.getAuthorizationUrl(null)
-      redirect(akka.http.scaladsl.model.Uri(url), StatusCodes.PermanentRedirect)
-    } ~ path("frontend-login-github") {
+  /**
+  ~ path("frontend-login-github") {
       get {
         extractHost { host =>
           system.log.info(s"frontend-login-github from: $host")
@@ -71,6 +66,15 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
           redirect(akka.http.scaladsl.model.Uri(url), StatusCodes.PermanentRedirect)
         }
       }
+    }
+  */
+
+  private def githubR(implicit ec: ExecutionContext): Route =
+    path("login-github") {
+      val service = github.oAuthService.callback(s"http://$domain:$httpPort/$pathPrefix/github-sign-in").build()
+      // Obtain the Authorization URL
+      val url = service.getAuthorizationUrl(null)
+      redirect(akka.http.scaladsl.model.Uri(url), StatusCodes.PermanentRedirect)
     } ~ path("github-sign-in") {
       get {
         parameterMap { params ⇒
