@@ -60,6 +60,17 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
       // Obtain the Authorization URL
       val url = service.getAuthorizationUrl(null)
       redirect(akka.http.scaladsl.model.Uri(url), StatusCodes.PermanentRedirect)
+    } ~ path("frontend-login-github") {
+      get {
+        extractHost { host =>
+          system.log.info(s"frontend-login-github from: $host")
+          //FIXME port 9000 put address in the params
+          val service = twitter.oAuthService.callback(s"http://$host:9000/github-callback").build()
+          val requestToken = service.getRequestToken
+          val url = service.getAuthorizationUrl(requestToken)
+          redirect(akka.http.scaladsl.model.Uri(url), StatusCodes.PermanentRedirect)
+        }
+      }
     } ~ path("github-sign-in") {
       get {
         parameterMap { params ⇒
@@ -81,24 +92,10 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
                 import spray.json._
                 val json = response.getBody.parseJson.asJsObject
                 val user = json.fields("name").toString().replace("\"", "")
-                s"$user has been authorized by github\nAuthorizationUrl: http://$domain:$httpPort/$pathPrefix/login?user=$user:github&password=$token"
-              } else response.getBody
+                s""" "authorizationUrl" : "http://$domain:$httpPort/$pathPrefix/login?user=$user:github&password=$token" """
+              } else s"""{ "authorization-error": "${response.getCode}" }"""
             }(ec)
           }
-        }
-      }
-    }
-
-  private def githubFrontend(implicit ec: ExecutionContext): Route =
-    path("frontend-login-github") {
-      get {
-        extractHost { host =>
-          system.log.info(s"frontend-login-github from: $host")
-          //FIXME port 9000 put address in the params
-          val service = twitter.oAuthService.callback(s"http://$host:9000/github-callback").build()
-          val requestToken = service.getRequestToken
-          val url = service.getAuthorizationUrl(requestToken)
-          redirect(akka.http.scaladsl.model.Uri(url), StatusCodes.PermanentRedirect)
         }
       }
     }
@@ -140,19 +137,7 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
       }
     }
 
-  private def twitterFrontend(implicit ec: ExecutionContext): Route =
-    path("frontend-login-twitter") {
-      get {
-        extractHost { host =>
-          system.log.info(s"frontend-login-twitter from: $host")
-          //FIXME port 9000
-          val service = twitter.oAuthService.callback(s"http://$host:9000/twitter-callback").build()
-          val requestToken = service.getRequestToken
-          val url = service.getAuthorizationUrl(requestToken)
-          redirect(akka.http.scaladsl.model.Uri(url), StatusCodes.PermanentRedirect)
-        }
-      }
-    }
+
 
   private def twitterR(implicit ec: ExecutionContext): Route =
     path("login-twitter") {
@@ -162,6 +147,17 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
           val requestToken = service.getRequestToken
           val url = service.getAuthorizationUrl(requestToken)
           system.log.info(s"login-twitter: $host")
+          redirect(akka.http.scaladsl.model.Uri(url), StatusCodes.PermanentRedirect)
+        }
+      }
+    } ~ path("frontend-login-twitter") {
+      get {
+        extractHost { host =>
+          system.log.info(s"frontend-login-twitter from: $host")
+          //FIXME port 9000
+          val service = twitter.oAuthService.callback(s"http://$host:9000/twitter-callback").build()
+          val requestToken = service.getRequestToken
+          val url = service.getAuthorizationUrl(requestToken)
           redirect(akka.http.scaladsl.model.Uri(url), StatusCodes.PermanentRedirect)
         }
       }
@@ -221,7 +217,7 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
               }
             }
           }
-        } ~ twitterR ~ twitterFrontend ~ googleR ~ githubR ~ githubFrontend
+        } ~ twitterR ~ githubR ~ googleR
         path("test-secret") {
           get {
             requiredHttpSession(ec) { session ⇒
