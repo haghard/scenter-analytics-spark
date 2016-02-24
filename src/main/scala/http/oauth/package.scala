@@ -1,5 +1,7 @@
 package http
 
+import com.github.scribejava.apis.{GitHubApi, TwitterApi, GoogleApi20}
+
 import scala.annotation.implicitNotFound
 import java.util.concurrent.ThreadLocalRandom
 
@@ -14,6 +16,8 @@ package object oauth {
     protected def secretState = s"secret${ThreadLocalRandom.current().nextInt(Int.MinValue, Int.MaxValue)}"
 
     def oAuthService: com.github.scribejava.core.builder.ServiceBuilder
+
+    def instance: T
 
     def withKeySecret(apiKey0: String, apiSecret0: String): Oauth[T] = {
       apiKey = apiKey0
@@ -36,6 +40,8 @@ package object oauth {
           .apiSecret(apiSecret)
           .state(secretState)
           .scope("profile")
+
+      override def instance: GoogleApi20 = ???
     }
 
     implicit def twitter = new Oauth[com.github.scribejava.apis.TwitterApi] {
@@ -45,6 +51,8 @@ package object oauth {
         new com.github.scribejava.core.builder.ServiceBuilder()
           .apiKey(apiKey)
           .apiSecret(apiSecret)
+
+      override def instance: TwitterApi = TwitterApi.instance()
     }
 
     implicit def github = new Oauth[com.github.scribejava.apis.GitHubApi] {
@@ -55,6 +63,8 @@ package object oauth {
           .apiKey(apiKey)
           .apiSecret(apiSecret)
           .state(secretState)
+
+      override def instance: GitHubApi = GitHubApi.instance()
     }
   }
 }
