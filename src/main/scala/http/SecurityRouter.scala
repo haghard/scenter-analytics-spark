@@ -63,10 +63,10 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
       redirect(akka.http.scaladsl.model.Uri(url), StatusCodes.PermanentRedirect)
     } ~ path("frontend-login-github") {
       get {
-        headerValueByName("Host") { host =>
+        extractHost { host =>
           system.log.info(s"frontend-login-github from: $host")
           //FIXME port 9000 put address in the params
-          val service = github.oAuthService.callback(s"http://$host/github-callback").build(GitHubApi.instance)
+          val service = github.oAuthService.callback(s"http://$host:9000/github-callback").build(GitHubApi.instance)
           //val requestToken = service.getRequestToken
           val url = service.getAuthorizationUrl()
           system.log.info(s"frontend-login-github url: $url")
@@ -144,7 +144,7 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
   private def twitterR(implicit ec: ExecutionContext): Route =
     path("login-twitter") {
       get {
-        headerValueByName("Host") { host =>
+        extractHost { host =>
           system.log.info(s"login-from-twitter from: $host")
           val service = twitter.oAuthService.callback(s"http://$domain:$httpPort/$pathPrefix/twitter-sign-in").build(twitter.instance)
           val requestToken = service.getRequestToken
@@ -155,9 +155,9 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
       }
     } ~ path("frontend-login-twitter") {
       get {
-        headerValueByName("Host") { host =>
+        extractHost { host =>
           system.log.info(s"frontend-login-from-twitter from: $host")
-          val service = twitter.oAuthService.callback(s"http://$host/twitter-callback").build(twitter.instance)
+          val service = twitter.oAuthService.callback(s"http://$host:9000/twitter-callback").build(twitter.instance)
           val requestToken = service.getRequestToken
           val url = service.getAuthorizationUrl(requestToken)
           redirect(akka.http.scaladsl.model.Uri(url), StatusCodes.PermanentRedirect)
