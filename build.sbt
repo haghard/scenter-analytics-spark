@@ -176,7 +176,7 @@ javacOptions ++= Seq(
 //run-main  http.Bootstrap --HTTP_PORT=8001 --NET_INTERFACE=en0 --DB_HOSTS=109.234.39.32 --TWITTER_CONSUMER_KEY= --TWITTER_CONSUMER_SECRET=
 //run-main  http.Bootstrap --HTTP_PORT=8001 --NET_INTERFACE=en0 --DB_HOSTS=109.234.39.32 --GOOGLE_CONSUMER_KEY= --GOOGLE_CONSUMER_SECRET=
 //run-main http.Bootstrap --HTTP_PORT=8001 --NET_INTERFACE=en0 --DB_HOSTS=109.234.39.32  --GITHUB_CONSUMER_KEY= --GITHUB_CONSUMER_SECRET=
-addCommandAlias("lanalytics", s"run-main  http.Bootstrap --HTTP_PORT=8001 --NET_INTERFACE=en0 --DB_HOSTS=$CassandraHost")
+addCommandAlias("lanalytics", s"run-main  http.Bootstrap --HTTP_PORT=8001 --NET_INTERFACE=eth0 --DB_HOSTS=$CassandraHost")
 
 //http GET http://192.168.0.62:8001/api/login?"user=haghard&password=qwerty"
 
