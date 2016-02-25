@@ -16,6 +16,8 @@ import org.mindrot.jbcrypt.BCrypt
 
 trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: MicroKernel ⇒
 
+  val senderAddress = "X-Forwarded-For"
+
   def googleApiKey: String
   def googleApiSecret: String
   def twitterApiKey: String
@@ -155,9 +157,9 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
       }
     } ~ path("frontend-login-twitter") {
       get {
-        extractHost { host =>
-          system.log.info(s"frontend-login-from-twitter from: $host")
-          val service = twitter.oAuthService.callback(s"http://$host:9000/twitter-callback").build(twitter.instance)
+        headerValueByName(senderAddress) { senderAddress =>
+          system.log.info(s"frontend-login-from-twitter from: $senderAddress")
+          val service = twitter.oAuthService.callback(s"http://$senderAddress/twitter-callback").build(twitter.instance)
           val requestToken = service.getRequestToken
           val url = service.getAuthorizationUrl(requestToken)
           redirect(akka.http.scaladsl.model.Uri(url), StatusCodes.PermanentRedirect)
