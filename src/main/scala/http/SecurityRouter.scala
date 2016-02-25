@@ -1,6 +1,7 @@
 package http
 
 import akka.http.scaladsl.model.StatusCodes
+import akka.http.scaladsl.server.directives.BasicDirectives._
 import com.github.scribejava.apis.{GoogleApi, TwitterApi, GitHubApi}
 import com.github.scribejava.core.model.{ OAuthRequest, Verb }
 import com.softwaremill.session._
@@ -157,9 +158,11 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
       }
     } ~ path("frontend-login-twitter") {
       get {
-        headerValueByName("Location") { senderAddress =>
-          system.log.info(s"frontend-login-from-twitter from: $senderAddress")
-          val service = twitter.oAuthService.callback(s"http://$senderAddress/twitter-callback").build(twitter.instance)
+        extract(_.request.headers) { headers =>
+          headers.foreach(_.name())
+        //headerValueByName("Location") { senderAddress =>
+          system.log.info(s"frontend-login-from-twitter from:")
+          val service = twitter.oAuthService.callback(s"http://twitter-callback").build(twitter.instance)
           val requestToken = service.getRequestToken
           val url = service.getAuthorizationUrl(requestToken)
           redirect(akka.http.scaladsl.model.Uri(url), StatusCodes.PermanentRedirect)
