@@ -99,7 +99,7 @@ libraryDependencies ++= Seq(
 
   "com.softwaremill.akka-http-session"  %%  "core"              % "0.2.4",
 
-  "com.typesafe.akka"       %% "akka-slf4j"                     % "2.4.2-RC1",
+  "com.typesafe.akka"       %% "akka-slf4j"                     % "2.4.2",
   "ch.qos.logback"          %  "logback-classic"                % "1.1.2",
 
   "com.github.scribejava"   %   "scribejava-core"               % "2.2.0",
