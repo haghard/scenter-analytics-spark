@@ -60,9 +60,7 @@ package object cassandra {
           println(s"Parse proto error: ${e.getMessage}")
           ResultAddedEvent.getDefaultInstance
       }
-    val bts = message.array()
-    loop(bts)
-    //loop(bts.slice(offset, bts.length))
+    loop(message.array())
   }
 
   implicit class SparkContextOps(context: SparkContext) {

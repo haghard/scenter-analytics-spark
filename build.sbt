@@ -20,7 +20,7 @@ version := "0.0.1-SNAPSHOT"
 scalaVersion := "2.11.7"
 
 val Spark = "1.5.2"
-val CassandaConnector = "1.5.0-RC1"
+val CassandraConnector = "1.5.0"
 val CassandraHost = "109.234.39.32"
 val Akka = "2.4.2"
 
@@ -95,7 +95,7 @@ libraryDependencies ++= Seq(
 
   "org.mindrot"             %  "jbcrypt"                        % "0.3m",
 
-  "com.haghard"             %% "nosql-join-stream"              % "0.1.12",
+  "com.haghard"             %% "nosql-join-stream"              % "0.1.15",
 
   "com.softwaremill.akka-http-session"  %%  "core"              % "0.2.4",
 
@@ -141,7 +141,7 @@ libraryDependencies ++= Seq(
     .exclude("com.esotericsoftware.minlog", "minlog")
     .exclude("org.slf4j", "slf4j-log4j12"),
 
-  ("com.datastax.spark"      %% "spark-cassandra-connector"      % CassandaConnector)
+  ("com.datastax.spark"      %% "spark-cassandra-connector"      % CassandraConnector)
     .exclude("javax.xml.bind", "jsr173_api")
     .exclude("org.mortbay.jetty", "servlet-api")
     .exclude("com.google.guava","guava")
