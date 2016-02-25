@@ -147,21 +147,16 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
   private def twitterR(implicit ec: ExecutionContext): Route =
     path("login-twitter") {
       get {
-        extractHost { host =>
-          system.log.info(s"login-from-twitter from: $host")
-          val service = twitter.oAuthService.callback(s"http://$domain:$httpPort/$pathPrefix/twitter-sign-in").build(twitter.instance)
-          val requestToken = service.getRequestToken
-          val url = service.getAuthorizationUrl(requestToken)
-          system.log.info(s"login-twitter: $host $url")
-          redirect(akka.http.scaladsl.model.Uri(url), StatusCodes.PermanentRedirect)
-        }
+        val service = twitter.oAuthService.callback(s"http://$domain:$httpPort/$pathPrefix/twitter-sign-in").build(twitter.instance)
+        val requestToken = service.getRequestToken
+        val url = service.getAuthorizationUrl(requestToken)
+        redirect(akka.http.scaladsl.model.Uri(url), StatusCodes.PermanentRedirect)
       }
     } ~ path("frontend-login-twitter") {
       get {
-        //extract(_.request.headers) { headers => system.log.info(headers.mkString(", "))
-        headerValueByName(referer) { senderSegment =>
-          system.log.info(s"frontend-login-from-twitter from:$senderSegment")
-          val service = twitter.oAuthService.callback(s"${senderSegment}twitter-callback").build(twitter.instance)
+        headerValueByName(referer) { frontEndSegment =>
+          system.log.info(s"frontend-login-from-twitter from:$frontEndSegment")
+          val service = twitter.oAuthService.callback(s"${frontEndSegment}twitter-callback").build(twitter.instance)
           val requestToken = service.getRequestToken
           val url = service.getAuthorizationUrl(requestToken)
           redirect(akka.http.scaladsl.model.Uri(url), StatusCodes.PermanentRedirect)
