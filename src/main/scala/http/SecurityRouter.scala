@@ -157,7 +157,7 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
       }
     } ~ path("frontend-login-twitter") {
       get {
-        headerValueByName(senderAddress) { senderAddress =>
+        headerValueByName("Location") { senderAddress =>
           system.log.info(s"frontend-login-from-twitter from: $senderAddress")
           val service = twitter.oAuthService.callback(s"http://$senderAddress/twitter-callback").build(twitter.instance)
           val requestToken = service.getRequestToken
