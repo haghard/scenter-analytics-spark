@@ -61,7 +61,8 @@ package object cassandra {
           ResultAddedEvent.getDefaultInstance
       }
     val bts = message.array()
-    loop(bts.slice(offset, bts.length))
+    loop(bts)
+    //loop(bts.slice(offset, bts.length))
   }
 
   implicit class SparkContextOps(context: SparkContext) {
