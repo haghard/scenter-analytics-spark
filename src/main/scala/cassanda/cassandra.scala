@@ -1,13 +1,11 @@
 import java.nio.ByteBuffer
 import java.text.SimpleDateFormat
 import java.util.{ Date, TimeZone }
-import com.datastax.driver.core.utils.UUIDs
 import com.datastax.spark.connector._
 import com.typesafe.config.Config
 import http.NbaResult
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.cassandra.CassandraSQLContext
 import org.joda.time.{ DateTime, DateTimeZone }
 import domain.formats.DomainEventFormats._
 import scala.collection.JavaConverters._
@@ -88,7 +86,7 @@ package object cassandra {
       (context broadcast javaTeams) //broadcast variable
       (context broadcast partitions) //broadcast variable
       context.cassandraTable(keyspace, table)
-        .select("message")
+        .select("event")
         .where("persistence_id in ? and partition_nr in ?", javaTeams, partitions)
         .as((m: ByteBuffer) ⇒ deserialize(m))
         .keyBy(event ⇒ new DateTime(event.getResult.getTime).withZone(SCENTER_TIME_ZONE))

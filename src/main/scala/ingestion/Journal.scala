@@ -24,7 +24,7 @@ object Journal {
   */
   def queryByKey(journal: String) =
     s"""
-       |SELECT message FROM $journal WHERE
+       |SELECT event FROM $journal WHERE
        |  persistence_id = ? AND
        |  partition_nr = ? AND
        |  sequence_nr >= ?
@@ -107,7 +107,9 @@ class Journal(config: Config, cassandraHosts: Array[InetSocketAddress],
       teams.foreach { kv ⇒
         (eventlog.Log[CassandraSource] from (queryByKey(journal), kv._1, kv._2, targetPartitionSize))
           .source
-          .map(row ⇒ cassandra.deserialize(row.getBytes("message"))) ~> merge
+          .map { row ⇒
+            cassandra.deserialize(row.getBytes("event"))
+          } ~> merge
       }
       SourceShape(merge.out)
     }

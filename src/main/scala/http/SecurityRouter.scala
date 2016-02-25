@@ -1,7 +1,6 @@
 package http
 
 import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.directives.BasicDirectives._
 import com.github.scribejava.apis.{GoogleApi, TwitterApi, GitHubApi}
 import com.github.scribejava.core.model.{ OAuthRequest, Verb }
 import com.softwaremill.session._
