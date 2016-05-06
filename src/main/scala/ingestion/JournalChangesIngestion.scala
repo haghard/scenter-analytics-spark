@@ -96,7 +96,7 @@ object JournalChangesIngestion extends CassandraSchema {
         (period, playersBox)
       }
 
-    installSchema(ctx.getConf, keySpace, resultsTable, leadersPlayers, playersTable, dailyResultsTable)
+    installSchema(ctx.getConf, keySpace, resultsTable, leadersPlayers, playersTable, dailyResultsTable, teams)
 
     val journal = streaming.actorStream[(ResultAddedEvent, Long)](Props(new Journal(config, hosts, teams, gameIntervals)), "journal")
 

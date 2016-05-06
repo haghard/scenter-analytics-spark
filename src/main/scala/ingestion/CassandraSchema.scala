@@ -4,6 +4,9 @@ import com.datastax.spark.connector.SomeColumns
 import com.datastax.spark.connector.cql.{CassandraConnectorConf, CassandraConnector}
 import org.apache.spark.SparkConf
 
+/*
+  CREATE KEYSPACE sport_center WITH replication = {'class': 'NetworkTopologyStrategy', 'east': '2', 'west': '2'}  AND durable_writes = true;
+*/
 trait CassandraSchema {
 
   lazy val resultColumns =
@@ -20,9 +23,32 @@ trait CassandraSchema {
   lazy val dailyResColumns =
     SomeColumns("period", "opponents", "year", "month", "day", "score", "guest_score", "score_line", "guest_score_line")
 
-  def installSchema(conf: SparkConf, keySpace: String, table1: String, table2: String, table3: String, table4: String) = {
+  def installSchema(conf: SparkConf, keySpace: String, table1: String, table2: String, table3: String, table4: String,
+                    teams: scala.collection.mutable.HashMap[String, String]) = {
     val con = new CassandraConnector(CassandraConnectorConf(conf))
 
+    con.withSessionDo {
+      _.execute(s"""CREATE TABLE IF NOT EXISTS ${keySpace}.teams (
+          | processor_id varchar,
+          | description varchar,
+          | PRIMARY KEY (processor_id));
+        """.stripMargin)
+    }.one()
+
+    for (kv <- teams) {
+      con.withSessionDo {
+        _.execute(s"""INSERT INTO ${keySpace}.teams (processor_id, description) VALUES (?, ?) IF NOT EXISTS;""", kv._1, kv._2)
+      }.one()
+    }
+
+
+    con.withSessionDo {
+      _.execute(s"""CREATE TABLE IF NOT EXISTS ${keySpace}.campaign (
+              | campaign_id text,
+              | description text,
+              | PRIMARY KEY (campaign_id));
+        """.stripMargin)
+    }.one()
 
     /*
                        +------------------+------------------------+
@@ -37,8 +63,8 @@ trait CassandraSchema {
     */
     con.withSessionDo {
       _.execute(s"""CREATE TABLE IF NOT EXISTS $keySpace.${table1} (
-                    | period text,
-                    | team text,
+                    | period varchar,
+                    | team varchar,
                     | date timestamp,
                     | opponent text,
                     | opponent_score int,
@@ -91,7 +117,7 @@ trait CassandraSchema {
            |      PRIMARY KEY (period, time, name)
            |    ) WITH CLUSTERING ORDER BY (time ASC, name ASC);
          """.stripMargin)
-    }
+    }.one()
 
     /*
 
@@ -132,7 +158,7 @@ trait CassandraSchema {
            |        PRIMARY KEY ((name, period, team), time)
            |     ) WITH CLUSTERING ORDER BY (time ASC);
          """.stripMargin)
-    }
+    }.one()
 
     /*
 
@@ -161,6 +187,6 @@ trait CassandraSchema {
            |        PRIMARY KEY ((period), year, month, day, opponents)
            |    ) WITH CLUSTERING ORDER BY (year DESC, month DESC, day DESC, opponents ASC);
          """.stripMargin)
-    }
+    }.one()
   }
 }
