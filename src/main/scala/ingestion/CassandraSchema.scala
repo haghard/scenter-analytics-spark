@@ -42,6 +42,11 @@ trait CassandraSchema {
       _.execute(s"""CREATE TABLE IF NOT EXISTS ${keySpace}.campaign (campaign_id text, description text, PRIMARY KEY (campaign_id))""")
     }.one()
 
+    con.withSessionDo {
+      _.execute(s"""INSERT INTO ${keySpace}.campaign (campaign_id, description) VALUES (?, ?);""", "nba", "desc")
+    }.one()
+
+
     /*
                        +------------------+------------------------+
                        |26Apr2015:opponent|26Apr2015:opponent_score|
