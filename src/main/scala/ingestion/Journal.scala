@@ -89,8 +89,8 @@ class Journal(config: Config, cassandraHosts: Array[InetSocketAddress],
 
   private def loadProgress(session: Session): Map[String, Long] = {
     progresses.map { kv ⇒
-      (kv._1, gameIntervals.values().asScala./:(0l) { (acc, c) ⇒
-        val seqNum = fetchMax(c, kv._1, session)
+      (kv._1, gameIntervals.values().asScala./:(0l) { (acc, period) ⇒
+        val seqNum = fetchMax(period, kv._1, session)
         if (seqNum > acc) seqNum else acc
       })
     }

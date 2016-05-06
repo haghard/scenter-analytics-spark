@@ -1,7 +1,7 @@
 package http
 
 import akka.http.scaladsl.model.StatusCodes
-import com.github.scribejava.apis.{GoogleApi, TwitterApi, GitHubApi}
+import com.github.scribejava.apis.{ GoogleApi, TwitterApi, GitHubApi }
 import com.github.scribejava.core.model.{ OAuthRequest, Verb }
 import com.softwaremill.session._
 import akka.http.scaladsl.server._
@@ -65,7 +65,7 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
       redirect(akka.http.scaladsl.model.Uri(url), StatusCodes.PermanentRedirect)
     } ~ path("frontend-login-github") {
       get {
-        extractHost { host =>
+        extractHost { host ⇒
           system.log.info(s"frontend-login-github from: $host")
           //FIXME port 9000 put address in the params
           val service = github.oAuthService.callback(s"http://$host:9000/github-callback").build(GitHubApi.instance)
@@ -153,7 +153,7 @@ trait SecurityRouter extends DefaultRestMicroservice with Directives { mixin: Mi
       }
     } ~ path("frontend-login-twitter") {
       get {
-        headerValueByName(referer) { frontEndSegment =>
+        headerValueByName(referer) { frontEndSegment ⇒
           system.log.info(s"frontend-login-from-twitter from:$frontEndSegment")
           val service = twitter.oAuthService.callback(s"${frontEndSegment}twitter-callback").build(twitter.instance)
           val requestToken = service.getRequestToken

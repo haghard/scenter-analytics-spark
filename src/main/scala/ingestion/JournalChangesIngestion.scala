@@ -26,6 +26,7 @@ object JournalChangesIngestion {
     import scala.collection.JavaConverters._
 
     val streaming = new StreamingContext(ctx, Seconds(5))
+    streaming.checkpoint("scenter-checkpoint")
     val hosts = config.getString("db.cassandra.seeds").split(",").map(host ⇒ new InetSocketAddress(host, CassandraPort))
     val resultsTable = config.getString("spark.cassandra.journal.results")
     val leadersPlayers = config.getString("spark.cassandra.journal.leaders")

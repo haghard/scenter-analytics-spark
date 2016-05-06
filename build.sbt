@@ -17,12 +17,11 @@ name := "scenter-analytics-spark"
 
 version := "0.0.1-SNAPSHOT"
 
-scalaVersion := "2.11.7"
+scalaVersion := "2.11.8"
 
-val Spark = "1.5.2"
-val CassandraConnector = "1.5.0"
-val CassandraHost = "109.234.39.32"
-val Akka = "2.4.2"
+val Spark = "1.6.1"
+val CassandraConnector = "1.6.0-M2"
+val CassandraHost = "192.168.0.182"
 
 enablePlugins(DockerPlugin)
 
@@ -82,7 +81,9 @@ buildOptions in docker := BuildOptions(cache = false,
 
 resolvers ++= Seq(
   "Sonatype snapshots" at "http://oss.sonatype.org/content/repositories/snapshots/",
-  "Sonatype" at "https://oss.sonatype.org/content/groups/public/")
+  "Sonatype" at "https://oss.sonatype.org/content/groups/public/",
+  "haghard-bintray"  at "http://dl.bintray.com/haghard/releases/"
+)
 
 val sparkDependencyScope = "provided"
 
@@ -95,9 +96,9 @@ libraryDependencies ++= Seq(
 
   "org.mindrot"             %  "jbcrypt"                        % "0.3m",
 
-  "com.haghard"             %% "nosql-join-stream"              % "0.1.15",
+  "com.haghard"             %% "nosql-join-stream"              % "0.1.16",
 
-  "com.softwaremill.akka-http-session"  %%  "core"              % "0.2.4",
+  "com.softwaremill.akka-http-session"  %%  "core"              % "0.2.5",
 
   "com.typesafe.akka"       %% "akka-slf4j"                     % "2.4.2",
   "ch.qos.logback"          %  "logback-classic"                % "1.1.2",
