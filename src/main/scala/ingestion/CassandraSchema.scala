@@ -41,11 +41,10 @@ trait CassandraSchema {
       }.one()
     }
 
-
     con.withSessionDo {
       _.execute(s"""CREATE TABLE IF NOT EXISTS ${keySpace}.campaign (
-              | campaign_id text,
-              | description text,
+              | campaign_id varchar,
+              | description varchar,
               | PRIMARY KEY (campaign_id));
         """.stripMargin)
     }.one()
@@ -72,9 +71,7 @@ trait CassandraSchema {
                     | score int,
                     | score_line text,
                     | seq_number bigint,
-                    | PRIMARY KEY ((period, team), date)
-                    | ) WITH CLUSTERING ORDER BY (date DESC);
-                     """.stripMargin)
+                    | PRIMARY KEY ((period, team), date)) WITH CLUSTERING ORDER BY (date DESC); """.stripMargin)
     }.one()
 
 
@@ -91,8 +88,7 @@ trait CassandraSchema {
     */
     con.withSessionDo {
       _.execute(
-        s"""
-           |CREATE TABLE NOT EXISTS $keySpace.${table2} (
+        s"""CREATE TABLE NOT EXISTS $keySpace.${table2} (
            |      period text,
            |      time timestamp,
            |      name text,
@@ -114,8 +110,7 @@ trait CassandraSchema {
            |      threepma text,
            |      to0 int,
            |      totalreb int,
-           |      PRIMARY KEY (period, time, name)
-           |    ) WITH CLUSTERING ORDER BY (time ASC, name ASC);
+           |      PRIMARY KEY (period, time, name)) WITH CLUSTERING ORDER BY (time ASC, name ASC);
          """.stripMargin)
     }.one()
 
@@ -132,8 +127,7 @@ trait CassandraSchema {
     */
     con.withSessionDo {
       _.execute(
-        s"""
-           |CREATE TABLE NOT EXISTS $keySpace.${table3} (
+        s"""CREATE TABLE NOT EXISTS $keySpace.${table3} (
            |        name text,
            |        period text,
            |        team text,
@@ -155,9 +149,7 @@ trait CassandraSchema {
            |        threepma text,
            |        to0 int,
            |        totalreb int,
-           |        PRIMARY KEY ((name, period, team), time)
-           |     ) WITH CLUSTERING ORDER BY (time ASC);
-         """.stripMargin)
+           |        PRIMARY KEY ((name, period, team), time)) WITH CLUSTERING ORDER BY (time ASC);""".stripMargin)
     }.one()
 
     /*
@@ -173,8 +165,7 @@ trait CassandraSchema {
 
     con.withSessionDo {
       _.execute(
-        s"""
-           |CREATE TABLE CREATE TABLE NOT EXISTS $keySpace.${table4} (
+        s""" CREATE TABLE CREATE TABLE NOT EXISTS $keySpace.${table4} (
            |        period text,
            |        opponents text,
            |        year int,
@@ -184,8 +175,7 @@ trait CassandraSchema {
            |        guest_score int,
            |        score_line text,
            |        guest_score_line text,
-           |        PRIMARY KEY ((period), year, month, day, opponents)
-           |    ) WITH CLUSTERING ORDER BY (year DESC, month DESC, day DESC, opponents ASC);
+           |        PRIMARY KEY ((period), year, month, day, opponents)) WITH CLUSTERING ORDER BY (year DESC, month DESC, day DESC, opponents ASC);
          """.stripMargin)
     }.one()
   }
