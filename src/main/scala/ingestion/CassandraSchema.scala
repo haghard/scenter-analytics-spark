@@ -27,18 +27,16 @@ trait CassandraSchema {
                     teams: scala.collection.mutable.HashMap[String, String]) = {
     val con = new CassandraConnector(CassandraConnectorConf(conf))
 
-    println(table1 + table2 + table3 + table4)
-
     con.withSessionDo {
       _.execute(s"""CREATE TABLE IF NOT EXISTS ${keySpace}.teams (processor_id text, description text, PRIMARY KEY (processor_id))""")
     }.one()
 
-    /*
+
     for (kv <- teams) {
       con.withSessionDo {
         _.execute(s"INSERT INTO ${keySpace}.teams (processor_id, description) VALUES (?, ?) IF NOT EXISTS", kv._1, kv._2)
       }.one()
-    }*/
+    }
 
     con.withSessionDo {
       _.execute(s"""CREATE TABLE IF NOT EXISTS ${keySpace}.campaign (campaign_id text, description text, PRIMARY KEY (campaign_id))""")
@@ -66,7 +64,7 @@ trait CassandraSchema {
                     | score int,
                     | score_line text,
                     | seq_number bigint,
-                    | PRIMARY KEY ((period, team), date)) WITH CLUSTERING ORDER BY (date DESC); """.stripMargin)
+                    | PRIMARY KEY ((period, team), date)) WITH CLUSTERING ORDER BY (date DESC)""".stripMargin)
     }.one()
 
 
@@ -82,30 +80,29 @@ trait CassandraSchema {
 
     */
     con.withSessionDo {
-      _.execute(
-        s"""CREATE TABLE NOT EXISTS $keySpace.${table2} (
-           |      period text,
-           |      time timestamp,
-           |      name text,
-           |      ast int,
-           |      ba int,
-           |      blockshoot int,
-           |      defreb int,
-           |      fgma text,
-           |      ftma text,
-           |      min text,
-           |      minusslashplus text,
-           |      offreb int,
-           |      opponent text,
-           |      pf int,
-           |      pos text,
-           |      pts int,
-           |      steel int,
-           |      team text,
-           |      threepma text,
-           |      to0 int,
-           |      totalreb int,
-           |      PRIMARY KEY (period, time, name)) WITH CLUSTERING ORDER BY (time ASC, name ASC);
+      _.execute(s"""CREATE TABLE IF NOT EXISTS $keySpace.${table2} (
+           | period text,
+           | time timestamp,
+           | name text,
+           | ast int,
+           | ba int,
+           | blockshoot int,
+           | defreb int,
+           | fgma text,
+           | ftma text,
+           | min text,
+           | minusslashplus text,
+           | offreb int,
+           | opponent text,
+           | pf int,
+           | pos text,
+           | pts int,
+           | steel int,
+           | team text,
+           | threepma text,
+           | to0 int,
+           | totalreb int,
+           | PRIMARY KEY (period, time, name)) WITH CLUSTERING ORDER BY (time ASC, name ASC)
          """.stripMargin)
     }.one()
 
@@ -121,8 +118,7 @@ trait CassandraSchema {
 
     */
     con.withSessionDo {
-      _.execute(
-        s"""CREATE TABLE NOT EXISTS $keySpace.${table3} (
+      _.execute(s"""CREATE TABLE IF NOT EXISTS $keySpace.${table3} (
            |        name text,
            |        period text,
            |        team text,
@@ -144,7 +140,7 @@ trait CassandraSchema {
            |        threepma text,
            |        to0 int,
            |        totalreb int,
-           |        PRIMARY KEY ((name, period, team), time)) WITH CLUSTERING ORDER BY (time ASC);""".stripMargin)
+           |        PRIMARY KEY ((name, period, team), time)) WITH CLUSTERING ORDER BY (time ASC)""".stripMargin)
     }.one()
 
     /*
@@ -160,7 +156,7 @@ trait CassandraSchema {
 
     con.withSessionDo {
       _.execute(
-        s""" CREATE TABLE CREATE TABLE NOT EXISTS $keySpace.${table4} (
+        s"""CREATE TABLE IF NOT EXISTS $keySpace.${table4} (
            |        period text,
            |        opponents text,
            |        year int,
@@ -170,7 +166,7 @@ trait CassandraSchema {
            |        guest_score int,
            |        score_line text,
            |        guest_score_line text,
-           |        PRIMARY KEY ((period), year, month, day, opponents)) WITH CLUSTERING ORDER BY (year DESC, month DESC, day DESC, opponents ASC);
+           |        PRIMARY KEY ((period), year, month, day, opponents)) WITH CLUSTERING ORDER BY (year DESC, month DESC, day DESC, opponents ASC)
          """.stripMargin)
     }.one()
   }
