@@ -37,7 +37,7 @@ trait CassandraSchema {
 
     for (kv <- teams) {
       con.withSessionDo {
-        _.execute(s"""INSERT INTO ${keySpace}.teams (processor_id, description) VALUES (?, ?) IF NOT EXISTS;""", kv._1, kv._2)
+        _.execute(s"INSERT INTO ${keySpace}.teams (processor_id, description) VALUES (?, ?) IF NOT EXISTS;", kv._1, kv._2)
       }.one()
     }
 
