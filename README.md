@@ -14,15 +14,10 @@ Get docker image
 `docker pull haghard/scenter-analytics-spark:v0.2`
 
 
-Run docker image in interactive mode
+Run with docker
 ================
 
-`docker run --net="host" -it haghard/scenter-analytics-spark:v0.1 --HTTP_PORT=8001 --DB_HOSTS=192.168.0.xxx` 
-
-
-By default server is going to bind on "eth0" enterface. If you need to change it you should pass additional parameter --NET_INTERFACE
-
-`docker run --net="host" -it haghard/scenter-analytics-spark:v0.1 --HTTP_PORT=8001 --DB_HOSTS=192.168.0.xxx --NET_INTERFACE=en0`
+`docker run -d -p 8080:8080 haghard/scenter-analytics-spark:v0.2 --HTTP_PORT=8080 --DB_HOSTS=109.234.39.32 --DOMAIN=192.168.0.182 --TWITTER_CONSUMER_KEY=<...> --TWITTER_CONSUMER_SECRET=<...> --GOOGLE_CONSUMER_KEY=<...> --GOOGLE_CONSUMER_SECRET=<...> --GITHUB_CONSUMER_KEY=<...> --GITHUB_CONSUMER_SECRET=<...>` 
 
 
 Example routes
