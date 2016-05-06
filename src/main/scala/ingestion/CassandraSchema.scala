@@ -33,11 +33,12 @@ trait CassandraSchema {
       _.execute(s"""CREATE TABLE IF NOT EXISTS ${keySpace}.teams (processor_id text, description text, PRIMARY KEY (processor_id))""")
     }.one()
 
+    /*
     for (kv <- teams) {
       con.withSessionDo {
         _.execute(s"INSERT INTO ${keySpace}.teams (processor_id, description) VALUES (?, ?) IF NOT EXISTS", kv._1, kv._2)
       }.one()
-    }
+    }*/
 
     con.withSessionDo {
       _.execute(s"""CREATE TABLE IF NOT EXISTS ${keySpace}.campaign (campaign_id text, description text, PRIMARY KEY (campaign_id))""")
