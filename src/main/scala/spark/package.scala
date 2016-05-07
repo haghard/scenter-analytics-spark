@@ -17,15 +17,14 @@ package object spark {
   trait SparkQuery {
     def name: String
 
-    def createSparkContext(config: Config, cassandraHost: String, driverHost: String) =
+    def createSparkContext(config: Config, cassandraHost: String) =
       new SparkContext(new SparkConf()
         .setAppName(name)
         .set("spark.cassandra.connection.host", cassandraHost)
-        .set("spark.driver.hostname", driverHost)
         .set("spark.cassandra.connection.timeout_ms", "8000")
         .set("spark.cleaner.ttl", "3600")
         .set("spark.eventLog.dir", "spark-logs")
-        //.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
+        .set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
         .set("spark.akka.frameSize", "50")
         .set("spark.default.parallelism", "4")
         .set("spark.streaming.backpressure.enabled", "true")
