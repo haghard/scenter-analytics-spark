@@ -24,7 +24,7 @@ package object spark {
         .set("spark.cassandra.connection.timeout_ms", "8000")
         .set("spark.cleaner.ttl", "3600")
         .set("spark.eventLog.dir", "spark-logs")
-        .set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
+        //.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
         .set("spark.akka.frameSize", "50")
         .set("spark.default.parallelism", "4")
         .set("spark.streaming.backpressure.enabled", "true")
