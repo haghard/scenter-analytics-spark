@@ -17,10 +17,11 @@ package object spark {
   trait SparkQuery {
     def name: String
 
-    def createSparkContext(config: Config, host: String) =
+    def createSparkContext(config: Config, cassandraHost: String, driverHost: String) =
       new SparkContext(new SparkConf()
         .setAppName(name)
-        .set("spark.cassandra.connection.host", host)
+        .set("spark.cassandra.connection.host", cassandraHost)
+        .set("spark.driver.host", driverHost)
         .set("spark.cassandra.connection.timeout_ms", "8000")
         .set("spark.cleaner.ttl", "3600")
         .set("spark.eventLog.dir", "spark-logs")

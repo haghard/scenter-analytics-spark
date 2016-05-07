@@ -295,7 +295,7 @@ package object http {
 
     lazy val context = new SparkQuery {
       override val name = "scenter-analytics"
-    }.createSparkContext(config, config.getString("db.cassandra.seeds").split(",")(0))
+    }.createSparkContext(config, config.getString("db.cassandra.seeds").split(",")(0), domain)
 
     override def startup(): Unit = {
       system
