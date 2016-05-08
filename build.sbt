@@ -73,7 +73,7 @@ assemblyExcludedJars in assembly := {
 }
 
 imageNames in docker := Seq(ImageName(namespace = Some("haghard"),
-  repository = "scenter-analytics-spark", tag = Some("v0.2")))
+  repository = "scenter-analytics-spark", tag = Some("v0.3")))
 
 buildOptions in docker := BuildOptions(cache = false,
   removeIntermediateContainers = BuildOptions.Remove.Always,
@@ -199,6 +199,6 @@ javacOptions ++= Seq(
 
 //docker
 
-//docker run --net="host" -d haghard/scenter-analytics-spark:v0.1 --HTTP_PORT=8001 --DB_HOSTS=192.168.0.xxx
+//docker run --net="host" -d haghard/scenter-analytics-spark:v0.2 --HTTP_PORT=8001 --DB_HOSTS=192.168.0.xxx
 
 //dependencyBrowseGraph
