@@ -1,31 +1,17 @@
 import sbt._
-import com.typesafe.sbt.SbtScalariform.ScalariformKeys
-import com.typesafe.sbt.SbtScalariform._
 import sbtdocker.ImageName
-import scalariform.formatter.preferences._
-
-scalariformSettings
-
-ScalariformKeys.preferences := ScalariformKeys.preferences.value
-  .setPreference(RewriteArrowSymbols, true)
-  .setPreference(AlignParameters, true)
-  .setPreference(AlignSingleLineCaseStatements, true)
 
 organization := "github.com/haghard"
-
 name := "scenter-analytics-spark"
-
 version := "0.0.1-SNAPSHOT"
-
 scalaVersion := "2.11.8"
 
 val Spark = "1.6.1"
-val CassandraConnector = "1.6.0-M2"
-val CassandraHost = "192.168.0.182"
+val CassandraConnector = "1.6.0"
 
 enablePlugins(DockerPlugin)
 
-assemblyJarName in assembly := "scenter-analytics-spark.jar"
+assemblyJarName in assembly := "scenter-spark-analytics.jar"
 
 parallelExecution in Test := false
 
@@ -52,7 +38,6 @@ promptTheme := ScalapenosTheme
 
 val duplicates = Seq("Absent.class", "Function.class", "Optional$1$1.class", "Optional$1.class", "Optional.class", "Present.class", "Supplier.class")
 
-//http://blog.prabeeshk.com/blog/2014/04/08/creating-uber-jar-for-spark-project-using-sbt-assembly/
 assemblyMergeStrategy in assembly := {
   case PathList("javax", "servlet", xs @ _*) => MergeStrategy.last
   case PathList("org", "apache", xs @ _*) => MergeStrategy.last
@@ -73,7 +58,7 @@ assemblyExcludedJars in assembly := {
 }
 
 imageNames in docker := Seq(ImageName(namespace = Some("haghard"),
-  repository = "scenter-analytics-spark", tag = Some("v0.3")))
+  repository = "scenter-spark-analytics", tag = Some("v0.3")))
 
 buildOptions in docker := BuildOptions(cache = false,
   removeIntermediateContainers = BuildOptions.Remove.Always,

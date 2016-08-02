@@ -14,7 +14,8 @@ class SparkQuerySupervisor extends Actor with ActorLogging {
 
   override val supervisorStrategy = OneForOneStrategy() {
     case reason: Exception ⇒
-      log.debug("SparkJobSupervisor has caught unexpected error: {}", reason.getMessage)
+      log.debug("SparkJobSupervisor has caught unexpected error: {}",
+                reason.getMessage)
       Stop
   }
 

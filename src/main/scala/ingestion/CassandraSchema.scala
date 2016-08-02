@@ -6,46 +6,108 @@ import org.apache.spark.SparkConf
 
 /*
   CREATE KEYSPACE sport_center WITH replication = {'class': 'NetworkTopologyStrategy', 'east': '2', 'west': '2'}  AND durable_writes = true;
-*/
+ */
 trait CassandraSchema {
 
-  lazy val resultColumns =
-    SomeColumns("period", "team", "score_line", "score", "opponent", "opponent_score_line", "opponent_score", "date", "seq_number")
+  lazy val resultColumns = SomeColumns("period",
+                                       "team",
+                                       "score_line",
+                                       "score",
+                                       "opponent",
+                                       "opponent_score_line",
+                                       "opponent_score",
+                                       "date",
+                                       "seq_number")
 
-  lazy val leadersColumns =
-    SomeColumns("period", "name", "pos", "min", "fgma", "threepma", "ftma", "minusslashplus", "offreb", "defreb", "totalreb", "ast", "pf", "steel", "to0", "blockshoot", "ba", "pts",
-    "team", "opponent", "time")
+  lazy val leadersColumns = SomeColumns("period",
+                                        "name",
+                                        "pos",
+                                        "min",
+                                        "fgma",
+                                        "threepma",
+                                        "ftma",
+                                        "minusslashplus",
+                                        "offreb",
+                                        "defreb",
+                                        "totalreb",
+                                        "ast",
+                                        "pf",
+                                        "steel",
+                                        "to0",
+                                        "blockshoot",
+                                        "ba",
+                                        "pts",
+                                        "team",
+                                        "opponent",
+                                        "time")
 
-  lazy val playerColumns =
-    SomeColumns("name", "period", "team", "time", "pos", "min", "fgma", "threepma", "ftma", "minusslashplus", "offreb", "defreb", "totalreb",
-    "ast", "pf", "steel", "to0", "blockshoot", "ba", "pts", "opponent")
+  lazy val playerColumns = SomeColumns("name",
+                                       "period",
+                                       "team",
+                                       "time",
+                                       "pos",
+                                       "min",
+                                       "fgma",
+                                       "threepma",
+                                       "ftma",
+                                       "minusslashplus",
+                                       "offreb",
+                                       "defreb",
+                                       "totalreb",
+                                       "ast",
+                                       "pf",
+                                       "steel",
+                                       "to0",
+                                       "blockshoot",
+                                       "ba",
+                                       "pts",
+                                       "opponent")
 
-  lazy val dailyResColumns =
-    SomeColumns("period", "opponents", "year", "month", "day", "score", "guest_score", "score_line", "guest_score_line")
+  lazy val dailyResColumns = SomeColumns("period",
+                                         "opponents",
+                                         "year",
+                                         "month",
+                                         "day",
+                                         "score",
+                                         "guest_score",
+                                         "score_line",
+                                         "guest_score_line")
 
-  def installSchema(conf: SparkConf, keySpace: String, table1: String, table2: String, table3: String, table4: String,
-                    teams: scala.collection.mutable.HashMap[String, String]) = {
+  def installSchema(
+      conf: SparkConf,
+      keySpace: String,
+      table1: String,
+      table2: String,
+      table3: String,
+      table4: String,
+      teams: scala.collection.mutable.HashMap[String, String]) = {
     val con = new CassandraConnector(CassandraConnectorConf(conf))
 
     con.withSessionDo {
-      _.execute(s"""CREATE TABLE IF NOT EXISTS ${keySpace}.teams (processor_id text, description text, PRIMARY KEY (processor_id))""")
-    }.one()
-
+      _.execute(
+          s"""CREATE TABLE IF NOT EXISTS ${keySpace}.teams (processor_id text, description text, PRIMARY KEY (processor_id))""")
+    }
 
     for (kv <- teams) {
       con.withSessionDo {
-        _.execute(s"INSERT INTO ${keySpace}.teams (processor_id, description) VALUES (?, ?) IF NOT EXISTS", kv._1, kv._2)
-      }.one()
+        _.execute(
+            s"INSERT INTO ${keySpace}.teams (processor_id, description) VALUES (?, ?) IF NOT EXISTS",
+            kv._1,
+            kv._2)
+      }
     }
 
     con.withSessionDo {
-      _.execute(s"""CREATE TABLE IF NOT EXISTS ${keySpace}.campaign (campaign_id text, description text, PRIMARY KEY (campaign_id))""")
-    }.one()
+      _.execute(
+          s"""CREATE TABLE IF NOT EXISTS ${keySpace}.campaign (campaign_id text, description text, PRIMARY KEY (campaign_id))""")
+    }
 
     con.withSessionDo {
-      _.execute(s"""INSERT INTO ${keySpace}.campaign (campaign_id, description) VALUES (?, ?);""", "nba", "desc")
-    }.one()
-
+      _.execute(
+          s"""INSERT INTO ${keySpace}.campaign (campaign_id, description) VALUES (?, ?);""",
+          "nba",
+          "desc")
+    }
 
     /*
                        +------------------+------------------------+
@@ -70,15 +132,14 @@ trait CassandraSchema {
                     | score_line text,
                     | seq_number bigint,
                     | PRIMARY KEY ((period, team), date)) WITH CLUSTERING ORDER BY (date DESC)""".stripMargin)
-    }.one()
-
+    }
 
     /*
-                   +--------------------+--------------------+
-                   |26Apr2015:J.Wall:pos|26Apr2015:J.Wall:min|
-      +------------+--------------------+--------------------+
-      |season-15-16|         guard      |      35:23         |
-      +------------+--------------------+--------------------+
+                       +--------------------+--------------------+
+                       |26Apr2015:J.Wall:pos|26Apr2015:J.Wall:min|
+      +----------------+--------------------+--------------------+
+      |season-15-16:was|         guard      |      35:23         |
+      +----------------+--------------------+--------------------+
 
 
     select name, team, pts from leaders_by_period where period = 'season-12-13' LIMIT 10;
@@ -109,7 +170,7 @@ trait CassandraSchema {
            | totalreb int,
            | PRIMARY KEY (period, time, name)) WITH CLUSTERING ORDER BY (time ASC, name ASC)
          """.stripMargin)
-    }.one()
+    }
 
     /*
 
@@ -121,7 +182,7 @@ trait CassandraSchema {
 
      select name, pts, team, opponent, time from player_by_period_team where name = 'S. Curry' and period = 'season-12-13' and team = 'gsw';
 
-    */
+     */
     con.withSessionDo {
       _.execute(s"""CREATE TABLE IF NOT EXISTS $keySpace.${table3} (
            |        name text,
@@ -146,7 +207,7 @@ trait CassandraSchema {
            |        to0 int,
            |        totalreb int,
            |        PRIMARY KEY ((name, period, team), time)) WITH CLUSTERING ORDER BY (time ASC)""".stripMargin)
-    }.one()
+    }
 
     /*
 
@@ -160,8 +221,7 @@ trait CassandraSchema {
     */
 
     con.withSessionDo {
-      _.execute(
-        s"""CREATE TABLE IF NOT EXISTS $keySpace.${table4} (
+      _.execute(s"""CREATE TABLE IF NOT EXISTS $keySpace.${table4} (
            |        period text,
            |        opponents text,
            |        year int,
@@ -173,6 +233,6 @@ trait CassandraSchema {
            |        guest_score_line text,
            |        PRIMARY KEY ((period), year, month, day, opponents)) WITH CLUSTERING ORDER BY (year DESC, month DESC, day DESC, opponents ASC)
          """.stripMargin)
-    }.one()
+    }
   }
 }

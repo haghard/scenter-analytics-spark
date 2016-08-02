@@ -8,7 +8,8 @@ object Bootstrap extends App {
   val opt = """--(\S+)=(\S+)""".r
   val DefaultEth = "eth0"
 
-  def argsToProps(args: Array[String]) = args.collect { case opt(key, value) ⇒ key -> value }(breakOut)
+  def argsToProps(args: Array[String]) =
+    args.collect { case opt(key, value) ⇒ key -> value }(breakOut)
 
   def applySystemProperties(args: Array[String]) = {
     for ((key, value) ← argsToProps(args)) {
@@ -20,8 +21,11 @@ object Bootstrap extends App {
   if (args.size > 0)
     applySystemProperties(args)
 
-  val httpP = Try(System.getProperty(HTTP_PORT).toInt).getOrElse(DefaultHttpPort)
-  val eth = Option(System.getProperty(NET_INTERFACE)).filter(_ != "null").getOrElse(DefaultEth)
+  val httpP =
+    Try(System.getProperty(HTTP_PORT).toInt).getOrElse(DefaultHttpPort)
+  val eth = Option(System.getProperty(NET_INTERFACE))
+    .filter(_ != "null")
+    .getOrElse(DefaultEth)
 
   /*
   import scalaz._, Scalaz._
@@ -33,22 +37,30 @@ object Bootstrap extends App {
   }
 
   val routes = (rest.api1 |@| rest.api2)((a, b) ⇒ (ec: ExecutionContext) ⇒ a(ec) ~ b(ec))
-  */
+   */
 
   //https://github.com/akka/akka/blob/master/akka-http-tests/src/test/scala/akka/http/scaladsl/server/directives/SecurityDirectivesSpec.scala
 
-  object SparkAnalytics extends MicroKernel(httpPort = httpP, ethName = eth) with DailyResultsRouter {
+  object SparkAnalytics
+      extends MicroKernel(httpPort = httpP, ethName = eth)
+      with DailyResultsRouter {
     implicit val timeout = akka.util.Timeout(30 seconds)
     override val environment = "Spark"
 
-    override lazy val googleApiKey = system.settings.config.getString("google.consumer-key")
-    override lazy val googleApiSecret = system.settings.config.getString("google.consumer-secret")
+    override lazy val googleApiKey =
+      system.settings.config.getString("google.consumer-key")
+    override lazy val googleApiSecret =
+      system.settings.config.getString("google.consumer-secret")
 
-    override lazy val twitterApiKey = system.settings.config.getString("twitter.consumer-key")
-    override lazy val twitterApiSecret = system.settings.config.getString("twitter.consumer-secret")
+    override lazy val twitterApiKey =
+      system.settings.config.getString("twitter.consumer-key")
+    override lazy val twitterApiSecret =
+      system.settings.config.getString("twitter.consumer-secret")
 
-    override lazy val githubApiKey = system.settings.config.getString("github.consumer-key")
-    override lazy val githubApiSecret = system.settings.config.getString("github.consumer-secret")
+    override lazy val githubApiKey =
+      system.settings.config.getString("github.consumer-key")
+    override lazy val githubApiSecret =
+      system.settings.config.getString("github.consumer-secret")
   }
 
   SparkAnalytics.startup
