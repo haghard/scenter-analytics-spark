@@ -9,69 +9,15 @@ import org.apache.spark.SparkConf
  */
 trait CassandraSchema {
 
-  lazy val resultColumns = SomeColumns("period",
-                                       "team",
-                                       "score_line",
-                                       "score",
-                                       "opponent",
-                                       "opponent_score_line",
-                                       "opponent_score",
-                                       "date",
-                                       "seq_number")
+  lazy val resultColumns = SomeColumns("period", "team", "score_line", "score", "opponent", "opponent_score_line", "opponent_score", "date", "seq_number")
 
-  lazy val leadersColumns = SomeColumns("period",
-                                        "name",
-                                        "pos",
-                                        "min",
-                                        "fgma",
-                                        "threepma",
-                                        "ftma",
-                                        "minusslashplus",
-                                        "offreb",
-                                        "defreb",
-                                        "totalreb",
-                                        "ast",
-                                        "pf",
-                                        "steel",
-                                        "to0",
-                                        "blockshoot",
-                                        "ba",
-                                        "pts",
-                                        "team",
-                                        "opponent",
-                                        "time")
+  lazy val leadersColumns = SomeColumns("period", "name", "pos", "min", "fgma", "threepma", "ftma", "minusslashplus", "offreb", "defreb", "totalreb", "ast", "pf", "steel",
+                                        "to0", "blockshoot", "ba", "pts", "team", "opponent", "time")
 
-  lazy val playerColumns = SomeColumns("name",
-                                       "period",
-                                       "team",
-                                       "time",
-                                       "pos",
-                                       "min",
-                                       "fgma",
-                                       "threepma",
-                                       "ftma",
-                                       "minusslashplus",
-                                       "offreb",
-                                       "defreb",
-                                       "totalreb",
-                                       "ast",
-                                       "pf",
-                                       "steel",
-                                       "to0",
-                                       "blockshoot",
-                                       "ba",
-                                       "pts",
-                                       "opponent")
+  lazy val playerColumns = SomeColumns("name", "period", "team", "time", "pos", "min", "fgma", "threepma", "ftma", "minusslashplus", "offreb", "defreb", "totalreb", "ast", "pf", "steel", "to0",
+                                       "blockshoot", "ba", "pts", "opponent")
 
-  lazy val dailyResColumns = SomeColumns("period",
-                                         "opponents",
-                                         "year",
-                                         "month",
-                                         "day",
-                                         "score",
-                                         "guest_score",
-                                         "score_line",
-                                         "guest_score_line")
+  lazy val dailyResColumns = SomeColumns("period", "opponents", "year", "month", "day", "score", "guest_score", "score_line", "guest_score_line")
 
   def installSchema(
       conf: SparkConf,
@@ -217,15 +163,15 @@ trait CassandraSchema {
      |season-15-16|89                        |89                              | 67                       |
      +---------------------------------------+-----------------------------------------------------------+
 
-    select * from daily_results where period = 'season-12-13' and year=2012  and month=11 and day=29;
+    select * from daily_results where period = 'season-12-13' and year=2012 and month=11 and day=29;
     */
 
     con.withSessionDo {
       _.execute(s"""CREATE TABLE IF NOT EXISTS $keySpace.${table4} (
            |        period text,
-           |        opponents text,
            |        year int,
            |        month int,
+           |        opponents text,
            |        day int,
            |        score int,
            |        guest_score int,

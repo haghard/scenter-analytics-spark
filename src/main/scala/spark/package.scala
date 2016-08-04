@@ -80,10 +80,8 @@ package object spark {
   }
 
   object DailyResultsQuery {
-    @implicitNotFound(
-        msg = "Cannot find DailyResultsQuery type class for ${T}")
-    def apply[T <: SparkQueryView: DailyResultsQuery](
-        implicit ex: ExecutionContext) = implicitly[DailyResultsQuery[T]]
+    @implicitNotFound(msg = "Cannot find DailyResultsQuery type class for ${T}")
+    def apply[T <: SparkQueryView: DailyResultsQuery](implicit ex: ExecutionContext) = implicitly[DailyResultsQuery[T]]
 
     implicit def teamStats(implicit ex: ExecutionContext) =
       new DailyResultsQuery[DailyView] {
@@ -97,24 +95,13 @@ package object spark {
             arenas: Seq[(String, String)],
             teams: mutable.HashMap[String, String]): Future[DailyView] = {
           val startTs = System.currentTimeMillis()
-          val results = ctx
-            .cassandraDailyResults(config,
-                                   stage,
-                                   yyyyMMDD._1,
-                                   yyyyMMDD._2,
-                                   yyyyMMDD._3)
-            .cache()
+          val results = ctx.cassandraDailyResults(config, stage, yyyyMMDD._1, yyyyMMDD._2, yyyyMMDD._3).cache()
           results.collectAsync().map { seq =>
             val results = seq.map { el =>
-              ResultView(
-                  s" ${el._2} @ ${el._1}",
-                  s"${el._7}:${el._5} - ${el._6}:${el._4}",
-                  cassandra.formatter.format(el._3),
-                  arenas.find(_._1 == el._1.trim).map(_._2).getOrElse(el._1))
+              ResultView(s" ${el._2} @ ${el._1}", s"${el._7}:${el._5} - ${el._6}:${el._4}", cassandra.formatter.format(el._3),
+                arenas.find(_._1 == el._1.trim).map(_._2).getOrElse(el._1))
             }
-            DailyView(results.size,
-                      results.toList,
-                      System.currentTimeMillis() - startTs)
+            DailyView(results.size, results.toList, System.currentTimeMillis - startTs)
           }
         }
       }
@@ -122,8 +109,7 @@ package object spark {
 
   object TeamsResultsQuery {
 
-    @implicitNotFound(
-        msg = "Cannot find TeamsResultsQuery type class for ${T}")
+    @implicitNotFound(msg = "Cannot find TeamsResultsQuery type class for ${T}")
     def apply[T <: SparkQueryView: TeamsResultsQuery](
         implicit ex: ExecutionContext) = implicitly[TeamsResultsQuery[T]]
 
@@ -135,8 +121,7 @@ package object spark {
                            period: String,
                            teams: scala.collection.Seq[String],
                            arenas: Seq[(String, String)],
-                           allTeams: mutable.HashMap[String, String])
-          : Future[TeamStatsView] = {
+                           allTeams: mutable.HashMap[String, String]): Future[TeamStatsView] = {
           val sqlContext = new SQLContext(ctx)
           import sqlContext.implicits._
           val startTs = System.currentTimeMillis()
@@ -144,9 +129,7 @@ package object spark {
           val keyTeamsDF = ctx.parallelize(teams).toDF("team")
           val arenasDF = ctx.parallelize(arenas).toDF("home-team", "arena")
 
-          val resultsDF = ctx
-            .cassandraResultByPeriodRdd(config, allTeams.keySet, period)
-            .cache()
+          val resultsDF = ctx.cassandraResultByPeriodRdd(config, allTeams.keySet, period)
             .toDF("home-team", "home-score", "away-team", "away-score", "date")
 
           ((keyTeamsDF join (resultsDF, resultsDF("home-team") === keyTeamsDF(
@@ -161,10 +144,7 @@ package object spark {
                   row.getAs[String]("arena"))
             }
             .collectAsync()
-            .map(res ⇒
-                  TeamStatsView(res.size,
-                                res.toList,
-                                System.currentTimeMillis() - startTs))
+            .map(res ⇒ TeamStatsView(res.size, res.toList, System.currentTimeMillis - startTs))
         }
       }
   }
