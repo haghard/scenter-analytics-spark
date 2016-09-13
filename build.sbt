@@ -83,7 +83,8 @@ libraryDependencies ++= Seq(
 
   "com.haghard"             %% "nosql-join-stream"              % "0.1.17",
 
-  "com.softwaremill.akka-http-session"  %%  "core"              % "0.2.5",
+  "com.softwaremill.akka-http-session"  %%  "core"              % "0.2.7",
+  "com.github.swagger-akka-http"        %% "swagger-akka-http"  % "0.7.2",
 
   "com.typesafe.akka"       %% "akka-slf4j"                     % "2.4.2",
   "ch.qos.logback"          %  "logback-classic"                % "1.1.2",
