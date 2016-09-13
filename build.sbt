@@ -54,7 +54,7 @@ assemblyMergeStrategy in assembly := {
 
 assemblyExcludedJars in assembly := {
   val cp = (fullClasspath in assembly).value
-  cp filter { n => n.data.getName == "metrics-core-3.0.2.jar" }
+  cp filter { n => n.data.getName == "metrics-core-3.0.2.jar" || n.data.getName == "jersey-core-1.9.jar" }
 }
 
 imageNames in docker := Seq(ImageName(namespace = Some("haghard"),
