@@ -110,40 +110,31 @@ package object spark {
   object TeamsResultsQuery {
 
     @implicitNotFound(msg = "Cannot find TeamsResultsQuery type class for ${T}")
-    def apply[T <: SparkQueryView: TeamsResultsQuery](
-        implicit ex: ExecutionContext) = implicitly[TeamsResultsQuery[T]]
+    def apply[T <: SparkQueryView: TeamsResultsQuery](implicit ex: ExecutionContext) = implicitly[TeamsResultsQuery[T]]
 
     implicit def teamStats(implicit ex: ExecutionContext) =
       new TeamsResultsQuery[TeamStatsView] {
         override val name: String = "[spark-query]: team-stats"
-        override def async(ctx: SparkContext,
-                           config: Config,
-                           period: String,
-                           teams: scala.collection.Seq[String],
-                           arenas: Seq[(String, String)],
+        override def async(ctx: SparkContext, config: Config, period: String,
+                           teams: scala.collection.Seq[String], arenas: Seq[(String, String)],
                            allTeams: mutable.HashMap[String, String]): Future[TeamStatsView] = {
           val sqlContext = new SQLContext(ctx)
           import sqlContext.implicits._
-          val startTs = System.currentTimeMillis()
+          val startTs = System.currentTimeMillis
 
           val keyTeamsDF = ctx.parallelize(teams).toDF("team")
           val arenasDF = ctx.parallelize(arenas).toDF("home-team", "arena")
 
-          val resultsDF = ctx.cassandraResultByPeriodRdd(config, allTeams.keySet, period)
-            .toDF("home-team", "home-score", "away-team", "away-score", "date")
+          val resultsDF = ctx.cassandraResultByPeriodRdd(config, allTeams.keySet, period).toDF("home-team", "home-score", "away-team", "away-score", "date")
 
-          ((keyTeamsDF join (resultsDF, resultsDF("home-team") === keyTeamsDF(
-                          "team") || resultsDF("away-team") === keyTeamsDF(
-                          "team"))) join (arenasDF, "home-team"))
+          ((keyTeamsDF join (resultsDF, resultsDF("home-team") === keyTeamsDF("team") || resultsDF("away-team") === keyTeamsDF("team"))) join (arenasDF, "home-team"))
             .sort(resultsDF("date"))
             .map { row: Row ⇒
-              ResultView(
-                  s"${row.getAs[String]("away-team")} @ ${row.getAs[String]("home-team")}",
+              ResultView(s"${row.getAs[String]("away-team")} @ ${row.getAs[String]("home-team")}",
                   s"${row.getAs[Int]("away-score")} : ${row.getAs[Int]("home-score")}",
                   cassandra.formatter.format(row.getAs[java.sql.Date]("date")),
                   row.getAs[String]("arena"))
-            }
-            .collectAsync()
+            }.collectAsync()
             .map(res ⇒ TeamStatsView(res.size, res.toList, System.currentTimeMillis - startTs))
         }
       }
@@ -183,45 +174,14 @@ package object spark {
                            period: String,
                            team: String): Future[PlayerStatsView] = {
           val start = System.currentTimeMillis()
-          val rdd: RDD[
-              (String,
-               Date,
-               String,
-               Int,
-               Int,
-               Int,
-               String,
-               String,
-               String,
-               Int,
-               Int,
-               Int,
-               String,
-               Int)] =
+          val rdd: RDD[(String, Date, String, Int, Int, Int, String, String, String, Int, Int, Int, String, Int)] =
             ctx.cassandraPlayerRdd(config, playerName, period, team).cache()
 
           rdd.collectAsync().map { batch ⇒
             val st = batch
-              .map(
-                  r ⇒
-                    Stats(r._1,
-                          r._2,
-                          r._3,
-                          r._4,
-                          r._5,
-                          r._6,
-                          r._7,
-                          r._8,
-                          r._9,
-                          r._10,
-                          r._11,
-                          r._12,
-                          r._13,
-                          r._14))
+              .map(r ⇒ Stats(r._1, r._2, r._3, r._4, r._5, r._6, r._7, r._8, r._9, r._10, r._11, r._12, r._13, r._14))
               .toList
-            PlayerStatsView(st.length,
-                            stats = st,
-                            System.currentTimeMillis() - start)
+            PlayerStatsView(st.length, stats = st, System.currentTimeMillis() - start)
           }
         }
       }

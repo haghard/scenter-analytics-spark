@@ -1,3 +1,4 @@
+/*
 package http
 
 import java.net.URLDecoder
@@ -45,38 +46,27 @@ object PlayersRouter {
 
 trait PlayersRouter extends LeadersRouter with PlayersProtocol {
   mixin: MicroKernel ⇒
+
   lazy val enc = "utf-8"
   private val playerServicePath = "player"
   private val playerJobSupervisor = system.actorOf(SparkQuerySupervisor.props)
 
   abstract override def configureApi() =
     super.configureApi() ~
-      Api(route = Option { ec: ExecutionContext ⇒
-            dailyRoute(ec)
-          },
-          postAction = Option(
-              () ⇒
-                system.log.info(
+      Api(route = Option { ec: ExecutionContext ⇒ dailyRoute(ec)},
+          postAction = Option(() ⇒ system.log.info(
                     s"\n★ ★ ★ [${playerServicePath}-routes] was stopped on $httpPrefixAddress ★ ★ ★")),
-          urls =
-            s"[$httpPrefixAddress/$pathPrefix/$playerServicePath/pts/{stage}?name=...&period=...&team=... Authorization:...']")
+          urls = s"[$httpPrefixAddress/$pathPrefix/$playerServicePath/pts/{stage}?name=...&period=...&team=... Authorization:...']")
 
   def dailyRoute(implicit ex: ExecutionContext): Route =
     pathPrefix(pathPrefix) {
       path(playerServicePath / "stats") {
         get {
-          parameters(('name.as[String]),
-                     ('period.as[String]),
-                     ('team.as[String])) { (name, period, team) ⇒
+          parameters(('name.as[String]), ('period.as[String]), ('team.as[String])) { (name, period, team) ⇒
             withUri { url ⇒
               requiredHttpSession(ex) { session ⇒
-                system.log.info(
-                    s"[user:${session.user}] access [$httpPrefixAddress/$pathPrefix/$playerServicePath/stats]")
-                get(
-                    complete(playerStats(URLDecoder.decode(url, enc),
-                                         URLDecoder.decode(name, enc),
-                                         period,
-                                         team)))
+                system.log.info(s"[user:${session.user}] access [$httpPrefixAddress/$pathPrefix/$playerServicePath/stats]")
+                get(complete(playerStats(URLDecoder.decode(url, enc), URLDecoder.decode(name, enc), period, team)))
               }
             }
           }
@@ -84,22 +74,12 @@ trait PlayersRouter extends LeadersRouter with PlayersProtocol {
       }
     }
 
-  private def playerStats(
-      url: String,
-      name: String,
-      period: String,
-      team: String)(implicit ex: ExecutionContext): Future[HttpResponse] = {
+  private def playerStats(url: String, name: String, period: String, team: String)(implicit ex: ExecutionContext): Future[HttpResponse] = {
     system.log.info(s"incoming http GET on $url")
-    fetch[PlayerStatsView](
-        PlayerStatsQueryArgs(context, url, name, period, team),
-        playerJobSupervisor).map {
-      case \/-(res) ⇒
-        success(
-            SparkJobHttpResponse(url,
-                                 view = Option("player-stats"),
-                                 body = Option(res),
-                                 error = res.error))(PlayersResponseWriter)
+    fetch[PlayerStatsView](PlayerStatsQueryArgs(context, url, name, period, team), playerJobSupervisor).map {
+      case \/-(res) ⇒ success(SparkJobHttpResponse(url, view = Option("player-stats"), body = Option(res), error = res.error))(PlayersResponseWriter)
       case -\/(error) ⇒ fail(error)
     }
   }
 }
+*/

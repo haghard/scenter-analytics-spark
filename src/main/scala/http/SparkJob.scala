@@ -24,14 +24,9 @@ object SparkJob {
       extends JobManagerProtocol
       with DefaultJobArgs
 
-  case class TeamStatQueryArgs(ctx: SparkContext,
-                               url: String,
-                               period: String,
-                               teams: scala.collection.Seq[String],
-                               arenas: Seq[(String, String)],
-                               allTeams: mutable.HashMap[String, String])
-      extends JobManagerProtocol
-      with DefaultJobArgs
+  case class TeamStatQueryArgs(ctx: SparkContext, url: String, period: String, teams: scala.collection.Seq[String],
+                               arenas: Seq[(String, String)], allTeams: mutable.HashMap[String, String])
+    extends JobManagerProtocol with DefaultJobArgs
 
   case class PtsLeadersQueryArgs(ctx: SparkContext,
                                  url: String,
@@ -65,27 +60,11 @@ object SparkJob {
       extends JobManagerProtocol
       with DefaultJobArgs
 
-  case class Standing(team: String = "",
-                      hw: Int = 0,
-                      hl: Int = 0,
-                      aw: Int = 0,
-                      al: Int = 0,
-                      w: Int = 0,
-                      l: Int = 0)
-  case class ResultView(lineup: String,
-                        score: String,
-                        time: String,
-                        arena: String)
-  case class PtsLeader(team: String,
-                       player: String,
-                       pts: Double,
-                       games: Long = 0)
-  case class RebLeader(team: String = "",
-                       player: String = "",
-                       offensive: Double,
-                       defensive: Double,
-                       total: Double,
-                       games: Long = 0)
+  case class Standing(team: String = "", hw: Int = 0, hl: Int = 0, aw: Int = 0, al: Int = 0, w: Int = 0, l: Int = 0)
+
+  case class ResultView(lineup: String, score: String, time: String, arena: String)
+  case class PtsLeader(team: String, player: String, pts: Double, games: Long = 0)
+  case class RebLeader(team: String = "", player: String = "", offensive: Double, defensive: Double, total: Double, games: Long = 0)
 
   case class Stats(VS: String,
                    DT: Date,
@@ -139,16 +118,10 @@ object SparkJob {
                             latency: Long = 0l,
                             error: Option[String] = None)
       extends SparkQueryView
-  case class PlayerStatsView(count: Int = 0,
-                             stats: List[Stats] = List.empty,
-                             latency: Long = 0l,
-                             error: Option[String] = None)
-      extends SparkQueryView
-  case class TeamStatsView(count: Int = 0,
-                           stats: List[ResultView] = List.empty,
-                           latency: Long = 0l,
-                           error: Option[String] = None)
-      extends SparkQueryView
+
+  case class PlayerStatsView(count: Int = 0, stats: List[Stats] = List.empty, latency: Long = 0l, error: Option[String] = None) extends SparkQueryView
+  case class TeamStatsView(count: Int = 0, stats: List[ResultView] = List.empty, latency: Long = 0l, error: Option[String] = None) extends SparkQueryView
+
   case class DailyView(count: Int = 0,
                        results: List[ResultView] = List.empty,
                        latency: Long = 0l,
@@ -168,8 +141,7 @@ class SparkJob(val config: Config) extends Actor with ActorLogging {
 
   override def receive: Receive = {
     case PtsLeadersQueryArgs(ctx, url, stage, teams, interval, depth) ⇒
-      log.info(
-          s"Start spark pts-leader query with [${interval.toString}] with $depth")
+      log.info(s"Start spark pts-leader query with [${interval.toString}] with $depth")
       ((PtsLeadersQuery[PtsLeadersView] async (ctx, config, interval, depth)) to sender()).future
         .onComplete(_ ⇒ context.system.stop(self))
 

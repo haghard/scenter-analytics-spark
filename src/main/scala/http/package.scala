@@ -3,8 +3,9 @@ import java.util.Date
 
 import akka.actor._
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.server.{Route, Directive1, Directives}
+import akka.http.scaladsl.server.{RouteConcatenation, Route, Directive1, Directives}
 import akka.stream.ActorMaterializer
+import http.swagger.CorsSupport
 import ingestion.JournalChangesIngestion
 import org.apache.spark.SparkContext
 import spark.SparkQuery
@@ -15,84 +16,22 @@ import org.joda.time.{DateTime, Interval}
 
 import scala.collection.JavaConversions._
 import scala.collection.mutable
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.ClassTag
 import scala.util.{Failure, Success}
-import scalaz.{-\/, \/-, \/}
+//import scalaz.{-\/, \/-, \/}
 import com.github.nscala_time.time.Imports._
 
 package object http {
-
-  private val HttpDispatcher = "akka.http-dispatcher"
-  private[http] val SparkDispatcher = "akka.spark-dispatcher"
-  private[http] val ActorSystemName = "SportCenter"
-  private[http] val DefaultHttpPort = 8012
-  private[http] val SEEDS_ENV = "SEED_NODES"
-  private[http] val HTTP_PORT = "HTTP_PORT"
-  private[http] val NET_INTERFACE = "NET_INTERFACE"
-  private[http] val DOMAIN = "DOMAIN"
-
-  case class NbaResultView(homeTeam: String,
-                           homeScore: Int,
-                           awayTeam: String,
-                           awayScore: Int,
-                           dt: Date)
-  case class ResultAdded(team: String, r: NbaResult)
-  case class NbaResult(homeTeam: String,
-                       homeScore: Int,
-                       awayTeam: String,
-                       awayScore: Int,
-                       dt: Date,
-                       homeScoreBox: String = "",
-                       awayScoreBox: String = "",
-                       homeTotal: Total = Total(),
-                       awayTotal: Total = Total(),
-                       homeBox: List[PlayerLine] = Nil,
-                       awayBox: List[PlayerLine] = Nil)
-
-  case class Total(min: Int = 0,
-                   fgmA: String = "",
-                   threePmA: String = "",
-                   ftmA: String = "",
-                   minusSlashPlus: String = "",
-                   offReb: Int = 0,
-                   defReb: Int = 0,
-                   totalReb: Int = 0,
-                   ast: Int = 0,
-                   pf: Int = 0,
-                   steels: Int = 0,
-                   to: Int = 0,
-                   bs: Int = 0,
-                   ba: Int = 0,
-                   pts: Int = 0)
-
-  case class PlayerLine(name: String = "",
-                        pos: String = "",
-                        min: String = "",
-                        fgmA: String = "",
-                        threePmA: String = "",
-                        ftmA: String = "",
-                        minusSlashPlus: String = "",
-                        offReb: Int = 0,
-                        defReb: Int = 0,
-                        totalReb: Int = 0,
-                        ast: Int = 0,
-                        pf: Int = 0,
-                        steels: Int = 0,
-                        to: Int = 0,
-                        bs: Int = 0,
-                        ba: Int = 0,
-                        pts: Int = 0)
-
   import util.Try
-  import scalaz.concurrent.{Task => ZTask}
-  import scala.concurrent.{ExecutionContext, Future => SFuture, Promise}
+  //import scalaz.concurrent.{Task => ZTask}
+  //import scala.concurrent.{ExecutionContext, Future => SFuture, Promise}
 
   //Integration code between Scalaz and Scala standard concurrency libraries
+  /*
   object Task2Future {
 
-    def fromScala[A](future: SFuture[A])(
-        implicit ec: ExecutionContext): ZTask[A] =
+    def fromScala[A](future: SFuture[A])(implicit ec: ExecutionContext): ZTask[A] =
       scalaz.concurrent.Task.async(handlerConversion andThen future.onComplete)
 
     def fromScalaDeferred[A](future: => SFuture[A])(
@@ -105,12 +44,33 @@ package object http {
       p.future
     }
 
-    private def handlerConversion[A]
-      : ((Throwable \/ A) => Unit) => Try[A] => Unit =
-      callback => { t: Try[A] =>
-        \/.fromTryCatchNonFatal(t.get)
-      } andThen callback
-  }
+    private def handlerConversion[A]: ((Throwable \/ A) => Unit) => Try[A] => Unit =
+      callback => { t: Try[A] => \/.fromTryCatchNonFatal(t.get) } andThen callback
+  }*/
+
+  private val HttpDispatcher = "akka.http-dispatcher"
+  private[http] val SparkDispatcher = "akka.spark-dispatcher"
+  private[http] val ActorSystemName = "SportCenter"
+  private[http] val DefaultHttpPort = 8012
+  private[http] val SEEDS_ENV = "SEED_NODES"
+  private[http] val HTTP_PORT = "HTTP_PORT"
+  private[http] val NET_INTERFACE = "NET_INTERFACE"
+  private[http] val DOMAIN = "DOMAIN"
+
+  case class NbaResultView(homeTeam: String, homeScore: Int, awayTeam: String, awayScore: Int, dt: Date)
+  case class ResultAdded(team: String, r: NbaResult)
+  case class NbaResult(homeTeam: String, homeScore: Int, awayTeam: String, awayScore: Int, dt: Date,
+                       homeScoreBox: String = "", awayScoreBox: String = "", homeTotal: Total = Total(), awayTotal: Total = Total(),
+                       homeBox: List[PlayerLine] = Nil, awayBox: List[PlayerLine] = Nil)
+
+  case class Total(min: Int = 0, fgmA: String = "", threePmA: String = "", ftmA: String = "", minusSlashPlus: String = "",
+                   offReb: Int = 0, defReb: Int = 0, totalReb: Int = 0, ast: Int = 0, pf: Int = 0, steels: Int = 0,
+                   to: Int = 0, bs: Int = 0, ba: Int = 0, pts: Int = 0)
+
+  case class PlayerLine(name: String = "", pos: String = "", min: String = "", fgmA: String = "",
+                        threePmA: String = "", ftmA: String = "", minusSlashPlus: String = "",
+                        offReb: Int = 0, defReb: Int = 0, totalReb: Int = 0, ast: Int = 0, pf: Int = 0,
+                        steels: Int = 0, to: Int = 0, bs: Int = 0, ba: Int = 0, pts: Int = 0)
 
   trait DefaultJobArgs {
     def url: String
@@ -128,29 +88,23 @@ package object http {
     def count: Int
   }
 
-  private[http] trait TypedAsk {
+  trait TypedAsk {
     import akka.pattern.ask
-    def fetch[T <: DefaultResponseBody](message: DefaultJobArgs,
-                                        target: ActorRef)(
-        implicit ec: ExecutionContext,
-        fetchTimeout: akka.util.Timeout,
-        tag: ClassTag[T]): Future[String \/ T] =
-      target.ask(message).mapTo[T].map(\/-(_)).recoverWith {
-        case ex: ClassCastException ⇒ Future.successful(-\/(ex.getMessage))
-        case ex: AskTimeoutException ⇒
-          Future.successful(
-              -\/(s"Fetch results operation timeout ${ex.getMessage}"))
+    def fetch[T <: DefaultResponseBody](message: DefaultJobArgs, target: ActorRef)
+                                       (implicit ec: ExecutionContext, fetchTimeout: akka.util.Timeout, tag: ClassTag[T]): Future[cats.data.Xor[String,T]] =
+      target.ask(message).mapTo[T].map(cats.data.Xor.right(_))
+        .recoverWith {
+          case ex: ClassCastException ⇒ Future.successful(cats.data.Xor.left(s"Unexpected ClassCast: ${ex.getMessage}"))
+          case ex: AskTimeoutException ⇒ Future.successful(cats.data.Xor.left(s"Request timeout: ${ex.getMessage}"))
+          case scala.util.control.NonFatal(e) => //Doesn't swallow stack overflow out of memory errors
+            Future.successful(cats.data.Xor.left(s"Unexpected error: ${e.getMessage}"))
       }
   }
+/*
+  case class Api(route: Option[ExecutionContext ⇒ Route] = None, preAction: Option[() ⇒ Unit] = None, postAction: Option[() ⇒ Unit] = None,
+                               urls: String = "") extends Directives {
 
-  private[http] case class Api(route: Option[ExecutionContext ⇒ Route] = None,
-                               preAction: Option[() ⇒ Unit] = None,
-                               postAction: Option[() ⇒ Unit] = None,
-                               urls: String = "")
-      extends Directives {
-
-    private def cmbRoutes(r0: ExecutionContext ⇒ Route,
-                          r1: ExecutionContext ⇒ Route) =
+    private def cmbRoutes(r0: ExecutionContext ⇒ Route, r1: ExecutionContext ⇒ Route) =
       (ec: ExecutionContext) ⇒ r0(ec) ~ r1(ec)
 
     private def cmbActions(a1: () ⇒ Unit, a2: () ⇒ Unit) =
@@ -166,54 +120,45 @@ package object http {
           s"$urls\n${that.urls}")
 
     def ~(that: Api): Api = compose(that)
-  }
+  }*/
 
-  private[http] trait EndpointInstaller {
-
-    def context: SparkContext
-
+  trait EndpointInstaller {
     protected val pathPrefix = "api"
 
-    protected def configureApi() = Api()
+    //protected def configureApi() = Api()
 
     protected def httpPrefixAddress: String
 
     protected val httpDispatcher = HttpDispatcher
 
-    protected def installApi(api: Api, interface: String, httpPort: Int)(
-        implicit materializer: akka.stream.ActorMaterializer,
-        system: ActorSystem) = {
-      api.route.foreach { api ⇒
-        implicit val ec = system.dispatchers.lookup(httpDispatcher)
-        val route = api(ec)
-        system.registerOnTermination {
-          system.log.info("Http server was stopped")
-        }
+    protected def installApi(/*api: Api,*/ context: SparkContext,
+                             intervals: scala.collection.mutable.LinkedHashMap[org.joda.time.Interval,String],
+                             arenas: scala.collection.immutable.Vector[(String, String)],
+                             teams : scala.collection.mutable.HashMap[String, String],
+                             interface: String, httpPort: Int)
+                            (implicit materializer: akka.stream.ActorMaterializer, system: ActorSystem) = {
 
-        val startFuture = Http().bindAndHandle(
-            akka.http.scaladsl.server.RouteResult.route2HandlerFlow(route),
-            interface,
-            httpPort)
-        startFuture.onComplete {
-          case Success(binding) =>
-          case Failure(ex) =>
-            system.log.error(ex.getMessage)
-            ex.printStackTrace()
-            sys.exit(-1)
-        }
+      implicit val _ = system.dispatchers.lookup(httpDispatcher)
+
+      import RouteConcatenation._
+      val route = new LoginRouter(interface, httpPort).route ~
+        new TeamsRouter(interface, httpPort, context, intervals, arenas, teams).route ~
+          new SwaggerRouter(interface, httpPort).route
+
+      system.registerOnTermination {  system.log.info("Http server was stopped")  }
+      val startFuture = Http().bindAndHandle(akka.http.scaladsl.server.RouteResult.route2HandlerFlow(route), interface, httpPort)
+
+      startFuture.onComplete {
+        case Success(binding) =>
+        case Failure(ex) =>
+          system.log.error(ex.getMessage)
+          ex.printStackTrace()
+          sys.exit(-1)
       }
-
-      api.preAction.foreach(action ⇒ action())
     }
-
-    protected def uninstallApi(api: Api) =
-      api.postAction.foreach(action ⇒ action())
   }
 
-  private[http] trait DefaultRestMicroservice
-      extends EndpointInstaller
-      with Directives {
-    mixin: MicroKernel ⇒
+  trait DefaultRestMicroservice extends EndpointInstaller with Directives with CorsSupport {
     import spray.json._
     import akka.http.scaladsl.model._
 
@@ -221,55 +166,42 @@ package object http {
 
     def withUri: Directive1[String] = extract(_.request.uri.toString())
 
-    protected def fail[T <: DefaultJobArgs](resp: T)(
-        implicit writer: JsonWriter[T]): String ⇒ Future[HttpResponse] =
+    def internalError[T <: DefaultJobArgs](resp: T)(implicit writer: JsonWriter[T]): String ⇒ Future[HttpResponse] =
       error ⇒
-        Future.successful(
-            HttpResponse(StatusCodes.BadRequest,
-                         scala.collection.immutable.Seq[HttpHeader](),
-                         HttpEntity(ContentTypes.`application/json`,
-                                    ByteString(resp.toJson.prettyPrint))))
+        Future.successful(HttpResponse(StatusCodes.BadRequest, scala.collection.immutable.Seq[HttpHeader](),
+                         HttpEntity(ContentTypes.`application/json`, ByteString(resp.toJson.prettyPrint))))
 
-    protected def fail(error: String) =
-      HttpResponse(StatusCodes.InternalServerError, entity = error)
+    def internalError(error: String) = HttpResponse(StatusCodes.InternalServerError, entity = error)
 
-    protected def success[T <: DefaultHttpResponse](resp: T)(
-        implicit writer: JsonWriter[T]) =
-      HttpResponse(StatusCodes.OK,
-                   scala.collection.immutable.Seq[HttpHeader](),
-                   HttpEntity(ContentTypes.`application/json`,
-                              ByteString(resp.toJson.prettyPrint)))
+    def notFound(error: String) = HttpResponse(StatusCodes.NotFound, entity = error)
+
+    def success[T <: DefaultHttpResponse](resp: T)(implicit writer: JsonWriter[T]) =
+      HttpResponse(StatusCodes.OK, scala.collection.immutable.Seq[HttpHeader](),
+        HttpEntity(ContentTypes.`application/json`, ByteString(resp.toJson.prettyPrint)))
   }
 
-  private[http] trait ClusterNetwork {
-
-    def ethName: String
-
-    def localAddress: String
-
-    def domain: String
-
+  trait ClusterNetwork {
     def httpPort: Int
-
+    def domain: String
+    def ethName: String
+    def localAddress: String
     def httpPrefixAddress = s"http://$domain:$httpPort"
   }
 
-  private[http] trait AddressResolver { mixin: ClusterNetwork ⇒
+  trait NetworkResolver {
+    mixin: ClusterNetwork ⇒
     import scala.collection.JavaConverters._
 
     protected val ipExpression = """\d{1,3}.\d{1,3}.\d{1,3}.\d{1,3}"""
 
     def addresses: Option[InetAddress] =
-      NetworkInterface.getNetworkInterfaces.asScala.toList
-        .find(_.getName == ethName)
-        .flatMap(x ⇒
-              x.getInetAddresses.asScala.toList.find(i ⇒
-                    i.getHostAddress.matches(ipExpression)))
+      NetworkInterface.getNetworkInterfaces.asScala.toList.find(_.getName == ethName)
+        .flatMap(x ⇒ x.getInetAddresses.asScala.toList.find(i ⇒ i.getHostAddress.matches(ipExpression)))
   }
 
   case class ServerSession(user: String, password: String)
 
-  private[http] trait BootableMicroservice {
+  trait BootableMicroservice {
     def system: ActorSystem
     def environment: String
     def startup(): Unit
@@ -279,30 +211,21 @@ package object http {
     def arenas: Seq[(String, String)]
   }
 
-  private[http] abstract class MicroKernel(override val httpPort: Int =
-                                             DefaultHttpPort,
-                                           override val ethName: String)
-      extends BootableMicroservice
+  abstract class MicroKernel(override val httpPort: Int = DefaultHttpPort, override val ethName: String) extends BootableMicroservice
       with EndpointInstaller
       with ClusterNetwork
-      with AddressResolver {
+      with NetworkResolver {
 
-    lazy val api = configureApi()
+    //lazy val api = configureApi()
     override lazy val system = ActorSystem(ActorSystemName, config)
 
-    override def localAddress =
-      addresses.map(_.getHostAddress).getOrElse("0.0.0.0")
+    override def localAddress = addresses.map(_.getHostAddress).getOrElse("0.0.0.0")
 
     override val domain = Option(System.getProperty(DOMAIN))
-      .fold(throw new Exception(s"$DOMAIN ENV variable should be defined"))(
-          identity)
+      .fold(throw new Exception(s"$DOMAIN ENV variable should be defined"))(identity)
 
-    override val teams = {
-      asScalaBuffer(
-          system.settings.config
-            .getConfig("app-settings")
-            .getObjectList("teams"))
-        ./:(scala.collection.mutable.HashMap[String, String]()) { (acc, c) ⇒
+    override val teams = asScalaBuffer(system.settings.config.getConfig("app-settings")
+      .getObjectList("teams"))./:(scala.collection.mutable.HashMap[String, String]()) { (acc, c) ⇒
           val it = c.entrySet().iterator()
           if (it.hasNext) {
             val entry = it.next()
@@ -310,24 +233,15 @@ package object http {
           }
           acc
         }
-    }
 
-    override val arenas = {
-      asScalaBuffer(
-          system.settings.config
-            .getConfig("app-settings")
-            .getObjectList("arenas"))
-        ./:(scala.collection.immutable.Vector.empty[(String, String)]) {
-          (acc, c) ⇒
-            val it = c.entrySet().iterator()
-            if (it.hasNext) {
-              val entry = it.next()
-              acc :+ (entry.getKey -> entry.getValue
-                    .render()
-                    .replace("\"", ""))
-            } else acc
+    override val arenas = asScalaBuffer(system.settings.config.getConfig("app-settings")
+      .getObjectList("arenas"))./:(scala.collection.immutable.Vector.empty[(String, String)]) { (acc, c) ⇒
+          val it = c.entrySet().iterator()
+          if (it.hasNext) {
+            val entry = it.next()
+            acc :+ (entry.getKey -> entry.getValue.render().replace("\"", ""))
+          } else acc
         }
-    }
 
     override val intervals = {
       var views = scala.collection.mutable.LinkedHashMap[Interval, String]()
@@ -336,29 +250,23 @@ package object http {
       var end: Option[DateTime] = None
       var period: Option[String] = None
 
-      val stages = system.settings.config
-        .getConfig("app-settings")
-        .getObjectList("stages")
+      val stages = system.settings.config.getConfig("app-settings").getObjectList("stages")
         ./:(scala.collection.mutable.LinkedHashMap[String, String]()) {
           (acc, c) ⇒
             val it = c.entrySet().iterator()
             if (it.hasNext) {
               val entry = it.next()
-              acc += (entry.getKey -> entry.getValue
-                    .render()
-                    .replace("\"", ""))
+              acc += (entry.getKey -> entry.getValue.render().replace("\"", ""))
             }
             acc
         }
 
       for ((k, v) ← stages) {
         if (start.isEmpty) {
-          start = Some(
-              new DateTime(v).withZone(timeZone).withTime(23, 59, 59, 0))
+          start = Some(new DateTime(v).withZone(timeZone).withTime(23, 59, 59, 0))
           period = Some(k)
         } else {
-          end = Some(
-              new DateTime(v).withZone(timeZone).withTime(23, 59, 58, 0))
+          end = Some(new DateTime(v).withZone(timeZone).withTime(23, 59, 58, 0))
           val interval = (start.get to end.get)
           views = views += (interval -> period.get)
           start = Some(end.get.withTime(23, 59, 59, 0))
@@ -372,8 +280,7 @@ package object http {
 
     lazy val context = new SparkQuery {
       override val name = "scenter-analytics"
-    }.createSparkContext(config,
-                         config.getString("db.cassandra.seeds").split(",")(0))
+    }.createSparkContext(config, config.getString("db.cassandra.seeds"))
 
     override def startup(): Unit = {
       system
@@ -381,13 +288,11 @@ package object http {
         .append('\n')
         .append("=====================================================================================================================================")
         .append('\n')
-        .append(
-            s"★ ★ ★ ★ ★ ★  Web service env: $environment [ext: $domain - docker: $localAddress] ★ ★ ★ ★ ★ ★")
+        .append(s"★ ★ ★ ★ ★ ★  Web service env: $environment [ext: $domain - docker: $localAddress] ★ ★ ★ ★ ★ ★")
         .append('\n')
-        .append(
-            s"★ ★ ★ ★ ★ ★  Cassandra contact points: ${system.settings.config.getString("db.cassandra.seeds")}  ★ ★ ★ ★ ★ ★")
+        .append(s"★ ★ ★ ★ ★ ★  Cassandra contact points: ${system.settings.config.getString("db.cassandra.seeds")}  ★ ★ ★ ★ ★ ★")
         .append('\n')
-        .append(s"★ ★ ★ ★ ★ ★  Available urls: ${api.urls}")
+        //.append(s"★ ★ ★ ★ ★ ★  Available urls: ${api.urls}")
         .append('\n')
         .append("=====================================================================================================================================")
         .append('\n')
@@ -395,22 +300,67 @@ package object http {
 
       system.log.info(message)
 
-      val settings = akka.stream
-        .ActorMaterializerSettings(system)
-        .withInputBuffer(32, 64)
-        .withDispatcher("akka.stream-dispatcher")
+      val settings = akka.stream.ActorMaterializerSettings(system).withInputBuffer(32, 64).withDispatcher("akka.stream-dispatcher")
       implicit val mat = ActorMaterializer(settings)(system)
 
-      installApi(api, localAddress, httpPort)(mat, system)
+      installApi(context, intervals, arenas, teams,
+        localAddress, httpPort)(mat, system)
 
       //Streaming
       JournalChangesIngestion.start(context, config, teams)
     }
 
     override def shutdown() = {
-      uninstallApi(api)
+      //uninstallApi(api)
       context.stop
       system.log.info("Web service has been stopped")
     }
   }
+
+
+  import http.SparkJob._
+  import http.TeamsRouter.TeamsHttpProtocols
+  import spray.json.JsonWriter
+
+  case class SparkJobHttpResponse(url: String,view: Option[String] = None,
+                                    body: Option[SparkQueryView] = None,  error: Option[String] = None) extends DefaultHttpResponse
+
+    trait StandingHttpProtocols extends TeamsHttpProtocols {
+      implicit val standingFormat = jsonFormat7(Standing.apply)
+
+      implicit object ResultsResponseWriter extends JsonWriter[SparkJobHttpResponse] {
+        import spray.json._
+        override def write(obj: SparkJobHttpResponse): spray.json.JsValue = {
+          val url = JsString(obj.url.toString)
+          val v = obj.view.fold(JsString("none")) { JsString(_)}
+          val error = obj.error.fold(JsString("none")) { JsString(_) }
+          obj.body match {
+            case Some(SeasonStandingView(c, west, east, latency, _)) ⇒
+              JsObject("western conference" -> JsArray(west.map(_.toJson)),
+                       "eastern conference" -> JsArray(east.map(_.toJson)),
+                       "url" -> url, "view" -> v, "latency" -> JsNumber(latency),
+                       "body" -> JsObject("count" -> JsNumber(c)),
+                       "error" -> error)
+            case Some(PlayoffStandingView(c, table, latency, _)) ⇒
+              JsObject("playoff" -> JsArray(table.map(_.toJson)),
+                       "url" -> url, "view" -> v, "latency" -> JsNumber(latency),
+                       "body" -> JsObject("count" -> JsNumber(c)),
+                       "error" -> error)
+            case Some(FilteredView(c, results, latency, _)) ⇒
+              JsObject("url" -> url,
+                       "view" -> JsArray(results.map(_.toJson)),
+                       "latency" -> JsNumber(latency),
+                       "body" -> JsObject("count" -> JsNumber(c)),
+                       "error" -> error)
+            case Some(FilteredAllView(c, results, latency, _)) ⇒
+              JsObject("url" -> url,
+                       "view" -> JsArray(results.map(_.toJson)),
+                       "latency" -> JsNumber(latency),
+                       "body" -> JsObject("count" -> JsNumber(c)),
+                       "error" -> error)
+            case None ⇒ JsObject("url" -> url, "view" -> v, "error" -> error)
+          }
+        }
+      }
+    }
 }

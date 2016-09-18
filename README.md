@@ -52,3 +52,7 @@ https://www.digitalocean.com/community/tutorials/how-to-set-up-a-host-name-with-
 http://blog.prabeeshk.com/blog/2014/04/08/creating-uber-jar-for-spark-project-using-sbt-assembly/
 http://www.sestevez.com/sestevez/CassandraDataModeler/
 https://blog.cloudera.com/blog/2016/06/how-to-analyze-fantasy-sports-using-apache-spark-and-sql/
+
+
+
+run-main http.Bootstrap --HTTP_PORT=8001 --NET_INTERFACE=en0 --DB_HOSTS=192.168.0.182,192.168.0.38 --DOMAIN=192.168.0.62  --TWITTER_CONSUMER_KEY=zhmdNNiYTZq8kOkn8g9vrEUkp --TWITTER_CONSUMER_SECRET=IzqrKp0ksZoEhsxCw9Tbk4WutvVJNZBg6CZYKNjLUMonOSbVXx --GOOGLE_CONSUMER_KEY=460103596995-7o4m205tisva5b6bolooc6flm1udpr5t.apps.googleusercontent.com --GOOGLE_CONSUMER_SECRET=x2Yq7bY1ebpXkJCskmSHLO4b --GITHUB_CONSUMER_KEY=d7f8218f3c94e7a11f82 --GITHUB_CONSUMER_SECRET=ed68e09ad0f613f599c909df50fff2d99ab88c1e

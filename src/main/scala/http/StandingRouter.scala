@@ -1,3 +1,4 @@
+/*
 package http
 
 import akka.http.scaladsl.model.HttpResponse
@@ -12,11 +13,8 @@ import scalaz.{-\/, \/-}
 
 object StandingRouter {
 
-  case class SparkJobHttpResponse(url: String,
-                                  view: Option[String] = None,
-                                  body: Option[SparkQueryView] = None,
-                                  error: Option[String] = None)
-      extends DefaultHttpResponse
+  case class SparkJobHttpResponse(url: String,view: Option[String] = None,
+                                  body: Option[SparkQueryView] = None,  error: Option[String] = None) extends DefaultHttpResponse
 
   trait StandingHttpProtocols extends TeamsHttpProtocols {
     implicit val standingFormat = jsonFormat7(Standing.apply)
@@ -67,33 +65,24 @@ object StandingRouter {
   }
 }
 
-trait StandingRouter
-    extends TeamsRouter
-    with TypedAsk
-    with StandingHttpProtocols {
+trait StandingRouter extends TeamsRouter with TypedAsk with StandingHttpProtocols {
   mixin: MicroKernel ⇒
+
   private val standingServicePath = "standing"
   private val querySupervisor = system.actorOf(SparkQuerySupervisor.props)
 
   abstract override def configureApi() =
     super.configureApi() ~
-      Api(route = Option { ec: ExecutionContext ⇒
-            resultsRoute(ec)
-          },
-          postAction = Option(
-              () ⇒
-                system.log.info(
-                    s"\n★ ★ ★ $standingServicePath-routes was stopped on $httpPrefixAddress ★ ★ ★")),
-          urls =
-            s"[$httpPrefixAddress/$pathPrefix/$standingServicePath/{stage} Authorization:...']")
+      Api(route = Option { ec: ExecutionContext ⇒ resultsRoute(ec)},
+          postAction = Option(() ⇒ system.log.info(s"\n★ ★ ★ $standingServicePath-routes was stopped on $httpPrefixAddress ★ ★ ★")),
+          urls = s"[$httpPrefixAddress/$pathPrefix/$standingServicePath/{stage} Authorization:...']")
 
   private def resultsRoute(implicit ec: ExecutionContext): Route =
     pathPrefix(pathPrefix) {
       (get & path(standingServicePath / Segment)) { stage ⇒
         withUri { url ⇒
           requiredHttpSession(ec) { session ⇒
-            system.log.info(
-                s"[user:${session.user}] access [$httpPrefixAddress/$pathPrefix/$standingServicePath/$stage]")
+            system.log.info(s"[user:${session.user}] access [$httpPrefixAddress/$pathPrefix/$standingServicePath/$stage]")
             get(complete(searchResults(url, stage)))
           }
         }
@@ -103,23 +92,13 @@ trait StandingRouter
   private def searchResults(url: String, stage: String)(
       implicit ex: ExecutionContext): Future[HttpResponse] = {
     system.log.info(s"incoming http GET $url")
-    val interval = (for { (k, v) ← intervals if (v == stage) } yield
-      k).headOption
-    interval.fold(
-        Future.successful(
-            fail(s"Unsupported period has been received $stage"))) {
-      interval0 ⇒
-        fetch[SparkQueryView](
-            StandingQueryArgs(context, url, stage, teams, stage),
-            querySupervisor).map {
-          case \/-(res) ⇒
-            success(
-                SparkJobHttpResponse(url,
-                                     view = Option("standing"),
-                                     body = Option(res),
-                                     error = res.error))
+    val interval = (for { (k, v) ← intervals if (v == stage) } yield k).headOption
+    interval.fold(Future.successful(fail(s"Unsupported period has been received $stage"))) {
+      interval0 ⇒ fetch[SparkQueryView](StandingQueryArgs(context, url, stage, teams, stage), querySupervisor).map {
+          case \/-(res) ⇒ success(SparkJobHttpResponse(url, view = Option("standing"), body = Option(res), error = res.error))
           case -\/(error) ⇒ fail(error)
         }
     }
   }
 }
+*/

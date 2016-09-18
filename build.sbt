@@ -73,7 +73,10 @@ resolvers ++= Seq(
 val sparkDependencyScope = "provided"
 
 libraryDependencies ++= Seq(
-  "org.scalaz"              %% "scalaz-core"                    % "7.2.0",
+  //"org.scalaz"              %% "scalaz-core"                    % "7.2.0",
+
+  "org.typelevel"           %% "cats"                           % "0.7.0",
+
   "com.github.nscala-time"  %% "nscala-time"                    % "2.0.0",
 
   "org.json4s"              %% "json4s-native"                  % "3.2.10",
@@ -81,7 +84,7 @@ libraryDependencies ++= Seq(
 
   "org.mindrot"             %  "jbcrypt"                        % "0.3m",
 
-  "com.haghard"             %% "nosql-join-stream"              % "0.1.17",
+  "com.haghard"             %% "nosql-join-stream"              % "0.2.3",
 
   "com.softwaremill.akka-http-session"  %%  "core"              % "0.2.7",
   "com.github.swagger-akka-http"        %% "swagger-akka-http"  % "0.7.2",
@@ -159,6 +162,9 @@ javacOptions ++= Seq(
   "-target", "1.7",
   "-Xlint:unchecked",
   "-Xlint:deprecation")
+
+
+addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.8.0")
 
 //run-main  http.Bootstrap --HTTP_PORT=8001 --NET_INTERFACE=en0 --DB_HOSTS=109.234.39.32 --TWITTER_CONSUMER_KEY= --TWITTER_CONSUMER_SECRET=
 //run-main  http.Bootstrap --HTTP_PORT=8001 --NET_INTERFACE=en0 --DB_HOSTS=109.234.39.32 --GOOGLE_CONSUMER_KEY= --GOOGLE_CONSUMER_SECRET=

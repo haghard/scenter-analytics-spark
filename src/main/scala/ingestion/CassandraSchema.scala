@@ -19,14 +19,8 @@ trait CassandraSchema {
 
   lazy val dailyResColumns = SomeColumns("period", "opponents", "year", "month", "day", "score", "guest_score", "score_line", "guest_score_line")
 
-  def installSchema(
-      conf: SparkConf,
-      keySpace: String,
-      table1: String,
-      table2: String,
-      table3: String,
-      table4: String,
-      teams: scala.collection.mutable.HashMap[String, String]) = {
+  def installSchema(conf: SparkConf, keySpace: String, table1: String, table2: String, table3: String, table4: String,
+                    teams: scala.collection.mutable.HashMap[String, String]) = {
     val con = new CassandraConnector(CassandraConnectorConf(conf))
 
     con.withSessionDo {

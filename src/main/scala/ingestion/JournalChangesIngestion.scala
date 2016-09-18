@@ -57,21 +57,11 @@ object JournalChangesIngestion extends CassandraSchema {
         est,
         Pattern)
 
-    val transformResult2: (ResultAddedEvent) ⇒ ((String,
-                                                 String,
-                                                 Int,
-                                                 Int,
-                                                 Int,
-                                                 Int,
-                                                 Int,
-                                                 String,
-                                                 String)) = (event) ⇒ {
+    val transformResult2: (ResultAddedEvent) ⇒ ((String, String, Int, Int, Int,
+                                                 Int, Int, String, String)) = (event) ⇒ {
       val periodFinder = findPeriod
       val intervals = gameIntervals
-      val eventTime = ZonedDateTime.of(
-          LocalDateTime
-            .ofInstant(new Date(event.getResult.getTime).toInstant(), est),
-          est)
+      val eventTime = ZonedDateTime.of(LocalDateTime.ofInstant(new Date(event.getResult.getTime).toInstant(), est), est)
       (periodFinder(intervals.entrySet().iterator(), eventTime),
        s"${event.getResult.getHomeTeam} - ${event.getResult.getAwayTeam}",
        eventTime.getYear,

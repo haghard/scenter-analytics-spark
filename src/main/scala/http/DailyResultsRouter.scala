@@ -1,3 +1,5 @@
+/*
+
 package http
 
 import akka.http.scaladsl.model.HttpResponse
@@ -5,6 +7,7 @@ import akka.http.scaladsl.server._
 import http.DailyResultsRouter.{Args, DailyResultsProtocol}
 import http.SparkJob._
 import http.StandingRouter.{SparkJobHttpResponse, StandingHttpProtocols}
+import http.swagger.{CorsSupport, SwaggerDocService}
 import org.joda.time.DateTime
 import spray.json._
 
@@ -27,13 +30,8 @@ object DailyResultsRouter {
         }
         obj.body match {
           case Some(DailyView(c, results, latency, _)) ⇒
-            JsObject(
-                "url" -> url,
-                "view" -> JsArray(results.map(_.toJson)),
-                "body" -> JsObject("count" -> JsNumber(c)),
-                "latency" -> JsNumber(latency),
-                "error" -> error
-            )
+            JsObject("url" -> url, "view" -> JsArray(results.map(_.toJson)),
+              "body" -> JsObject("count" -> JsNumber(c)), "latency" -> JsNumber(latency), "error" -> error)
           case None ⇒ JsObject("url" -> url, "view" -> v, "error" -> error)
         }
       }
@@ -42,7 +40,6 @@ object DailyResultsRouter {
   }
 
   case class Args(period: String, year: Int, mm: Int, dd: Int)
-
 }
 
 trait DailyResultsRouter extends PlayersRouter with DailyResultsProtocol {
@@ -53,23 +50,16 @@ trait DailyResultsRouter extends PlayersRouter with DailyResultsProtocol {
 
   abstract override def configureApi() =
     super.configureApi() ~
-      Api(route = Option { ec: ExecutionContext ⇒
-            daily(ec)
-          },
-          postAction = Option(
-              () ⇒
-                system.log.info(
-                    s"\n★ ★ ★ [${dailyResultsPath}-routes] was stopped on $httpPrefixAddress ★ ★ ★")),
-          urls =
-            s"[$httpPrefixAddress/$pathPrefix/$dailyResultsPath/{date} Authorization:...']")
+      Api(route = Option { ec: ExecutionContext ⇒ daily(ec) /*~ corsHandler(new SwaggerDocService(system, s"${localAddress}:${httpPort}").routes)*/ },
+          postAction = Option(() ⇒ system.log.info(s"\n★ ★ ★ [${dailyResultsPath}-routes] was stopped on $httpPrefixAddress ★ ★ ★")),
+          urls = s"[$httpPrefixAddress/$pathPrefix/$dailyResultsPath/{date} Authorization:...']")
 
   def daily(implicit ex: ExecutionContext): Route =
     pathPrefix(pathPrefix) {
       (get & path(dailyResultsPath / Segment)) { stage ⇒
         withUri { url ⇒
           requiredHttpSession(ex) { session ⇒
-            system.log.info(
-                s"[user:${session.user}] access [$httpPrefixAddress/$pathPrefix/$dailyResultsPath/$stage]")
+            system.log.info(s"[user:${session.user}] access [$httpPrefixAddress/$pathPrefix/$dailyResultsPath/$stage]")
             get(complete(searchResults(url, stage)))
           }
         }
@@ -85,16 +75,10 @@ trait DailyResultsRouter extends PlayersRouter with DailyResultsProtocol {
   def findPeriod(yyyyMmdd: (Int, Int, Int)) =
     (for {
       (interval, v) ← intervals
-      if (interval contains new DateTime(
-              yyyyMmdd._1,
-              yyyyMmdd._2,
-              yyyyMmdd._3,
-              0,
-              0).withZone(cassandra.SCENTER_TIME_ZONE))
+      if (interval contains new DateTime(yyyyMmdd._1, yyyyMmdd._2, yyyyMmdd._3, 0, 0).withZone(cassandra.SCENTER_TIME_ZONE))
     } yield v).headOption
 
-  private def searchResults(url: String, stage: String)(
-      implicit ex: ExecutionContext): Future[HttpResponse] = {
+  private def searchResults(url: String, stage: String)(implicit ex: ExecutionContext): Future[HttpResponse] = {
     import scalaz._, Scalaz._
     system.log.info(s"incoming http GET on $url")
     val args: Option[Args] = for {
@@ -103,21 +87,11 @@ trait DailyResultsRouter extends PlayersRouter with DailyResultsProtocol {
     } yield Args(per, dt._1, dt._2, dt._3)
 
     args.fold(Future.successful(fail(s"Period error $stage"))) { args: Args ⇒
-      fetch[DailyView](DailyResultsQueryArgs(context,
-                                             url,
-                                             args.period,
-                                             (args.year, args.mm, args.dd),
-                                             arenas,
-                                             teams),
-                       dailyJobSupervisor).map {
-        case \/-(res) ⇒
-          success(
-              SparkJobHttpResponse(url,
-                                   view = Option("daily-results"),
-                                   body = Option(res),
-                                   error = res.error))(DailyResultsWriter)
+      fetch[DailyView](DailyResultsQueryArgs(context, url, args.period, (args.year, args.mm, args.dd), arenas, teams), dailyJobSupervisor).map {
+        case \/-(res) ⇒ success(SparkJobHttpResponse(url, view = Option("daily-results"), body = Option(res), error = res.error))(DailyResultsWriter)
         case -\/(error) ⇒ fail(error)
       }
     }
   }
 }
+*/
