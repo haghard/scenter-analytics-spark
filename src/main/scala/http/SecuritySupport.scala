@@ -52,7 +52,7 @@ trait SecuritySupport extends DefaultRestMicroservice /*with Directives*/ {
       Try(ServerSession(kv(0), kv(1)))
     })
 
-  val sessionConfig = SessionConfig.default(system.settings.config.getString("akka.http.session.secret"))
+  val sessionConfig = SessionConfig.default(system.settings.config.getString("akka.http.session.server-secret"))
   implicit val sessionManager = new SessionManager[ServerSession](sessionConfig)
 
   implicit val refreshTokenStorage = new InMemoryRefreshTokenStorage[ServerSession] {
