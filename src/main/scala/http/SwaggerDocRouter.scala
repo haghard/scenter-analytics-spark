@@ -1,17 +1,24 @@
 package http
 
 import akka.actor.ActorSystem
+import akka.http.scaladsl.model.StatusCodes
 import akka.util.Timeout
 import scala.concurrent.duration._
 import http.swagger.SwaggerDocService
 import scala.concurrent.ExecutionContext
 
-class SwaggerRouter(override val host: String, override val httpPort: Int)
-                    (implicit val ec: ExecutionContext, val system: ActorSystem) extends SecuritySupport {
+//https://blog.codecentric.de/en/2016/04/swagger-akka-http/
+class SwaggerDocRouter(override val host: String, override val httpPort: Int)
+                      (implicit val ec: ExecutionContext, val system: ActorSystem) extends SecuritySupport {
   //mixin: MicroKernel ⇒
 
-  val route =
-    corsHandler(new SwaggerDocService(system, s"${host}:${httpPort}").routes)
+  //http://localhost:8001/api-docs/swagger.json
+  val assets =
+    pathPrefix("swagger") {
+      getFromResourceDirectory("swagger") ~ pathSingleSlash(get(redirect("index.html", StatusCodes.PermanentRedirect)))
+    }
+
+  val route = corsHandler(new SwaggerDocService(system, s"${host}:${httpPort}").routes)
 
   /*abstract override def configureApi() =
     super.configureApi() ~ Api(

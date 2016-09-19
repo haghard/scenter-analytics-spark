@@ -143,7 +143,7 @@ package object http {
       import RouteConcatenation._
       val route = new LoginRouter(interface, httpPort).route ~
         new TeamsRouter(interface, httpPort, context, intervals, arenas, teams).route ~
-          new SwaggerRouter(interface, httpPort).route
+        new SwaggerDocRouter(interface, httpPort).route
 
       system.registerOnTermination {  system.log.info("Http server was stopped")  }
       val startFuture = Http().bindAndHandle(akka.http.scaladsl.server.RouteResult.route2HandlerFlow(route), interface, httpPort)
@@ -307,7 +307,7 @@ package object http {
         localAddress, httpPort)(mat, system)
 
       //Streaming
-      JournalChangesIngestion.start(context, config, teams)
+      //JournalChangesIngestion.start(context, config, teams)
     }
 
     override def shutdown() = {
