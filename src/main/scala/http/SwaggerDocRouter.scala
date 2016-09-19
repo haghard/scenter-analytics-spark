@@ -18,7 +18,7 @@ class SwaggerDocRouter(override val host: String, override val httpPort: Int)
       getFromResourceDirectory("swagger") ~ pathSingleSlash(get(redirect("index.html", StatusCodes.PermanentRedirect)))
     }
 
-  val route = corsHandler(new SwaggerDocService(system, s"${host}:${httpPort}").routes)
+  val route = corsHandler(new SwaggerDocService(system, s"${host}:${httpPort}").routes) ~ assets
 
   /*abstract override def configureApi() =
     super.configureApi() ~ Api(
