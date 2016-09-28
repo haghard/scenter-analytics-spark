@@ -8,7 +8,7 @@ version := "0.0.1-SNAPSHOT"
 scalaVersion := "2.11.8"
 
 val Spark = "1.6.2"
-val CassandraConnector = "1.6.0"
+val CassandraConnector = "1.6.1"
 
 enablePlugins(DockerPlugin)
 
