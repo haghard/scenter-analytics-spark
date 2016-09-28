@@ -7,7 +7,7 @@ name := "scenter-analytics-spark"
 version := "0.0.1-SNAPSHOT"
 scalaVersion := "2.11.8"
 
-val Spark = "1.6.1"
+val Spark = "1.6.2"
 val CassandraConnector = "1.6.0"
 
 enablePlugins(DockerPlugin)
@@ -85,7 +85,7 @@ libraryDependencies ++= Seq(
 
   "org.mindrot"             %  "jbcrypt"                        % "0.3m",
 
-  "com.haghard"             %% "nosql-join-stream"              % "0.2.4",
+  "com.haghard"             %% "nosql-join-stream"              % "0.2.5",
 
   "com.softwaremill.akka-http-session"  %%  "core"              % "0.2.7",
   "com.github.swagger-akka-http"        %% "swagger-akka-http"  % "0.7.2",

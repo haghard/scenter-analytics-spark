@@ -47,9 +47,7 @@ class Journal(
   cassandraHosts: Array[InetSocketAddress],
   teams: scala.collection.mutable.HashMap[String, String],
   gameIntervals: java.util.LinkedHashMap[Period, String]
-)
-    extends Actor
-    with ActorHelper {
+) extends Actor with ActorHelper {
   import Journal._
   import GraphDSL.Implicits._
   import scala.collection.JavaConverters._
