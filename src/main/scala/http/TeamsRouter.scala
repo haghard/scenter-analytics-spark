@@ -113,7 +113,8 @@ class TeamsRouter(override val host: String, override val httpPort: Int,
   private def validateTeams(searchTeams: String): Validated[String, List[String]] = {
     val teamsFilter = searchTeams.split(",").toList
     T.traverseU(teamsFilter) { team =>
-      teams.get(team).fold(Validated.invalid[String, String](s"\n Could'n find team $team"))(t => Validated.valid[String, String](t))
+      if(teams.keySet.contains(team)) Validated.invalid[String, String](s"\n Could'n find team $team")
+      else Validated.valid[String, String](team)
     }
   }
 
@@ -126,7 +127,7 @@ class TeamsRouter(override val host: String, override val httpPort: Int,
     val validation = cats.Apply[Validated[String, ?]].map2(
       validateTeams(searchTeams),
       validatePeriod(season)
-    ) { case (tms, _) => TeamStatQueryArgs(context, url, season, tms.toSeq, arenas, teams) }
+    ) { case (tms, seas) => TeamStatQueryArgs(context, url, season, tms.toSeq, arenas, teams) }
 
     validation.fold({ error => Future.successful(notFound(s"Invalid parameters: $error")) }, { arg =>
       fetch[TeamStatsView](arg, jobSupervisor).map {
