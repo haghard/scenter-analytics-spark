@@ -99,54 +99,32 @@ object SparkJob {
     def error: Option[String]
   }
 
-  case class SeasonStandingView(
-    count: Int = 0,
-    west: List[Standing] = List.empty,
-    east: List[Standing] = List.empty,
-    latency: Long = 0l,
-    error: Option[String] = None
-  )
-      extends SparkQueryView
-  case class PlayoffStandingView(
-    count: Int = 0,
-    table: List[String],
-    latency: Long = 0l,
-    error: Option[String] = None
-  )
-      extends SparkQueryView
-  case class FilteredView(
-    count: Int = 0,
-    results: List[ResultView] = List.empty,
-    latency: Long = 0l,
-    error: Option[String] = None
-  )
-      extends SparkQueryView
-  case class FilteredAllView(
-    count: Int = 0,
-    results: List[ResultView] = List.empty,
-    latency: Long = 0l,
-    error: Option[String] = None
-  )
-      extends SparkQueryView
-  case class PtsLeadersView(
-    count: Int = 0,
-    leaders: List[PtsLeader] = List.empty,
-    latency: Long = 0l,
-    error: Option[String] = None
-  )
-      extends SparkQueryView
-  case class RebLeadersView(
-    count: Int = 0,
-    leaders: List[RebLeader] = List.empty,
-    latency: Long = 0l,
-    error: Option[String] = None
-  )
-      extends SparkQueryView
+  case class SeasonStandingView(count: Int = 0, west: List[Standing] = List.empty,
+    east: List[Standing] = List.empty, latency: Long = 0l, error: Option[String] = None) extends SparkQueryView
 
-  case class PlayerStatsView(count: Int = 0, stats: List[Stats] = List.empty, latency: Long = 0l, error: Option[String] = None) extends SparkQueryView
-  case class TeamStatsView(count: Int = 0, stats: List[ResultView] = List.empty, latency: Long = 0l, error: Option[String] = None) extends SparkQueryView
+  case class PlayoffStandingView(count: Int = 0, table: List[String], latency: Long = 0l,
+    error: Option[String] = None) extends SparkQueryView
 
-  case class DailyView(count: Int = 0, results: List[ResultView] = List.empty, latency: Long = 0l, error: Option[String] = None) extends SparkQueryView
+  case class FilteredView(count: Int = 0, results: List[ResultView] = List.empty, latency: Long = 0l,
+    error: Option[String] = None) extends SparkQueryView
+
+  case class FilteredAllView(count: Int = 0, results: List[ResultView] = List.empty, latency: Long = 0l,
+    error: Option[String] = None) extends SparkQueryView
+
+  case class PtsLeadersView(count: Int = 0, leaders: List[PtsLeader] = List.empty, latency: Long = 0l,
+    error: Option[String] = None) extends SparkQueryView
+
+  case class RebLeadersView(count: Int = 0, leaders: List[RebLeader] = List.empty, latency: Long = 0l,
+                            error: Option[String] = None) extends SparkQueryView
+
+  case class PlayerStatsView(count: Int = 0, stats: List[Stats] = List.empty, latency: Long = 0l,
+                             error: Option[String] = None) extends SparkQueryView
+
+  case class TeamStatsView(count: Int = 0, stats: List[ResultView] = List.empty, latency: Long = 0l,
+                           error: Option[String] = None) extends SparkQueryView
+
+  case class DailyView(count: Int = 0, results: List[ResultView] = List.empty, latency: Long = 0l,
+                       error: Option[String] = None) extends SparkQueryView
 
   val Season = "season"
   val PlayOff = "playoff"
