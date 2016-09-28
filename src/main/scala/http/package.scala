@@ -304,7 +304,7 @@ package object http {
         localAddress, httpPort)(mat, system)
 
       //Streaming
-      //JournalChangesIngestion.start(context, config, teams)
+      JournalChangesIngestion.start(context, config, teams)
     }
 
     override def shutdown() = {

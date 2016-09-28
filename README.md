@@ -23,10 +23,10 @@ Run with docker
 Swagger UI link
 =================
  
-`http://192.168.0.182:8000/swagger/index.html`
+`http://192.168.0.182:8001/swagger/index.html`
 
 insert this link to web form 
-`http://192.168.0.182:8000/api-docs/swagger.json`
+`http://192.168.0.182:8001/api-docs/swagger.json`
 
 
 Example routes
