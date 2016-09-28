@@ -1,23 +1,17 @@
 package http
 
-
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.HttpResponse
-import cats.data.ValidatedNel
 import http.SparkJob._
-
-//import http.StandingRouter.SparkJobHttpResponse
 import http.TeamsRouter.TeamsHttpProtocols
 
-//import io.swagger.annotations.Api
 import javax.ws.rs.Path
 
 import io.swagger.annotations._
 import org.apache.spark.SparkContext
 import spray.json._
 
-import scala.concurrent.{ExecutionContext, Future}
-//import scalaz.{-\/, \/-}
+import scala.concurrent.{ ExecutionContext, Future }
 
 object TeamsRouter {
 
@@ -25,12 +19,10 @@ object TeamsRouter {
   final case class WrongTeam(field: String) extends ParamsError
   final case class ParseError(field: String) extends ParamsError
 
-
   trait TeamsHttpProtocols extends DefaultJsonProtocol {
     implicit val resFormat = jsonFormat4(ResultView)
 
     implicit object DateFormatToJson extends JsonFormat[java.util.Date] with DefaultJsonProtocol {
-
       import spray.json._
 
       val formatter = cassandra.extFormatter
@@ -41,37 +33,32 @@ object TeamsRouter {
     }
 
     implicit object TeamsResponseWriter extends JsonWriter[SparkJobHttpResponse] {
-
       import spray.json._
 
       override def write(obj: SparkJobHttpResponse): spray.json.JsValue = {
         val url = JsString(obj.url.toString)
-        val v = obj.view.fold(JsString("none")) { JsString(_)}
+        val v = obj.view.fold(JsString("none")) { JsString(_) }
         val error = obj.error.fold(JsString("none")) { error ⇒ JsString(error) }
         obj.body match {
           case Some(TeamStatsView(c, results, latency, _)) ⇒
             JsObject("url" -> url, "view" -> JsArray(results.map(_.toJson).toVector),
               "body" -> JsObject("count" -> JsNumber(c)),
-              "latency" -> JsNumber(latency), "error" -> error
-            )
+              "latency" -> JsNumber(latency), "error" -> error)
           case None ⇒ JsObject("url" -> url, "view" -> v, "error" -> error)
         }
       }
     }
-
   }
-
 }
 
 @io.swagger.annotations.Api(value = "/teams", produces = "application/json")
 @Path("/api/teams")
 class TeamsRouter(override val host: String, override val httpPort: Int,
-                  context: SparkContext,
-                  intervals: scala.collection.mutable.LinkedHashMap[org.joda.time.Interval, String],
-                  arenas: scala.collection.immutable.Vector[(String, String)],
-                  teams: scala.collection.mutable.HashMap[String, String],
-                  override val httpPrefixAddress: String = "teams")
-                 (implicit val ec: ExecutionContext, val system: ActorSystem) extends SecuritySupport with TypedAsk with TeamsHttpProtocols {
+    context: SparkContext,
+    intervals: scala.collection.mutable.LinkedHashMap[org.joda.time.Interval, String],
+    arenas: scala.collection.immutable.Vector[(String, String)],
+    teams: scala.collection.mutable.HashMap[String, String],
+    override val httpPrefixAddress: String = "teams")(implicit val ec: ExecutionContext, val system: ActorSystem) extends SecuritySupport with TypedAsk with TeamsHttpProtocols {
   import scala.concurrent.duration._
 
   override implicit val timeout = akka.util.Timeout(10.seconds)
@@ -81,7 +68,7 @@ class TeamsRouter(override val host: String, override val httpPort: Int,
   import cats.kernel.Monoid
   import cats.Traverse._
   import cats.data.Validated
-  import cats.data.Validated.{Invalid, Valid}
+  import cats.data.Validated.{ Invalid, Valid }
   import cats.SemigroupK
   import cats.data.NonEmptyList
   import cats.implicits._
@@ -129,27 +116,25 @@ class TeamsRouter(override val host: String, override val httpPort: Int,
       }
     }
 
-
   private def validateTeams(searchTeams: String): Validated[String, List[String]] = {
     val teamsFilter = searchTeams.split(",").toList
-    T.traverseU(teamsFilter){ team =>
-      teams.get(team).fold(Validated.invalid[String, String](s"\n Could'n find team $team"))(t=>Validated.valid[String,String](t))
+    T.traverseU(teamsFilter) { team =>
+      teams.get(team).fold(Validated.invalid[String, String](s"\n Could'n find team $team"))(t => Validated.valid[String, String](t))
     }
   }
 
   private def validatePeriod(season: String): Validated[String, Unit] = {
-    (for {(k, v) ← intervals if (v == season)} yield k).headOption
-      .fold(Validated.invalid[String, Unit](s"\n Could'n find season $season"))(_=>Validated.valid[String, Unit](()))
+    (for { (k, v) ← intervals if (v == season) } yield k).headOption
+      .fold(Validated.invalid[String, Unit](s"\n Could'n find season $season"))(_ => Validated.valid[String, Unit](()))
   }
-
 
   private def search(url: String, season: String, searchTeams: String): Future[HttpResponse] = {
     val validation = cats.Apply[Validated[String, ?]].map2(
       validateTeams(searchTeams),
       validatePeriod(season)
-      ) { case (tms, _) => TeamStatQueryArgs(context, url, season, tms.toSeq, arenas, teams) }
+    ) { case (tms, _) => TeamStatQueryArgs(context, url, season, tms.toSeq, arenas, teams) }
 
-    validation.fold({ error => Future.successful(notFound(s"Invalid parameters: $error"))}, { arg =>
+    validation.fold({ error => Future.successful(notFound(s"Invalid parameters: $error")) }, { arg =>
       fetch[TeamStatsView](arg, jobSupervisor).map {
         case Xor.Right(res) => success(SparkJobHttpResponse(url, view = Option("teams-stats"), body = Option(res), error = res.error))
         case Xor.Left(er) => internalError(er)

@@ -117,7 +117,7 @@ package object cassandra {
      * select team, score, opponent, opponent_score, date from results_by_period where period = 'season-12-13' and team in ('sas', 'cle', 'mia');
      */
     def cassandraResultByPeriodRdd(config: Config, teams: scala.collection.Set[String],
-                                   period: String): RDD[(String, Int, String, Int, java.sql.Date)] = {
+      period: String): RDD[(String, Int, String, Int, java.sql.Date)] = {
       val keyspace = config.getString("spark.cassandra.journal.keyspace")
       val table = config.getString("spark.cassandra.journal.results")
       val javaTeams = new java.util.HashSet[String](teams.asJavaCollection)

@@ -1,5 +1,6 @@
 import sbt._
 import sbtdocker.ImageName
+import com.scalapenos.sbt.prompt.SbtPrompt.autoImport._
 
 organization := "github.com/haghard"
 name := "scenter-analytics-spark"
@@ -84,7 +85,7 @@ libraryDependencies ++= Seq(
 
   "org.mindrot"             %  "jbcrypt"                        % "0.3m",
 
-  "com.haghard"             %% "nosql-join-stream"              % "0.2.3",
+  "com.haghard"             %% "nosql-join-stream"              % "0.2.4",
 
   "com.softwaremill.akka-http-session"  %%  "core"              % "0.2.7",
   "com.github.swagger-akka-http"        %% "swagger-akka-http"  % "0.7.2",
@@ -165,6 +166,15 @@ javacOptions ++= Seq(
 
 
 addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.8.0")
+
+def formattingPreferences = {
+  import scalariform.formatter.preferences._
+  FormattingPreferences()
+    .setPreference(RewriteArrowSymbols, true)
+    .setPreference(AlignParameters, true)
+    .setPreference(AlignSingleLineCaseStatements, true)
+    .setPreference(SpacesAroundMultiImports, true)
+}
 
 //run-main  http.Bootstrap --HTTP_PORT=8001 --NET_INTERFACE=en0 --DB_HOSTS=109.234.39.32 --TWITTER_CONSUMER_KEY= --TWITTER_CONSUMER_SECRET=
 //run-main  http.Bootstrap --HTTP_PORT=8001 --NET_INTERFACE=en0 --DB_HOSTS=109.234.39.32 --GOOGLE_CONSUMER_KEY= --GOOGLE_CONSUMER_SECRET=

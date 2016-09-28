@@ -1,7 +1,7 @@
 package ingestion
 
 import com.datastax.spark.connector.SomeColumns
-import com.datastax.spark.connector.cql.{CassandraConnectorConf, CassandraConnector}
+import com.datastax.spark.connector.cql.{ CassandraConnectorConf, CassandraConnector }
 import org.apache.spark.SparkConf
 
 /*
@@ -12,41 +12,45 @@ trait CassandraSchema {
   lazy val resultColumns = SomeColumns("period", "team", "score_line", "score", "opponent", "opponent_score_line", "opponent_score", "date", "seq_number")
 
   lazy val leadersColumns = SomeColumns("period", "name", "pos", "min", "fgma", "threepma", "ftma", "minusslashplus", "offreb", "defreb", "totalreb", "ast", "pf", "steel",
-                                        "to0", "blockshoot", "ba", "pts", "team", "opponent", "time")
+    "to0", "blockshoot", "ba", "pts", "team", "opponent", "time")
 
   lazy val playerColumns = SomeColumns("name", "period", "team", "time", "pos", "min", "fgma", "threepma", "ftma", "minusslashplus", "offreb", "defreb", "totalreb", "ast", "pf", "steel", "to0",
-                                       "blockshoot", "ba", "pts", "opponent")
+    "blockshoot", "ba", "pts", "opponent")
 
   lazy val dailyResColumns = SomeColumns("period", "opponents", "year", "month", "day", "score", "guest_score", "score_line", "guest_score_line")
 
   def installSchema(conf: SparkConf, keySpace: String, table1: String, table2: String, table3: String, table4: String,
-                    teams: scala.collection.mutable.HashMap[String, String]) = {
+    teams: scala.collection.mutable.HashMap[String, String]) = {
     val con = new CassandraConnector(CassandraConnectorConf(conf))
 
     con.withSessionDo {
       _.execute(
-          s"""CREATE TABLE IF NOT EXISTS ${keySpace}.teams (processor_id text, description text, PRIMARY KEY (processor_id))""")
+        s"""CREATE TABLE IF NOT EXISTS ${keySpace}.teams (processor_id text, description text, PRIMARY KEY (processor_id))"""
+      )
     }
 
     for (kv <- teams) {
       con.withSessionDo {
         _.execute(
-            s"INSERT INTO ${keySpace}.teams (processor_id, description) VALUES (?, ?) IF NOT EXISTS",
-            kv._1,
-            kv._2)
+          s"INSERT INTO ${keySpace}.teams (processor_id, description) VALUES (?, ?) IF NOT EXISTS",
+          kv._1,
+          kv._2
+        )
       }
     }
 
     con.withSessionDo {
       _.execute(
-          s"""CREATE TABLE IF NOT EXISTS ${keySpace}.campaign (campaign_id text, description text, PRIMARY KEY (campaign_id))""")
+        s"""CREATE TABLE IF NOT EXISTS ${keySpace}.campaign (campaign_id text, description text, PRIMARY KEY (campaign_id))"""
+      )
     }
 
     con.withSessionDo {
       _.execute(
-          s"""INSERT INTO ${keySpace}.campaign (campaign_id, description) VALUES (?, ?);""",
-          "nba",
-          "desc")
+        s"""INSERT INTO ${keySpace}.campaign (campaign_id, description) VALUES (?, ?);""",
+        "nba",
+        "desc"
+      )
     }
 
     /*

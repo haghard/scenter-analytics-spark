@@ -1,9 +1,9 @@
-import java.net.{NetworkInterface, InetAddress}
+import java.net.{ NetworkInterface, InetAddress }
 import java.util.Date
 
 import akka.actor._
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.server.{RouteConcatenation, Route, Directive1, Directives}
+import akka.http.scaladsl.server.{ RouteConcatenation, Route, Directive1, Directives }
 import akka.stream.ActorMaterializer
 import http.swagger.CorsSupport
 import ingestion.JournalChangesIngestion
@@ -12,13 +12,13 @@ import spark.SparkQuery
 import akka.pattern.AskTimeoutException
 import akka.util.ByteString
 import com.typesafe.config.ConfigFactory
-import org.joda.time.{DateTime, Interval}
+import org.joda.time.{ DateTime, Interval }
 
 import scala.collection.JavaConversions._
 import scala.collection.mutable
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 import scala.reflect.ClassTag
-import scala.util.{Failure, Success}
+import scala.util.{ Failure, Success }
 //import scalaz.{-\/, \/-, \/}
 import com.github.nscala_time.time.Imports._
 
@@ -60,17 +60,17 @@ package object http {
   case class NbaResultView(homeTeam: String, homeScore: Int, awayTeam: String, awayScore: Int, dt: Date)
   case class ResultAdded(team: String, r: NbaResult)
   case class NbaResult(homeTeam: String, homeScore: Int, awayTeam: String, awayScore: Int, dt: Date,
-                       homeScoreBox: String = "", awayScoreBox: String = "", homeTotal: Total = Total(), awayTotal: Total = Total(),
-                       homeBox: List[PlayerLine] = Nil, awayBox: List[PlayerLine] = Nil)
+    homeScoreBox: String = "", awayScoreBox: String = "", homeTotal: Total = Total(), awayTotal: Total = Total(),
+    homeBox: List[PlayerLine] = Nil, awayBox: List[PlayerLine] = Nil)
 
   case class Total(min: Int = 0, fgmA: String = "", threePmA: String = "", ftmA: String = "", minusSlashPlus: String = "",
-                   offReb: Int = 0, defReb: Int = 0, totalReb: Int = 0, ast: Int = 0, pf: Int = 0, steels: Int = 0,
-                   to: Int = 0, bs: Int = 0, ba: Int = 0, pts: Int = 0)
+    offReb: Int = 0, defReb: Int = 0, totalReb: Int = 0, ast: Int = 0, pf: Int = 0, steels: Int = 0,
+    to: Int = 0, bs: Int = 0, ba: Int = 0, pts: Int = 0)
 
   case class PlayerLine(name: String = "", pos: String = "", min: String = "", fgmA: String = "",
-                        threePmA: String = "", ftmA: String = "", minusSlashPlus: String = "",
-                        offReb: Int = 0, defReb: Int = 0, totalReb: Int = 0, ast: Int = 0, pf: Int = 0,
-                        steels: Int = 0, to: Int = 0, bs: Int = 0, ba: Int = 0, pts: Int = 0)
+    threePmA: String = "", ftmA: String = "", minusSlashPlus: String = "",
+    offReb: Int = 0, defReb: Int = 0, totalReb: Int = 0, ast: Int = 0, pf: Int = 0,
+    steels: Int = 0, to: Int = 0, bs: Int = 0, ba: Int = 0, pts: Int = 0)
 
   trait DefaultJobArgs {
     def url: String
@@ -89,18 +89,20 @@ package object http {
   }
 
   trait TypedAsk {
+    import cats.data.Xor
+    import cats.syntax.xor._
     import akka.pattern.ask
-    def fetch[T <: DefaultResponseBody](message: DefaultJobArgs, target: ActorRef)
-                                       (implicit ec: ExecutionContext, fetchTimeout: akka.util.Timeout, tag: ClassTag[T]): Future[cats.data.Xor[String,T]] =
+
+    def fetch[T <: DefaultResponseBody](message: DefaultJobArgs, target: ActorRef)(implicit ec: ExecutionContext, fetchTimeout: akka.util.Timeout, tag: ClassTag[T]): Future[cats.data.Xor[String, T]] =
       target.ask(message).mapTo[T].map(cats.data.Xor.right(_))
         .recoverWith {
-          case ex: ClassCastException ⇒ Future.successful(cats.data.Xor.left(s"Unexpected ClassCast: ${ex.getMessage}"))
+          case ex: ClassCastException ⇒ Future.successful(cats.data.Xor.left(s"Class cast error: ${ex.getMessage}"))
           case ex: AskTimeoutException ⇒ Future.successful(cats.data.Xor.left(s"Request timeout: ${ex.getMessage}"))
           case scala.util.control.NonFatal(e) => //Doesn't swallow stack overflow out of memory errors
             Future.successful(cats.data.Xor.left(s"Unexpected error: ${e.getMessage}"))
-      }
+        }
   }
-/*
+  /*
   case class Api(route: Option[ExecutionContext ⇒ Route] = None, preAction: Option[() ⇒ Unit] = None, postAction: Option[() ⇒ Unit] = None,
                                urls: String = "") extends Directives {
 
@@ -131,12 +133,12 @@ package object http {
 
     protected val httpDispatcher = HttpDispatcher
 
-    protected def installApi(/*api: Api,*/ context: SparkContext,
-                             intervals: scala.collection.mutable.LinkedHashMap[org.joda.time.Interval,String],
-                             arenas: scala.collection.immutable.Vector[(String, String)],
-                             teams : scala.collection.mutable.HashMap[String, String],
-                             interface: String, httpPort: Int)
-                            (implicit materializer: akka.stream.ActorMaterializer, system: ActorSystem) = {
+    protected def installApi( /*api: Api,*/ context: SparkContext,
+      intervals: scala.collection.mutable.LinkedHashMap[org.joda.time.Interval, String],
+      arenas: scala.collection.immutable.Vector[(String, String)],
+      teams: scala.collection.mutable.HashMap[String, String],
+      interface: String, httpPort: Int
+    )(implicit materializer: akka.stream.ActorMaterializer, system: ActorSystem) = {
 
       implicit val _ = system.dispatchers.lookup(httpDispatcher)
 
@@ -145,7 +147,7 @@ package object http {
         new TeamsRouter(interface, httpPort, context, intervals, arenas, teams).route ~
         new SwaggerDocRouter(interface, httpPort).route
 
-      system.registerOnTermination {  system.log.info("Http server was stopped")  }
+      system.registerOnTermination { system.log.info("Http server was stopped") }
       val startFuture = Http().bindAndHandle(akka.http.scaladsl.server.RouteResult.route2HandlerFlow(route), interface, httpPort)
 
       startFuture.onComplete {
@@ -169,7 +171,7 @@ package object http {
     def internalError[T <: DefaultJobArgs](resp: T)(implicit writer: JsonWriter[T]): String ⇒ Future[HttpResponse] =
       error ⇒
         Future.successful(HttpResponse(StatusCodes.BadRequest, scala.collection.immutable.Seq[HttpHeader](),
-                         HttpEntity(ContentTypes.`application/json`, ByteString(resp.toJson.prettyPrint))))
+          HttpEntity(ContentTypes.`application/json`, ByteString(resp.toJson.prettyPrint))))
 
     def internalError(error: String) = HttpResponse(StatusCodes.InternalServerError, entity = error)
 
@@ -226,22 +228,22 @@ package object http {
 
     override val teams = asScalaBuffer(system.settings.config.getConfig("app-settings")
       .getObjectList("teams"))./:(scala.collection.mutable.HashMap[String, String]()) { (acc, c) ⇒
-          val it = c.entrySet().iterator()
-          if (it.hasNext) {
-            val entry = it.next()
-            acc += (entry.getKey -> entry.getValue.render().replace("\"", ""))
-          }
-          acc
-        }
+      val it = c.entrySet().iterator()
+      if (it.hasNext) {
+        val entry = it.next()
+        acc += (entry.getKey -> entry.getValue.render().replace("\"", ""))
+      }
+      acc
+    }
 
     override val arenas = asScalaBuffer(system.settings.config.getConfig("app-settings")
       .getObjectList("arenas"))./:(scala.collection.immutable.Vector.empty[(String, String)]) { (acc, c) ⇒
-          val it = c.entrySet().iterator()
-          if (it.hasNext) {
-            val entry = it.next()
-            acc :+ (entry.getKey -> entry.getValue.render().replace("\"", ""))
-          } else acc
-        }
+      val it = c.entrySet().iterator()
+      if (it.hasNext) {
+        val entry = it.next()
+        acc :+ (entry.getKey -> entry.getValue.render().replace("\"", ""))
+      } else acc
+    }
 
     override val intervals = {
       var views = scala.collection.mutable.LinkedHashMap[Interval, String]()
@@ -317,50 +319,57 @@ package object http {
     }
   }
 
-
   import http.SparkJob._
   import http.TeamsRouter.TeamsHttpProtocols
   import spray.json.JsonWriter
 
-  case class SparkJobHttpResponse(url: String,view: Option[String] = None,
-                                    body: Option[SparkQueryView] = None,  error: Option[String] = None) extends DefaultHttpResponse
+  case class SparkJobHttpResponse(url: String, view: Option[String] = None,
+    body: Option[SparkQueryView] = None, error: Option[String] = None) extends DefaultHttpResponse
 
-    trait StandingHttpProtocols extends TeamsHttpProtocols {
-      implicit val standingFormat = jsonFormat7(Standing.apply)
+  trait StandingHttpProtocols extends TeamsHttpProtocols {
+    implicit val standingFormat = jsonFormat7(Standing.apply)
 
-      implicit object ResultsResponseWriter extends JsonWriter[SparkJobHttpResponse] {
-        import spray.json._
-        override def write(obj: SparkJobHttpResponse): spray.json.JsValue = {
-          val url = JsString(obj.url.toString)
-          val v = obj.view.fold(JsString("none")) { JsString(_)}
-          val error = obj.error.fold(JsString("none")) { JsString(_) }
-          obj.body match {
-            case Some(SeasonStandingView(c, west, east, latency, _)) ⇒
-              JsObject("western conference" -> JsArray(west.map(_.toJson)),
-                       "eastern conference" -> JsArray(east.map(_.toJson)),
-                       "url" -> url, "view" -> v, "latency" -> JsNumber(latency),
-                       "body" -> JsObject("count" -> JsNumber(c)),
-                       "error" -> error)
-            case Some(PlayoffStandingView(c, table, latency, _)) ⇒
-              JsObject("playoff" -> JsArray(table.map(_.toJson)),
-                       "url" -> url, "view" -> v, "latency" -> JsNumber(latency),
-                       "body" -> JsObject("count" -> JsNumber(c)),
-                       "error" -> error)
-            case Some(FilteredView(c, results, latency, _)) ⇒
-              JsObject("url" -> url,
-                       "view" -> JsArray(results.map(_.toJson)),
-                       "latency" -> JsNumber(latency),
-                       "body" -> JsObject("count" -> JsNumber(c)),
-                       "error" -> error)
-            case Some(FilteredAllView(c, results, latency, _)) ⇒
-              JsObject("url" -> url,
-                       "view" -> JsArray(results.map(_.toJson)),
-                       "latency" -> JsNumber(latency),
-                       "body" -> JsObject("count" -> JsNumber(c)),
-                       "error" -> error)
-            case None ⇒ JsObject("url" -> url, "view" -> v, "error" -> error)
-          }
+    implicit object ResultsResponseWriter extends JsonWriter[SparkJobHttpResponse] {
+      import spray.json._
+      override def write(obj: SparkJobHttpResponse): spray.json.JsValue = {
+        val url = JsString(obj.url.toString)
+        val v = obj.view.fold(JsString("none")) { JsString(_) }
+        val error = obj.error.fold(JsString("none")) { JsString(_) }
+        obj.body match {
+          case Some(SeasonStandingView(c, west, east, latency, _)) ⇒
+            JsObject(
+              "western conference" -> JsArray(west.map(_.toJson)),
+              "eastern conference" -> JsArray(east.map(_.toJson)),
+              "url" -> url, "view" -> v, "latency" -> JsNumber(latency),
+              "body" -> JsObject("count" -> JsNumber(c)),
+              "error" -> error
+            )
+          case Some(PlayoffStandingView(c, table, latency, _)) ⇒
+            JsObject(
+              "playoff" -> JsArray(table.map(_.toJson)),
+              "url" -> url, "view" -> v, "latency" -> JsNumber(latency),
+              "body" -> JsObject("count" -> JsNumber(c)),
+              "error" -> error
+            )
+          case Some(FilteredView(c, results, latency, _)) ⇒
+            JsObject(
+              "url" -> url,
+              "view" -> JsArray(results.map(_.toJson)),
+              "latency" -> JsNumber(latency),
+              "body" -> JsObject("count" -> JsNumber(c)),
+              "error" -> error
+            )
+          case Some(FilteredAllView(c, results, latency, _)) ⇒
+            JsObject(
+              "url" -> url,
+              "view" -> JsArray(results.map(_.toJson)),
+              "latency" -> JsNumber(latency),
+              "body" -> JsObject("count" -> JsNumber(c)),
+              "error" -> error
+            )
+          case None ⇒ JsObject("url" -> url, "view" -> v, "error" -> error)
         }
       }
     }
+  }
 }

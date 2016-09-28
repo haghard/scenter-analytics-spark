@@ -8,8 +8,7 @@ import http.swagger.SwaggerDocService
 import scala.concurrent.ExecutionContext
 
 //https://blog.codecentric.de/en/2016/04/swagger-akka-http/
-class SwaggerDocRouter(override val host: String, override val httpPort: Int)
-                      (implicit val ec: ExecutionContext, val system: ActorSystem) extends SecuritySupport {
+class SwaggerDocRouter(override val host: String, override val httpPort: Int)(implicit val ec: ExecutionContext, val system: ActorSystem) extends SecuritySupport {
 
   //http://localhost:8001/api-docs/swagger.json
   val assets =

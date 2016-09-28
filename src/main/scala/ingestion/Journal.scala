@@ -31,9 +31,9 @@ object Journal {
    """.stripMargin
 
   /**
-    *
-    *
-    */
+   *
+   *
+   */
   def maxSeqNumber =
     s"""SELECT seq_number FROM results_by_period WHERE
        | period = ? AND
@@ -42,10 +42,12 @@ object Journal {
     """.stripMargin
 }
 
-class Journal(config: Config,
-              cassandraHosts: Array[InetSocketAddress],
-              teams: scala.collection.mutable.HashMap[String, String],
-              gameIntervals: java.util.LinkedHashMap[Period, String])
+class Journal(
+  config: Config,
+  cassandraHosts: Array[InetSocketAddress],
+  teams: scala.collection.mutable.HashMap[String, String],
+  gameIntervals: java.util.LinkedHashMap[Period, String]
+)
     extends Actor
     with ActorHelper {
   import Journal._
@@ -55,9 +57,9 @@ class Journal(config: Config,
   val bufferSize = 64
 
   /**
-    * Target number of entries per partition (= columns per row).
-    * The value from akka-persistence-cassandra
-    */
+   * Target number of entries per partition (= columns per row).
+   * The value from akka-persistence-cassandra
+   */
   val targetPartitionSize = 500000l
 
   val decider: Supervision.Decider = {
@@ -72,19 +74,21 @@ class Journal(config: Config,
   implicit val c = context.system.dispatcher
 
   implicit val Mat = ActorMaterializer(
-      ActorMaterializerSettings(context.system)
-        .withSupervisionStrategy(decider)
-        .withInputBuffer(bufferSize, bufferSize))(context.system)
+    ActorMaterializerSettings(context.system)
+      .withSupervisionStrategy(decider)
+      .withInputBuffer(bufferSize, bufferSize)
+  )(context.system)
 
   implicit val session = (cassandraClient(ConsistencyLevel.LOCAL_ONE) connect config
-          .getString("spark.cassandra.journal.keyspace"))
+    .getString("spark.cassandra.journal.keyspace"))
 
   private def cassandraClient(cl: ConsistencyLevel): CassandraSource#Client = {
     val qs = new QueryOptions().setConsistencyLevel(cl).setFetchSize(1000)
     Cluster
       .builder()
       .addContactPointsWithPorts(asJavaCollectionConverter(
-              cassandraHosts.toIterable).asJavaCollection)
+        cassandraHosts.toIterable
+      ).asJavaCollection)
       .withQueryOptions(qs)
       .build
   }
@@ -112,21 +116,22 @@ class Journal(config: Config,
   }
 
   private def flow(teams: Map[String, Long]) = Source.fromGraph(
-      GraphDSL.create() { implicit b ⇒
-        val merge = b.add(Merge[ResultAddedEvent](teams.size))
-        teams.foreach { kv ⇒
-          (eventlog
-                .Log[CassandraSource] from (queryByKey(journal), kv._1, kv._2, targetPartitionSize)).source.map {
+    GraphDSL.create() { implicit b ⇒
+      val merge = b.add(Merge[ResultAddedEvent](teams.size))
+      teams.foreach { kv ⇒
+        (eventlog
+          .Log[CassandraSource] from (queryByKey(journal), kv._1, kv._2, targetPartitionSize)).source.map {
             row ⇒
               cassandra.deserialize(row.getBytes("event"))
           } ~> merge
-        }
-        SourceShape(merge.out)
       }
+      SourceShape(merge.out)
+    }
   )
 
   private def teamsJournal(
-      teams: Map[String, Long]): Graph[ClosedShape, akka.NotUsed] = {
+    teams: Map[String, Long]
+  ): Graph[ClosedShape, akka.NotUsed] = {
     GraphDSL.create() { implicit b ⇒
       flow(teams) ~> Sink.actorRef[ResultAddedEvent](self, 'UpdateCompleted)
       ClosedShape
@@ -140,9 +145,9 @@ class Journal(config: Config,
       store(event, counter)
     case 'UpdateCompleted ⇒
       context.system.scheduler.scheduleOnce(RefreshEvery)(
-          akka.stream.scaladsl.RunnableGraph
-            .fromGraph(teamsJournal(progresses))
-            .run()(Mat)
+        akka.stream.scaladsl.RunnableGraph
+          .fromGraph(teamsJournal(progresses))
+          .run()(Mat)
       )
   }
 }

@@ -1,6 +1,6 @@
 package http
 
-import com.github.scribejava.apis.{GitHubApi, TwitterApi, GoogleApi20}
+import com.github.scribejava.apis.{ GitHubApi, TwitterApi, GoogleApi20 }
 
 import scala.annotation.implicitNotFound
 import java.util.concurrent.ThreadLocalRandom
@@ -30,8 +30,7 @@ package object oauth {
   object Oauth {
 
     @implicitNotFound(msg = "Cannot find Oauth type class for ${T}")
-    def apply[T <: com.github.scribejava.core.builder.api.Api: Oauth]
-      : Oauth[T] = implicitly[Oauth[T]]
+    def apply[T <: com.github.scribejava.core.builder.api.Api: Oauth]: Oauth[T] = implicitly[Oauth[T]]
 
     implicit def google = new Oauth[com.github.scribejava.apis.GoogleApi20] {
       override val protectedUrl =

@@ -5,8 +5,8 @@ import javax.ws.rs.Path
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes
-import com.github.scribejava.apis.{GoogleApi, TwitterApi, GitHubApi}
-import com.github.scribejava.core.model.{OAuthRequest, Verb}
+import com.github.scribejava.apis.{ GoogleApi, TwitterApi, GitHubApi }
+import com.github.scribejava.core.model.{ OAuthRequest, Verb }
 import com.softwaremill.session._
 import akka.http.scaladsl.server._
 import com.softwaremill.session.SessionDirectives._
@@ -16,7 +16,7 @@ import com.softwaremill.session.SessionOptions._
 import http.SparkJob.TeamStatsView
 import io.swagger.annotations._
 
-import scala.concurrent.{Future, ExecutionContext}
+import scala.concurrent.{ Future, ExecutionContext }
 import scala.util.Try
 import org.mindrot.jbcrypt.BCrypt
 
@@ -37,17 +37,18 @@ trait SecuritySupport extends DefaultRestMicroservice /*with Directives*/ {
   lazy val githubApiKey = system.settings.config.getString("github.consumer-key")
   lazy val githubApiSecret = system.settings.config.getString("github.consumer-secret")
 
-
   val salt = BCrypt.gensalt()
 
   lazy val (google, twitter, github) = {
-    (http.oauth.Oauth[com.github.scribejava.apis.GoogleApi20].withKeySecret(googleApiKey, googleApiSecret),
-     http.oauth.Oauth[com.github.scribejava.apis.TwitterApi].withKeySecret(twitterApiKey, twitterApiSecret),
-     http.oauth.Oauth[com.github.scribejava.apis.GitHubApi].withKeySecret(githubApiKey, githubApiSecret))
+    (
+      http.oauth.Oauth[com.github.scribejava.apis.GoogleApi20].withKeySecret(googleApiKey, googleApiSecret),
+      http.oauth.Oauth[com.github.scribejava.apis.TwitterApi].withKeySecret(twitterApiKey, twitterApiSecret),
+      http.oauth.Oauth[com.github.scribejava.apis.GitHubApi].withKeySecret(githubApiKey, githubApiSecret)
+    )
   }
 
   implicit def serializer: SessionSerializer[ServerSession, String] =
-    new SingleValueSessionSerializer({ session: ServerSession ⇒ (session.user + "-" + session.password)}, { v: (String) ⇒
+    new SingleValueSessionSerializer({ session: ServerSession ⇒ (session.user + "-" + session.password) }, { v: (String) ⇒
       val kv = v.split("-")
       Try(ServerSession(kv(0), kv(1)))
     })
@@ -184,15 +185,15 @@ trait SecuritySupport extends DefaultRestMicroservice /*with Directives*/ {
         parameters(('oauth_token.as[String]), ('oauth_verifier.as[String])) {
           (oauthToken, oauthVerifier) ⇒
             /**
-              * Converting the request token to an access token
-              * To render the request token into a usable access token,
-              * your application must make a request to the POST oauth / access_token endpoint,
-              * containing the oauth_verifier value obtained in prev step.
-              * The request token is also passed in the oauth_token portion of the header,
-              * but this will have been added by the signing process.
-              *
-              * Source https://dev.twitter.com/web/sign-in/implementing
-              */
+             * Converting the request token to an access token
+             * To render the request token into a usable access token,
+             * your application must make a request to the POST oauth / access_token endpoint,
+             * containing the oauth_verifier value obtained in prev step.
+             * The request token is also passed in the oauth_token portion of the header,
+             * but this will have been added by the signing process.
+             *
+             * Source https://dev.twitter.com/web/sign-in/implementing
+             */
             import spray.json._
             complete {
               Future {
