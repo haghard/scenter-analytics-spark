@@ -176,11 +176,12 @@ def formattingPreferences = {
     .setPreference(SpacesAroundMultiImports, true)
 }
 
-//run-main  http.Bootstrap --HTTP_PORT=8001 --NET_INTERFACE=en0 --DB_HOSTS=109.234.39.32 --TWITTER_CONSUMER_KEY= --TWITTER_CONSUMER_SECRET=
-//run-main  http.Bootstrap --HTTP_PORT=8001 --NET_INTERFACE=en0 --DB_HOSTS=109.234.39.32 --GOOGLE_CONSUMER_KEY= --GOOGLE_CONSUMER_SECRET=
-//run-main http.Bootstrap --HTTP_PORT=8001 --NET_INTERFACE=en0 --DB_HOSTS=109.234.39.32  --GITHUB_CONSUMER_KEY= --GITHUB_CONSUMER_SECRET=
-
 //http GET http://192.168.0.62:8001/api/login?"user=haghard&password=qwerty"
+
+
+//swagger
+
+//http://192.168.0.62:8001/api-docs/swagger.json
 
 //browser
 //http://haghard.com:8001/api/login-twitter

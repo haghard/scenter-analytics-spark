@@ -55,7 +55,7 @@ package object http {
   private[http] val SEEDS_ENV = "SEED_NODES"
   private[http] val HTTP_PORT = "HTTP_PORT"
   private[http] val NET_INTERFACE = "NET_INTERFACE"
-  private[http] val DOMAIN = "DOMAIN"
+  private[http] val HOST = "HOST"
 
   case class NbaResultView(homeTeam: String, homeScore: Int, awayTeam: String, awayScore: Int, dt: Date)
   case class ResultAdded(team: String, r: NbaResult)
@@ -212,17 +212,14 @@ package object http {
   }
 
   abstract class MicroKernel(override val httpPort: Int = DefaultHttpPort, override val ethName: String) extends BootableMicroservice
-      with EndpointInstaller
-      with ClusterNetwork
-      with NetworkResolver {
+      with EndpointInstaller with ClusterNetwork with NetworkResolver {
 
-    //lazy val api = configureApi()
     override lazy val system = ActorSystem(ActorSystemName, config)
 
     override def localAddress = addresses.map(_.getHostAddress).getOrElse("0.0.0.0")
 
-    override val domain = Option(System.getProperty(DOMAIN))
-      .fold(throw new Exception(s"$DOMAIN ENV variable should be defined"))(identity)
+    override val domain = Option(System.getProperty(HOST))
+      .fold(throw new Exception(s"$HOST ENV variable should be defined"))(identity)
 
     override val teams = asScalaBuffer(system.settings.config.getConfig("app-settings")
       .getObjectList("teams"))./:(scala.collection.mutable.HashMap[String, String]()) { (acc, c) ⇒
@@ -307,7 +304,7 @@ package object http {
         localAddress, httpPort)(mat, system)
 
       //Streaming
-      JournalChangesIngestion.start(context, config, teams)
+      //JournalChangesIngestion.start(context, config, teams)
     }
 
     override def shutdown() = {

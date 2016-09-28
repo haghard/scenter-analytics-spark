@@ -2,24 +2,25 @@ package http
 
 import scala.util.Try
 import scala.collection._
-import scala.concurrent.duration._
 
 object Bootstrap extends App {
-  val opt = """--(\S+)=(\S+)""".r
+  val opt = """(\S+)=(\S+)""".r
   val DefaultEth = "eth0"
 
-  def argsToProps(args: Array[String]) =
+  def argsToProps(args: Seq[String]): Map[String, String] =
     args.collect { case opt(key, value) ⇒ key -> value }(breakOut)
 
-  def applySystemProperties(args: Array[String]) = {
-    for ((key, value) ← argsToProps(args)) {
-      println(s"SYSTEM ENVIROMENT: $key - $value")
-      System.setProperty(key, value)
+  def applySystemProperties(args: Map[String, String]) = {
+    for ((key, value) ← args if key startsWith "-D") {
+      println(s"SYSTEM VARIABLE: ${key substring 2} - $value")
+      System.setProperty(key substring 2, value)
     }
   }
 
-  if (args.size > 0)
-    applySystemProperties(args)
+  if (args.size > 0) {
+    val opts = argsToProps(args.toSeq)
+    applySystemProperties(opts)
+  }
 
   val httpP = Try(System.getProperty(HTTP_PORT).toInt).getOrElse(DefaultHttpPort)
   val eth = Option(System.getProperty(NET_INTERFACE)).filter(_ != "null").getOrElse(DefaultEth)
@@ -38,8 +39,7 @@ object Bootstrap extends App {
 
   //https://github.com/akka/akka/blob/master/akka-http-tests/src/test/scala/akka/http/scaladsl/server/directives/SecurityDirectivesSpec.scala
 
-  object SparkAnalytics extends MicroKernel(httpPort = httpP, ethName = eth) /* with SwaggerRouter*/ {
-    //implicit val timeout = akka.util.Timeout(30 seconds)
+  object SparkAnalytics extends MicroKernel(httpPort = httpP, ethName = eth) {
     override val environment = "Spark"
 
     /*override lazy val googleApiKey = system.settings.config.getString("google.consumer-key")

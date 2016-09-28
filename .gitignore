@@ -16,3 +16,11 @@ project/plugins/project/
 .scala_dependencies
 .worksheet
 /src/main/scala/http/dsl/
+/alias.sbt
+.idea/
+.idea_modules/
+.sbtopts
+alias.sbt
+project/project/
+scenter-checkpoint/
+src/main/scala/http/modules/

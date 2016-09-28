@@ -63,14 +63,8 @@ class TeamsRouter(override val host: String, override val httpPort: Int,
 
   override implicit val timeout = akka.util.Timeout(10.seconds)
 
-  import cats.data.Validated
   import cats.data.Xor
-  import cats.kernel.Monoid
-  import cats.Traverse._
   import cats.data.Validated
-  import cats.data.Validated.{ Invalid, Valid }
-  import cats.SemigroupK
-  import cats.data.NonEmptyList
   import cats.implicits._
 
   val T = implicitly[cats.Traverse[List]]
@@ -108,7 +102,7 @@ class TeamsRouter(override val host: String, override val httpPort: Int,
         parameters(('teams.as[String])) { teams ⇒
           requiredHttpSession(ec) { session ⇒
             withUri { url ⇒
-              system.log.info(s"[user:${session.user}] accesses a resource [$httpPrefixAddress/$pathPrefix/$httpPrefixAddress/{season}]")
+              system.log.info(s"[user:${session.user}] accesses resource: [$httpPrefixAddress/$pathPrefix/$httpPrefixAddress/{season}]")
               get(complete(search(url, period, teams)))
             }
           }
