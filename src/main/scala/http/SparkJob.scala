@@ -186,7 +186,7 @@ class SparkJob(val config: Config) extends Actor with ActorLogging {
 
     case TeamStatQueryArgs(ctx, _, period, teams, arenas, allTeams) ⇒
       log.info(s"SELECT team, score, opponent, opponent_score, date FROM results_by_period WHERE period = '{}' and team in ({})",
-        period, teams.map(t=> s"""'$t',"""))
+        period, teams.map(t=> s"""'$t',""").mkString)
       (TeamsResultsQuery[TeamStatsView] async (ctx, config, period, teams, arenas, allTeams) to sender()).future
         .onComplete(_ ⇒ context.system.stop(self))
 
