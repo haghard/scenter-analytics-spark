@@ -89,8 +89,6 @@ package object http {
   }
 
   trait TypedAsk {
-    import cats.data.Xor
-    import cats.syntax.xor._
     import akka.pattern.ask
 
     def fetch[T <: DefaultResponseBody](message: DefaultJobArgs, target: ActorRef)(implicit ec: ExecutionContext, fetchTimeout: akka.util.Timeout, tag: ClassTag[T]): Future[cats.data.Xor[String, T]] =
@@ -309,7 +307,7 @@ package object http {
         localAddress, httpPort)(mat, system)
 
       //Streaming
-      //JournalChangesIngestion.start(context, config, teams)
+      JournalChangesIngestion.start(context, config, teams)
     }
 
     override def shutdown() = {
