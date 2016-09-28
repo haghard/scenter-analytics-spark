@@ -1,5 +1,6 @@
 import java.util.Date
 
+import akka.event.LoggingAdapter
 import cassandra._
 import com.typesafe.config.Config
 import http.NbaResult
@@ -71,14 +72,8 @@ package object spark {
   }
 
   trait TeamsResultsQuery[T] extends SparkQuery {
-    def async(
-      ctx: SparkContext,
-      config: Config,
-      period: String,
-      teams: scala.collection.Seq[String],
-      arenas: Seq[(String, String)],
-      allTeams: mutable.HashMap[String, String]
-    ): Future[T]
+    def async(ctx: SparkContext, log: LoggingAdapter, config: Config, period: String, teams: scala.collection.Seq[String],
+      arenas: Seq[(String, String)], allTeams: mutable.HashMap[String, String]): Future[T]
   }
 
   trait DailyResultsQuery[T] extends SparkQuery {
@@ -129,7 +124,7 @@ package object spark {
     implicit def teamStats(implicit ex: ExecutionContext) =
       new TeamsResultsQuery[TeamStatsView] {
         override val name: String = "[spark-query]: team-stats"
-        override def async(ctx: SparkContext, config: Config, period: String,
+        override def async(ctx: SparkContext, log: LoggingAdapter, config: Config, period: String,
           teams: scala.collection.Seq[String], arenas: Seq[(String, String)],
           allTeams: mutable.HashMap[String, String]): Future[TeamStatsView] = {
           val sqlContext = new SQLContext(ctx)
@@ -139,6 +134,7 @@ package object spark {
           val keyTeamsDF = ctx.parallelize(teams).toDF("team")
           val arenasDF = ctx.parallelize(arenas).toDF("home-team", "arena")
 
+          log.info(s"select team, score, opponent, opponent_score, date from results_by_period where period = '{}' and team in ( {} )", period, allTeams.keySet)
           val resultsDF = ctx.cassandraResultByPeriodRdd(config, allTeams.keySet, period).toDF("home-team", "home-score", "away-team", "away-score", "date")
 
           ((keyTeamsDF join (resultsDF, resultsDF("home-team") === keyTeamsDF("team") || resultsDF("away-team") === keyTeamsDF("team"))) join (arenasDF, "home-team"))
@@ -159,10 +155,7 @@ package object spark {
   object PlayerStatsQuery {
 
     @implicitNotFound(msg = "Cannot find PlayerStatsQuery type class for ${T}")
-    def apply[T <: SparkQueryView: PlayerStatsQuery](
-      implicit
-      ex: ExecutionContext
-    ) = implicitly[PlayerStatsQuery[T]]
+    def apply[T <: SparkQueryView: PlayerStatsQuery](implicit ex: ExecutionContext) = implicitly[PlayerStatsQuery[T]]
 
     /*
     implicit def avg(implicit ex: ExecutionContext) = new PlayerStatsTask[PlayerStatsView] {
@@ -205,24 +198,15 @@ package object spark {
   object RebLeadersQuery {
 
     @implicitNotFound(msg = "Cannot find RebLeadersTask type class for ${T}")
-    def apply[T <: SparkQueryView: RebLeadersQuery](
-      implicit
-      ex: ExecutionContext
-    ) = implicitly[RebLeadersQuery[T]]
+    def apply[T <: SparkQueryView: RebLeadersQuery](implicit ex: ExecutionContext) = implicitly[RebLeadersQuery[T]]
 
     implicit def instance(implicit ex: ExecutionContext) =
       new RebLeadersQuery[RebLeadersView] {
         override val name = "[spark-query]: rebound-leaders"
 
-        override def async(
-          ctx: SparkContext,
-          config: Config,
-          period: String,
-          depth: Int
-        ): Future[RebLeadersView] = {
+        override def async(ctx: SparkContext, config: Config, period: String, depth: Int): Future[RebLeadersView] = {
           val start = System.currentTimeMillis()
-          val rdd: RDD[((String, String), (Float, Float, Float))] =
-            ctx.cassandraRebLeadersRdd(config, period).cache()
+          val rdd: RDD[((String, String), (Float, Float, Float))] = ctx.cassandraRebLeadersRdd(config, period).cache()
 
           val array = rdd
             .combineByKey(

@@ -91,7 +91,8 @@ package object http {
   trait TypedAsk {
     import akka.pattern.ask
 
-    def fetch[T <: DefaultResponseBody](message: DefaultJobArgs, target: ActorRef)(implicit ec: ExecutionContext, fetchTimeout: akka.util.Timeout, tag: ClassTag[T]): Future[cats.data.Xor[String, T]] =
+    def fetch[T <: DefaultResponseBody](message: DefaultJobArgs, target: ActorRef)
+                                       (implicit ec: ExecutionContext, fetchTimeout: akka.util.Timeout, tag: ClassTag[T]): Future[cats.data.Xor[String, T]] =
       target.ask(message).mapTo[T].map(cats.data.Xor.right(_))
         .recoverWith {
           case ex: ClassCastException ⇒ Future.successful(cats.data.Xor.left(s"Class cast error: ${ex.getMessage}"))
