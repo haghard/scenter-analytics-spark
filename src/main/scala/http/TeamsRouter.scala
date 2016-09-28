@@ -113,7 +113,7 @@ class TeamsRouter(override val host: String, override val httpPort: Int,
   private def validateTeams(searchTeams: String): Validated[String, List[String]] = {
     val teamsFilter = searchTeams.split(",").toList
     T.traverseU(teamsFilter) { team =>
-      teams(team).fold(Validated.invalid[String, String](s"\n Could'n find team $team"))(r=>Validated.valid[String, String](r))
+      teams.get(team).fold(Validated.invalid[String, String](s"\n Could'n find team $team"))(r=>Validated.valid[String, String](r))
     }
   }
 
