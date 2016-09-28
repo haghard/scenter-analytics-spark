@@ -72,7 +72,7 @@ package object spark {
   }
 
   trait TeamsResultsQuery[T] extends SparkQuery {
-    def async(ctx: SparkContext, log: LoggingAdapter, config: Config, period: String, teams: scala.collection.Seq[String],
+    def async(ctx: SparkContext, config: Config, period: String, teams: scala.collection.Seq[String],
       arenas: Seq[(String, String)], allTeams: mutable.HashMap[String, String]): Future[T]
   }
 
@@ -124,7 +124,7 @@ package object spark {
     implicit def teamStats(implicit ex: ExecutionContext) =
       new TeamsResultsQuery[TeamStatsView] {
         override val name: String = "[spark-query]: team-stats"
-        override def async(ctx: SparkContext, log: LoggingAdapter, config: Config, period: String,
+        override def async(ctx: SparkContext, /*log: LoggingAdapter,*/ config: Config, period: String,
           teams: scala.collection.Seq[String], arenas: Seq[(String, String)],
           allTeams: mutable.HashMap[String, String]): Future[TeamStatsView] = {
           val sqlContext = new SQLContext(ctx)
@@ -134,7 +134,6 @@ package object spark {
           val keyTeamsDF = ctx.parallelize(teams).toDF("team")
           val arenasDF = ctx.parallelize(arenas).toDF("home-team", "arena")
 
-          log.info(s"select team, score, opponent, opponent_score, date from results_by_period where period = '{}' and team in ( {} )", period, allTeams.keySet)
           val resultsDF = ctx.cassandraResultByPeriodRdd(config, allTeams.keySet, period).toDF("home-team", "home-score", "away-team", "away-score", "date")
 
           ((keyTeamsDF join (resultsDF, resultsDF("home-team") === keyTeamsDF("team") || resultsDF("away-team") === keyTeamsDF("team"))) join (arenasDF, "home-team"))
