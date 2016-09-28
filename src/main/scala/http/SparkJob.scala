@@ -146,13 +146,7 @@ object SparkJob {
   case class PlayerStatsView(count: Int = 0, stats: List[Stats] = List.empty, latency: Long = 0l, error: Option[String] = None) extends SparkQueryView
   case class TeamStatsView(count: Int = 0, stats: List[ResultView] = List.empty, latency: Long = 0l, error: Option[String] = None) extends SparkQueryView
 
-  case class DailyView(
-    count: Int = 0,
-    results: List[ResultView] = List.empty,
-    latency: Long = 0l,
-    error: Option[String] = None
-  )
-      extends SparkQueryView
+  case class DailyView(count: Int = 0, results: List[ResultView] = List.empty, latency: Long = 0l, error: Option[String] = None) extends SparkQueryView
 
   val Season = "season"
   val PlayOff = "playoff"
@@ -191,8 +185,8 @@ class SparkJob(val config: Config) extends Actor with ActorLogging {
         .onComplete(_ ⇒ context.system.stop(self))
 
     case TeamStatQueryArgs(ctx, _, period, teams, arenas, allTeams) ⇒
-      //log.info(s"Start spark team-stats query for [$period] [$teams]")
-      log.info(s"select team, score, opponent, opponent_score, date from results_by_period where period = '{}' and team in ( {} )", period, teams)
+      log.info(s"SELECT team, score, opponent, opponent_score, date FROM results_by_period WHERE period = '{}' and team in ({})",
+        period, teams.mkString(","))
       (TeamsResultsQuery[TeamStatsView] async (ctx, config, period, teams, arenas, allTeams) to sender()).future
         .onComplete(_ ⇒ context.system.stop(self))
 
