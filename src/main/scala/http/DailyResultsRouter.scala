@@ -2,6 +2,7 @@ package http
 
 import javax.ws.rs.Path
 
+import akka.actor.ActorSystem
 import akka.http.scaladsl.model.HttpResponse
 import akka.http.scaladsl.server._
 import cats.data.Validated
@@ -47,7 +48,9 @@ class DailyResultsRouter(override val host: String, override val httpPort: Int,
                          context: SparkContext,
                          intervals: scala.collection.mutable.LinkedHashMap[org.joda.time.Interval, String],
                          arenas: scala.collection.immutable.Vector[(String, String)],
-                         teams: scala.collection.mutable.HashMap[String, String]) extends SecuritySupport with TypedAsk with DailyResultsProtocol {
+                         teams: scala.collection.mutable.HashMap[String, String],
+                         override val httpPrefixAddress: String = "daily")
+                        (implicit val ec: ExecutionContext, val system: ActorSystem) extends SecuritySupport with TypedAsk with DailyResultsProtocol {
   private val dailyResultsPath = "daily"
   private val dailyJobSupervisor = system.actorOf(SparkQuerySupervisor.props)
 
@@ -72,7 +75,7 @@ class DailyResultsRouter(override val host: String, override val httpPort: Int,
       (get & path(dailyResultsPath / Segment)) { day ⇒
         withUri { url ⇒
           requiredHttpSession(ec) { session ⇒
-            system.log.info(s"[user:${session.user}] access [$httpPrefixAddress/$pathPrefix/$dailyResultsPath/$day]")
+            system.log.info(s"[user:${session.user}] access [$pathPrefix/$httpPrefixAddress/$day]")
             get(complete(searchResults(url, day)))
           }
         }
