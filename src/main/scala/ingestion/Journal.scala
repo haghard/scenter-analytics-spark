@@ -3,25 +3,22 @@ package ingestion
 import java.net.InetSocketAddress
 
 import akka.actor.Actor
-import join.cassandra.CassandraSource
 import akka.stream._
 import akka.stream.scaladsl._
-import com.typesafe.config.Config
 import com.datastax.driver.core._
-import ingestion.SparkFunctions.Period
-import org.apache.spark.streaming.receiver.ActorHelper
+import com.typesafe.config.Config
 import domain.formats.DomainEventFormats.ResultAddedEvent
+import ingestion.SparkFunctions.Period
+import join.cassandra.CassandraSource
+import log.CassandraAsyncLog
+import org.apache.spark.streaming.receiver.ActorHelper
 
 object Journal {
+
   import scala.concurrent.duration._
 
   val RefreshEvery = JournalChangesIngestion.StreamingBatchInterval seconds
 
-  /*
-    sequence_nr >= ?
-    I use = to support serializable consistency for all 3 tables providing at-least-once write.
-    Cassandra provides idempotency on schema level to deal with duplicates
-   */
   def queryByKey(journal: String) =
     s"""
        |SELECT event FROM $journal WHERE
@@ -31,33 +28,36 @@ object Journal {
    """.stripMargin
 
   /**
-   *
-   *
-   */
+    *
+    *
+    */
   def maxSeqNumber =
     s"""SELECT seq_number FROM results_by_period WHERE
-       | period = ? AND
-       | team = ?
-       | limit 1
+        | period = ? AND
+        | team = ?
+        | limit 1
     """.stripMargin
 }
 
 class Journal(
-  config: Config,
-  cassandraHosts: Array[InetSocketAddress],
-  teams: scala.collection.mutable.HashMap[String, String],
-  gameIntervals: java.util.LinkedHashMap[Period, String]
-) extends Actor with ActorHelper {
-  import Journal._
+               config: Config,
+               cassandraHosts: Array[InetSocketAddress],
+               teams: scala.collection.mutable.HashMap[String, String],
+               gameIntervals: java.util.LinkedHashMap[Period, String]
+             ) extends Actor with ActorHelper {
+
   import GraphDSL.Implicits._
+  import Journal._
+
   import scala.collection.JavaConverters._
 
-  val bufferSize = 64
+  val AkkaBufferSize = 1024
+  val cassandraPageSize = 1024
 
   /**
-   * Target number of entries per partition (= columns per row).
-   * The value from akka-persistence-cassandra
-   */
+    * Target number of entries per partition
+    * The value from akka-persistence-cassandra cassandra-journal.target-partition-size
+    */
   val targetPartitionSize = 500000l
 
   val decider: Supervision.Decider = {
@@ -74,19 +74,17 @@ class Journal(
   implicit val Mat = ActorMaterializer(
     ActorMaterializerSettings(context.system)
       .withSupervisionStrategy(decider)
-      .withInputBuffer(bufferSize, bufferSize)
+      .withInputBuffer(AkkaBufferSize, AkkaBufferSize)
   )(context.system)
 
   implicit val session = (cassandraClient(ConsistencyLevel.LOCAL_ONE) connect config
     .getString("spark.cassandra.journal.keyspace"))
 
   private def cassandraClient(cl: ConsistencyLevel): CassandraSource#Client = {
-    val qs = new QueryOptions().setConsistencyLevel(cl).setFetchSize(1000)
+    val qs = new QueryOptions().setConsistencyLevel(cl).setFetchSize(cassandraPageSize)
     Cluster
       .builder()
-      .addContactPointsWithPorts(asJavaCollectionConverter(
-        cassandraHosts.toIterable
-      ).asJavaCollection)
+      .addContactPointsWithPorts(asJavaCollectionConverter(cassandraHosts.toIterable).asJavaCollection)
       .withQueryOptions(qs)
       .build
   }
@@ -113,25 +111,34 @@ class Journal(
     if (row == null) 0l else row.getLong("seq_number")
   }
 
-  private def flow(teams: Map[String, Long]) = Source.fromGraph(
+  private def asyncFlow(teams: Map[String, Long]) = Source.fromGraph(
     GraphDSL.create() { implicit b ⇒
       val merge = b.add(Merge[ResultAddedEvent](teams.size))
       teams.foreach { kv ⇒
-        (eventlog
-          .Log[CassandraSource] from (queryByKey(journal), kv._1, kv._2, targetPartitionSize)).source.map {
-            row ⇒
-              cassandra.deserialize(row.getBytes("event"))
-          } ~> merge
+        CassandraAsyncLog(session, cassandraPageSize, queryByKey(journal), kv._1, kv._2, targetPartitionSize)
+          .map { row ⇒ cassandra.deserialize(row.getBytes("event")) } ~> merge
       }
       SourceShape(merge.out)
     }
   )
 
-  private def teamsJournal(
-    teams: Map[String, Long]
-  ): Graph[ClosedShape, akka.NotUsed] = {
+  private def flow(teams: Map[String, Long]) = Source.fromGraph(
     GraphDSL.create() { implicit b ⇒
-      flow(teams) ~> Sink.actorRef[ResultAddedEvent](self, 'UpdateCompleted)
+      val merge = b.add(Merge[ResultAddedEvent](teams.size))
+      teams.foreach { kv ⇒
+        (eventlog.Log[CassandraSource] from(queryByKey(journal), kv._1, kv._2, targetPartitionSize)).source.map {
+          row ⇒
+            cassandra.deserialize(row.getBytes("event"))
+        } ~> merge
+      }
+      SourceShape(merge.out)
+    }
+  )
+
+  private def teamsJournal(teams: Map[String, Long]): Graph[ClosedShape, akka.NotUsed] = {
+    GraphDSL.create() { implicit b ⇒
+      //flow(teams)
+       asyncFlow(teams) ~> Sink.actorRef[ResultAddedEvent](self, 'UpdateCompleted)
       ClosedShape
     }
   }

@@ -35,40 +35,20 @@ package object spark {
   }
 
   trait StandingQuery[T] extends SparkQuery {
-    def async(
-      ctx: SparkContext,
-      config: Config,
-      teams: mutable.HashMap[String, String],
-      period: String
-    ): Future[T]
+    def async(ctx: SparkContext, config: Config,
+      teams: mutable.HashMap[String, String], period: String): Future[T]
   }
 
   trait PtsLeadersQuery[T] extends SparkQuery {
-    def async(
-      ctx: SparkContext,
-      config: Config,
-      period: String,
-      depth: Int
-    ): Future[T]
+    def async(ctx: SparkContext, config: Config, period: String, depth: Int): Future[T]
   }
 
   trait RebLeadersQuery[T] extends SparkQuery {
-    def async(
-      ctx: SparkContext,
-      config: Config,
-      period: String,
-      depth: Int
-    ): Future[T]
+    def async(ctx: SparkContext, config: Config, period: String, depth: Int): Future[T]
   }
 
   trait PlayerStatsQuery[T] extends SparkQuery {
-    def async(
-      ctx: SparkContext,
-      config: Config,
-      name: String,
-      period: String,
-      team: String
-    ): Future[T]
+    def async(ctx: SparkContext, config: Config, name: String, period: String, team: String): Future[T]
   }
 
   trait TeamsResultsQuery[T] extends SparkQuery {
@@ -77,14 +57,8 @@ package object spark {
   }
 
   trait DailyResultsQuery[T] extends SparkQuery {
-    def async(
-      ctx: SparkContext,
-      config: Config,
-      stage: String,
-      yyyyMMDD: (Int, Int, Int),
-      arenas: Seq[(String, String)],
-      allTeams: mutable.HashMap[String, String]
-    ): Future[T]
+    def async(ctx: SparkContext, config: Config, stage: String, yyyyMMDD: (Int, Int, Int),
+      arenas: Seq[(String, String)], allTeams: mutable.HashMap[String, String]): Future[T]
   }
 
   object DailyResultsQuery {
@@ -95,17 +69,11 @@ package object spark {
       new DailyResultsQuery[DailyView] {
         override val name: String = "[spark-query]: daily-results"
 
-        override def async(
-          ctx: SparkContext,
-          config: Config,
-          stage: String,
-          yyyyMMDD: (Int, Int, Int),
-          arenas: Seq[(String, String)],
-          teams: mutable.HashMap[String, String]
-        ): Future[DailyView] = {
-          val startTs = System.currentTimeMillis()
+        override def async(ctx: SparkContext, config: Config, stage: String, yyyyMMDD: (Int, Int, Int),
+          arenas: Seq[(String, String)], teams: mutable.HashMap[String, String]): Future[DailyView] = {
+          val startTs = System.currentTimeMillis
           val results = ctx.cassandraDailyResults(config, stage, yyyyMMDD._1, yyyyMMDD._2, yyyyMMDD._3).cache()
-          results.collectAsync().map { seq =>
+          results.collectAsync.map { seq =>
             val results = seq.map { el =>
               ResultView(s" ${el._2} @ ${el._1}", s"${el._7}:${el._5} - ${el._6}:${el._4}", cassandra.formatter.format(el._3),
                 arenas.find(_._1 == el._1.trim).map(_._2).getOrElse(el._1))
@@ -192,7 +160,7 @@ package object spark {
 
   object RebLeadersQuery {
 
-    @implicitNotFound(msg = "Cannot find RebLeadersTask type class for ${T}")
+    @implicitNotFound(msg = "Cannot find RebLeadersQuery type class for ${T}")
     def apply[T <: SparkQueryView: RebLeadersQuery](implicit ex: ExecutionContext) = implicitly[RebLeadersQuery[T]]
 
     implicit def instance(implicit ex: ExecutionContext) =
@@ -258,16 +226,12 @@ package object spark {
 
   object PtsLeadersQuery {
 
-    @implicitNotFound(msg = "Cannot find PtsLeadersTask type class for ${T}")
-    def apply[T <: SparkQueryView: PtsLeadersQuery](
-      implicit
-      ex: ExecutionContext
-    ) = implicitly[PtsLeadersQuery[T]]
+    @implicitNotFound(msg = "Cannot find PtsLeadersQuery type class for ${T}")
+    def apply[T <: SparkQueryView: PtsLeadersQuery](implicit ex: ExecutionContext) = implicitly[PtsLeadersQuery[T]]
 
     implicit def ptsLeaders(implicit ex: ExecutionContext) =
       new PtsLeadersQuery[PtsLeadersView] {
         override val name = "[spark-task]: pts-leaders"
-
         /*
         val sqlContext = new SQLContext(sc)
         import sqlContext.implicits._
@@ -280,15 +244,9 @@ package object spark {
           .collectAsync
           .map { leaders ⇒ PtsLeadersView(leaders.size, leaders.toList, System.currentTimeMillis() - sc.startTime) }
          */
-        override def async(
-          ctx: SparkContext,
-          config: Config,
-          period: String,
-          depth: Int
-        ): Future[PtsLeadersView] = {
+        override def async(ctx: SparkContext, config: Config, period: String, depth: Int): Future[PtsLeadersView] = {
           val start = System.currentTimeMillis()
-          val rdd: RDD[((String, String), Float)] =
-            ctx.cassandraPtsLeadersRdd(config, period).cache()
+          val rdd: RDD[((String, String), Float)] = ctx.cassandraPtsLeadersRdd(config, period).cache()
 
           //aggregation
           val array = rdd
