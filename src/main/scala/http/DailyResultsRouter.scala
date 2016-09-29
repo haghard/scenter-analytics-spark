@@ -38,9 +38,7 @@ object DailyResultsRouter {
   }
 
   case class Args(period: String, year: Int, mm: Int, dd: Int)
-
 }
-
 
 @io.swagger.annotations.Api(value = "/daily", produces = "application/json")
 @Path("/api/daily")

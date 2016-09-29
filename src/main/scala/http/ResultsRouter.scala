@@ -3,7 +3,7 @@ package http
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.HttpResponse
 import http.SparkJob._
-import http.TeamsRouter.TeamsHttpProtocols
+import http.ResultsRouter.TeamsHttpProtocols
 
 import javax.ws.rs.Path
 
@@ -13,12 +13,7 @@ import spray.json._
 
 import scala.concurrent.{ ExecutionContext, Future }
 
-object TeamsRouter {
-
-  sealed abstract class ParamsError
-  final case class WrongTeam(field: String) extends ParamsError
-  final case class ParseError(field: String) extends ParamsError
-
+object ResultsRouter {
   trait TeamsHttpProtocols extends DefaultJsonProtocol {
     implicit val resFormat = jsonFormat4(ResultView)
 
@@ -51,14 +46,14 @@ object TeamsRouter {
   }
 }
 
-@io.swagger.annotations.Api(value = "/teams", produces = "application/json")
-@Path("/api/teams")
-class TeamsRouter(override val host: String, override val httpPort: Int,
-    context: SparkContext,
-    intervals: scala.collection.mutable.LinkedHashMap[org.joda.time.Interval, String],
-    arenas: scala.collection.immutable.Vector[(String, String)],
-    teams: scala.collection.mutable.HashMap[String, String],
-    override val httpPrefixAddress: String = "teams")(implicit val ec: ExecutionContext, val system: ActorSystem) extends SecuritySupport with TypedAsk with TeamsHttpProtocols {
+@io.swagger.annotations.Api(value = "/results", produces = "application/json")
+@Path("/api/results")
+class ResultsRouter(override val host: String, override val httpPort: Int,
+                    context: SparkContext,
+                    intervals: scala.collection.mutable.LinkedHashMap[org.joda.time.Interval, String],
+                    arenas: scala.collection.immutable.Vector[(String, String)],
+                    teams: scala.collection.mutable.HashMap[String, String],
+                    override val httpPrefixAddress: String = "teams")(implicit val ec: ExecutionContext, val system: ActorSystem) extends SecuritySupport with TypedAsk with TeamsHttpProtocols {
 
   import cats.data.Xor
   import cats.data.Validated
@@ -70,13 +65,6 @@ class TeamsRouter(override val host: String, override val httpPort: Int,
   val T = implicitly[cats.Traverse[List]]
 
   private val jobSupervisor = system.actorOf(SparkQuerySupervisor.props)
-
-  /*abstract override def configureApi() = {
-    super.configureApi() ~
-      Api(route = Option { ec: ExecutionContext ⇒ teamsRoute(ec) },
-        postAction = Option(() ⇒ system.log.info(s"\n★ ★ ★ $teamsServicePath-routes was stopped on $httpPrefixAddress ★ ★ ★")),
-        urls = s"[$httpPrefixAddress/$pathPrefix/$teamsServicePath/{stage}?teams=...,... Authorization:...]")
-  }*/
 
   val route = teamsRoute
 

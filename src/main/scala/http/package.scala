@@ -120,7 +120,7 @@ package object http {
 
       import RouteConcatenation._
       val route = new LoginRouter(interface, httpPort).route ~
-        new TeamsRouter(interface, httpPort, context, intervals, arenas, teams).route ~
+        new ResultsRouter(interface, httpPort, context, intervals, arenas, teams).route ~
         new DailyResultsRouter(interface, httpPort, context, intervals, arenas, teams).route ~
         new SwaggerDocRouter(interface, httpPort).route
 
@@ -294,7 +294,7 @@ package object http {
   }
 
   import http.SparkJob._
-  import http.TeamsRouter.TeamsHttpProtocols
+  import http.ResultsRouter.TeamsHttpProtocols
   import spray.json.JsonWriter
 
   case class SparkJobHttpResponse(url: String, view: Option[String] = None,
