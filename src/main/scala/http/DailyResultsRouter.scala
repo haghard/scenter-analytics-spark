@@ -67,11 +67,11 @@ class DailyResultsRouter(override val host: String, override val httpPort: Int,
     new ApiResponse(code = 404, message = "Unsupported season or team"),
     new ApiResponse(code = 500, message = "Internal server error")
   ))
-  def dailyRoute(implicit ex: ExecutionContext): Route =
+  def dailyRoute(): Route =
     pathPrefix(pathPrefix) {
       (get & path(dailyResultsPath / Segment)) { day ⇒
         withUri { url ⇒
-          requiredHttpSession(ex) { session ⇒
+          requiredHttpSession(ec) { session ⇒
             system.log.info(s"[user:${session.user}] access [$httpPrefixAddress/$pathPrefix/$dailyResultsPath/$day]")
             get(complete(searchResults(url, day)))
           }
@@ -95,12 +95,11 @@ class DailyResultsRouter(override val host: String, override val httpPort: Int,
       case ex: Exception => Validated.invalid[String, (Int, Int, Int)](ex.getMessage)
     }
 
-  private def searchResults(url: String, day: String)(implicit ex: ExecutionContext): Future[HttpResponse] = {
-    import cats.data.Xor
+  private def searchResults(url: String, day: String): Future[HttpResponse] = {
     parseDay(day).andThen(validatePeriod).fold({ error: String => Future.successful(notFound(s"Invalid parameters: $error")) }, { arg =>
       fetch[DailyView](DailyResultsQueryArgs(context, url, arg.period, (arg.year, arg.mm, arg.dd) , arenas, teams), dailyJobSupervisor).map {
-        case Xor.Right(res) => success(SparkJobHttpResponse(url, view = Option("daily-results"), body = Option(res), error = res.error))(DailyResultsWriter)
-        case Xor.Left(er) => internalError(er)
+        case cats.data.Xor.Right(res) => success(SparkJobHttpResponse(url, view = Option("daily-results"), body = Option(res), error = res.error))(DailyResultsWriter)
+        case cats.data.Xor.Left(er) => internalError(er)
       }
     })
   }
