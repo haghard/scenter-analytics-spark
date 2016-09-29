@@ -139,10 +139,11 @@ object JournalChangesIngestion extends CassandraSchema {
       "journal"
     )
 
+    val wrConfig = WriteConf.fromSparkConf(ctx.getConf).copy(consistencyLevel = ConsistencyLevel.ONE)
+
     journal
       .map(event ⇒ transformResult(event._1, event._2))
-        .saveToCassandra(keySpace, resultsTable, resultColumns,
-          writeConf = WriteConf.fromSparkConf(ctx.getConf).copy(consistencyLevel = ConsistencyLevel.LOCAL_ONE))
+        .saveToCassandra(keySpace, resultsTable, resultColumns, writeConf = wrConfig)
 
     journal
       .map(event ⇒ transformLeaders(event._1))
@@ -152,8 +153,7 @@ object JournalChangesIngestion extends CassandraSchema {
         (kv._1, line._1, line._2, line._3, line._4, line._5, line._6, line._7, line._8,
           line._9, line._10, line._11, line._12, line._13, line._14, line._15, line._16, line._17,
           line._18, line._19, line._20)
-      }.saveToCassandra(keySpace, leadersPlayers, leadersColumns,
-        writeConf = WriteConf.fromSparkConf(ctx.getConf).copy(consistencyLevel = ConsistencyLevel.LOCAL_ONE))
+      }.saveToCassandra(keySpace, leadersPlayers, leadersColumns, writeConf = wrConfig)
 
     journal
       .map(event ⇒ transformPlayers(event._1))
@@ -162,13 +162,11 @@ object JournalChangesIngestion extends CassandraSchema {
         val r = kv._2
         (r._1, kv._1, r._2, r._3, r._4, r._5, r._6, r._7, r._8, r._9, r._10,
           r._11, r._12, r._13, r._14, r._15, r._16, r._17, r._18, r._19, r._20)
-      }.saveToCassandra(keySpace, playersTable, playerColumns,
-        writeConf = WriteConf.fromSparkConf(ctx.getConf).copy(consistencyLevel = ConsistencyLevel.LOCAL_ONE))
+      }.saveToCassandra(keySpace, playersTable, playerColumns, writeConf = wrConfig)
 
     journal
       .map(ev ⇒ transformResult2(ev._1))
-      .saveToCassandra(keySpace, dailyResultsTable, dailyResColumns,
-        writeConf = WriteConf.fromSparkConf(ctx.getConf).copy(consistencyLevel = ConsistencyLevel.LOCAL_ONE))
+      .saveToCassandra(keySpace, dailyResultsTable, dailyResColumns, writeConf = wrConfig)
 
     streaming.start()
   }

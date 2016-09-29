@@ -77,7 +77,7 @@ class Journal(
       .withInputBuffer(AkkaBufferSize, AkkaBufferSize)
   )(context.system)
 
-  implicit val session = (cassandraClient(ConsistencyLevel.LOCAL_ONE) connect config
+  implicit val session = (cassandraClient(ConsistencyLevel.ONE) connect config
     .getString("spark.cassandra.journal.keyspace"))
 
   private def cassandraClient(cl: ConsistencyLevel): CassandraSource#Client = {
