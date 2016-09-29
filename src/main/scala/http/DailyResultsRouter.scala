@@ -1,33 +1,30 @@
-/*
-
 package http
+
+import javax.ws.rs.Path
 
 import akka.http.scaladsl.model.HttpResponse
 import akka.http.scaladsl.server._
+import cats.data.Validated
 import http.DailyResultsRouter.{Args, DailyResultsProtocol}
 import http.SparkJob._
-import http.StandingRouter.{SparkJobHttpResponse, StandingHttpProtocols}
-import http.swagger.{CorsSupport, SwaggerDocService}
+import io.swagger.annotations._
+import org.apache.spark.SparkContext
 import org.joda.time.DateTime
 import spray.json._
 
+import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Try
 
 object DailyResultsRouter {
 
   trait DailyResultsProtocol extends StandingHttpProtocols {
 
     implicit object DailyResultsWriter
-        extends JsonWriter[SparkJobHttpResponse] {
+      extends JsonWriter[SparkJobHttpResponse] {
       override def write(obj: SparkJobHttpResponse): JsValue = {
         val url = JsString(obj.url.toString)
-        val v = obj.view.fold(JsString("none")) { view ⇒
-          JsString(view)
-        }
-        val error = obj.error.fold(JsString("none")) { error ⇒
-          JsString(error)
-        }
+        val v = obj.view.fold(JsString("none")) { view ⇒ JsString(view) }
+        val error = obj.error.fold(JsString("none")) { error ⇒ JsString(error) }
         obj.body match {
           case Some(DailyView(c, results, latency, _)) ⇒
             JsObject("url" -> url, "view" -> JsArray(results.map(_.toJson)),
@@ -40,58 +37,71 @@ object DailyResultsRouter {
   }
 
   case class Args(period: String, year: Int, mm: Int, dd: Int)
+
 }
 
-trait DailyResultsRouter extends PlayersRouter with DailyResultsProtocol {
-  mixin: MicroKernel ⇒
 
+@io.swagger.annotations.Api(value = "/daily", produces = "application/json")
+@Path("/api/daily")
+class DailyResultsRouter(override val host: String, override val httpPort: Int,
+                         context: SparkContext,
+                         intervals: scala.collection.mutable.LinkedHashMap[org.joda.time.Interval, String],
+                         arenas: scala.collection.immutable.Vector[(String, String)],
+                         teams: scala.collection.mutable.HashMap[String, String]) extends SecuritySupport with TypedAsk with DailyResultsProtocol {
   private val dailyResultsPath = "daily"
   private val dailyJobSupervisor = system.actorOf(SparkQuerySupervisor.props)
 
-  abstract override def configureApi() =
-    super.configureApi() ~
-      Api(route = Option { ec: ExecutionContext ⇒ daily(ec) /*~ corsHandler(new SwaggerDocService(system, s"${localAddress}:${httpPort}").routes)*/ },
-          postAction = Option(() ⇒ system.log.info(s"\n★ ★ ★ [${dailyResultsPath}-routes] was stopped on $httpPrefixAddress ★ ★ ★")),
-          urls = s"[$httpPrefixAddress/$pathPrefix/$dailyResultsPath/{date} Authorization:...']")
+  override implicit val timeout = akka.util.Timeout(10.seconds)
 
-  def daily(implicit ex: ExecutionContext): Route =
+  val route = dailyRoute
+
+  @Path("/{day}")
+  @ApiOperation(value = "Fetch results by day", notes = "", httpMethod = "GET")
+  @ApiImplicitParams(Array(
+    new ApiImplicitParam(name = "day", value = "Day. Examples:2016-01-10, 2015-09-12", required = true, dataType = "string", paramType = "path"),
+    new ApiImplicitParam(name = "Authorization", value = "Authorization token", required = true, dataType = "string", paramType = "header")
+  ))
+  @ApiResponses(Array(
+    new ApiResponse(code = 200, message = "Ok", response = classOf[DailyView]),
+    new ApiResponse(code = 403, message = "The supplied authentication is not authorized to access this resource"),
+    new ApiResponse(code = 404, message = "Unsupported season or team"),
+    new ApiResponse(code = 500, message = "Internal server error")
+  ))
+  def dailyRoute(implicit ex: ExecutionContext): Route =
     pathPrefix(pathPrefix) {
-      (get & path(dailyResultsPath / Segment)) { stage ⇒
+      (get & path(dailyResultsPath / Segment)) { day ⇒
         withUri { url ⇒
           requiredHttpSession(ex) { session ⇒
-            system.log.info(s"[user:${session.user}] access [$httpPrefixAddress/$pathPrefix/$dailyResultsPath/$stage]")
-            get(complete(searchResults(url, stage)))
+            system.log.info(s"[user:${session.user}] access [$httpPrefixAddress/$pathPrefix/$dailyResultsPath/$day]")
+            get(complete(searchResults(url, day)))
           }
         }
       }
     }
 
-  def parseStage(stage: String): Option[(Int, Int, Int)] =
-    Try {
-      val fields = stage.split("-")
-      Option((fields(0).toInt, fields(1).toInt, fields(2).toInt))
-    }.getOrElse(None)
-
-  def findPeriod(yyyyMmdd: (Int, Int, Int)) =
+  private def validatePeriod(yyyyMmdd: (Int, Int, Int)): Validated[String, Args] = {
     (for {
-      (interval, v) ← intervals
+      (interval, stage) ← intervals
       if (interval contains new DateTime(yyyyMmdd._1, yyyyMmdd._2, yyyyMmdd._3, 0, 0).withZone(cassandra.SCENTER_TIME_ZONE))
-    } yield v).headOption
+    } yield Args(stage, yyyyMmdd._1, yyyyMmdd._2, yyyyMmdd._3)).headOption
+      .fold(Validated.invalid[String, Args](s"\n Could'n find season for ${yyyyMmdd} day"))(a => Validated.valid[String, Args](a))
+  }
 
-  private def searchResults(url: String, stage: String)(implicit ex: ExecutionContext): Future[HttpResponse] = {
-    import scalaz._, Scalaz._
-    system.log.info(s"incoming http GET on $url")
-    val args: Option[Args] = for {
-      dt ← parseStage(stage)
-      per ← findPeriod(dt)
-    } yield Args(per, dt._1, dt._2, dt._3)
-
-    args.fold(Future.successful(fail(s"Period error $stage"))) { args: Args ⇒
-      fetch[DailyView](DailyResultsQueryArgs(context, url, args.period, (args.year, args.mm, args.dd), arenas, teams), dailyJobSupervisor).map {
-        case \/-(res) ⇒ success(SparkJobHttpResponse(url, view = Option("daily-results"), body = Option(res), error = res.error))(DailyResultsWriter)
-        case -\/(error) ⇒ fail(error)
-      }
+  private def parseDay(stage: String): Validated[String, (Int, Int, Int)] =
+    try {
+      val fields = stage.split("-")
+      Validated.valid[String, (Int, Int, Int)](fields(0).toInt, fields(1).toInt, fields(2).toInt)
+    } catch {
+      case ex: Exception => Validated.invalid[String, (Int, Int, Int)](ex.getMessage)
     }
+
+  private def searchResults(url: String, day: String)(implicit ex: ExecutionContext): Future[HttpResponse] = {
+    import cats.data.Xor
+    parseDay(day).andThen(validatePeriod).fold({ error: String => Future.successful(notFound(s"Invalid parameters: $error")) }, { arg =>
+      fetch[DailyView](DailyResultsQueryArgs(context, url, arg.period, (arg.year, arg.mm, arg.dd) , arenas, teams), dailyJobSupervisor).map {
+        case Xor.Right(res) => success(SparkJobHttpResponse(url, view = Option("daily-results"), body = Option(res), error = res.error))(DailyResultsWriter)
+        case Xor.Left(er) => internalError(er)
+      }
+    })
   }
 }
-*/

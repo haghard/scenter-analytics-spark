@@ -59,13 +59,13 @@ class TeamsRouter(override val host: String, override val httpPort: Int,
     arenas: scala.collection.immutable.Vector[(String, String)],
     teams: scala.collection.mutable.HashMap[String, String],
     override val httpPrefixAddress: String = "teams")(implicit val ec: ExecutionContext, val system: ActorSystem) extends SecuritySupport with TypedAsk with TeamsHttpProtocols {
-  import scala.concurrent.duration._
-
-  override implicit val timeout = akka.util.Timeout(10.seconds)
 
   import cats.data.Xor
   import cats.data.Validated
   import cats.implicits._
+  import scala.concurrent.duration._
+
+  override implicit val timeout = akka.util.Timeout(10.seconds)
 
   val T = implicitly[cats.Traverse[List]]
 
@@ -83,10 +83,10 @@ class TeamsRouter(override val host: String, override val httpPort: Int,
   //season-15-16?"teams=cle,okc" Authorization:...
   import akka.http.scaladsl.server._
 
-  @Path("/{season}")
+  @Path("/{stage}")
   @ApiOperation(value = "Fetch results by season and teams", notes = "", httpMethod = "GET")
   @ApiImplicitParams(Array(
-    new ApiImplicitParam(name = "season", value = "Name of season. Examples:season-14-15 or playoff-14-15", required = true, dataType = "string", paramType = "path"),
+    new ApiImplicitParam(name = "stage", value = "Name of stage. Examples:season-14-15 or playoff-14-15", required = true, dataType = "string", paramType = "path"),
     new ApiImplicitParam(name = "teams", value = "Teams separated by commas. Examples:cle,okc or hou,chi", required = true, dataType = "string", paramType = "query"),
     new ApiImplicitParam(name = "Authorization", value = "Authorization token", required = true, dataType = "string", paramType = "header")
   ))
@@ -98,12 +98,12 @@ class TeamsRouter(override val host: String, override val httpPort: Int,
   ))
   def teamsRoute(): Route =
     pathPrefix(pathPrefix) {
-      (get & path(httpPrefixAddress / Segment)) { period ⇒
+      (get & path(httpPrefixAddress / Segment)) { stage ⇒
         parameters(('teams.as[String])) { teams ⇒
           requiredHttpSession(ec) { session ⇒
             withUri { url ⇒
-              system.log.info(s"[user:${session.user}] accesses resource: [$httpPrefixAddress/$pathPrefix/$httpPrefixAddress/{season}]")
-              get(complete(search(url, period, teams)))
+              system.log.info(s"[user:${session.user}] accesses resource: [$httpPrefixAddress/$pathPrefix/$httpPrefixAddress/$stage]")
+              get(complete(search(url, stage, teams)))
             }
           }
         }

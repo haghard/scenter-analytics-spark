@@ -101,32 +101,9 @@ package object http {
             Future.successful(cats.data.Xor.left(s"Unexpected error: ${e.getMessage}"))
         }
   }
-  /*
-  case class Api(route: Option[ExecutionContext ⇒ Route] = None, preAction: Option[() ⇒ Unit] = None, postAction: Option[() ⇒ Unit] = None,
-                               urls: String = "") extends Directives {
-
-    private def cmbRoutes(r0: ExecutionContext ⇒ Route, r1: ExecutionContext ⇒ Route) =
-      (ec: ExecutionContext) ⇒ r0(ec) ~ r1(ec)
-
-    private def cmbActions(a1: () ⇒ Unit, a2: () ⇒ Unit) =
-      () ⇒ {
-        a1()
-        a2()
-      }
-
-    def compose(that: Api): Api =
-      Api((route ++ that.route).reduceOption(cmbRoutes),
-          (preAction ++ that.preAction).reduceOption(cmbActions),
-          (postAction ++ that.postAction).reduceOption(cmbActions),
-          s"$urls\n${that.urls}")
-
-    def ~(that: Api): Api = compose(that)
-  }*/
 
   trait EndpointInstaller {
     protected val pathPrefix = "api"
-
-    //protected def configureApi() = Api()
 
     protected def httpPrefixAddress: String
 
@@ -144,6 +121,7 @@ package object http {
       import RouteConcatenation._
       val route = new LoginRouter(interface, httpPort).route ~
         new TeamsRouter(interface, httpPort, context, intervals, arenas, teams).route ~
+        new DailyResultsRouter(interface, httpPort, context, intervals, arenas, teams).route ~
         new SwaggerDocRouter(interface, httpPort).route
 
       system.registerOnTermination { system.log.info("Http server was stopped") }
