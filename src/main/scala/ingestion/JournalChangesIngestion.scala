@@ -132,14 +132,14 @@ object JournalChangesIngestion extends CassandraSchema {
       (period, playersBox)
     }
 
-    installSchema(ctx.getConf, keySpace, resultsTable, leadersPlayers, playersTable, dailyResultsTable, teams)
+    //installSchema(ctx.getConf, keySpace, resultsTable, leadersPlayers, playersTable, dailyResultsTable, teams)
 
     val journal = streaming.actorStream[(ResultAddedEvent, Long)](
       Props(new Journal(config, hosts, teams, gameIntervals)),
       "journal"
     )
 
-    val wrConfig = WriteConf.fromSparkConf(ctx.getConf).copy(consistencyLevel = ConsistencyLevel.ONE)
+    val wrConfig = WriteConf.fromSparkConf(ctx.getConf).copy(consistencyLevel = ConsistencyLevel.LOCAL_ONE)
 
     journal
       .map(event ⇒ transformResult(event._1, event._2))
