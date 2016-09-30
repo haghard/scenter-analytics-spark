@@ -5,7 +5,7 @@ trait ParamsValidation {
   import cats.data.Validated
   import cats.implicits._
 
-  def teams: scala.collection.mutable.HashMap[String, String],
+  def teams: scala.collection.mutable.HashMap[String, String]
 
   def intervals: scala.collection.mutable.LinkedHashMap[org.joda.time.Interval, String]
 
