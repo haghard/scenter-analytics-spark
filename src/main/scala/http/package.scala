@@ -8,7 +8,7 @@ import akka.pattern.AskTimeoutException
 import akka.stream.ActorMaterializer
 import akka.util.ByteString
 import com.typesafe.config.ConfigFactory
-import http.oauth.{GitHubLoginRouter, TwitterLoginRouter}
+import http.oauth.{GoogleLoginRouter, GitHubLoginRouter, TwitterLoginRouter}
 import http.swagger.CorsSupport
 import ingestion.JournalChangesIngestion
 import org.apache.spark.SparkContext
@@ -135,6 +135,7 @@ package object http {
         new StandingRouter(interface, httpPort, intervals, teams, arenas = arenas, context = context).route ~
         new TwitterLoginRouter(interface, httpPort, pref = pathPrefix).route ~
         new GitHubLoginRouter(interface, httpPort, pref = pathPrefix).route ~
+        new GoogleLoginRouter(interface, httpPort, pref = pathPrefix).route ~
         new SwaggerDocRouter(interface, httpPort).route
 
       system.registerOnTermination {
@@ -152,7 +153,6 @@ package object http {
   }
 
   trait DefaultRestMicroservice extends EndpointInstaller with Directives with CorsSupport {
-
     import akka.http.scaladsl.model._
     import spray.json._
 

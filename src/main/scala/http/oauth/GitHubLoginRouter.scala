@@ -4,28 +4,28 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Route
 import akka.util.Timeout
-import com.github.scribejava.apis.GitHubApi
-import com.github.scribejava.core.model.{Verb, OAuthRequest}
+import com.github.scribejava.apis.{GitHubApi, GoogleApi}
+import com.github.scribejava.core.model.{OAuthRequest, Verb}
 import http.SecuritySupport
+
 import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContext, Future}
 
-import scala.concurrent.{Future, ExecutionContext}
-
-
+//http://[host]:[port]/api/login-github
 class GitHubLoginRouter(override val host: String, override val httpPort: Int,
                         override val httpPrefixAddress: String = "login-github", pref: String)
-                        (implicit val ec: ExecutionContext, val system: ActorSystem) extends SecuritySupport {
-  override implicit val timeout: Timeout = Timeout(5 seconds)
+                       (implicit val ec: ExecutionContext, val system: ActorSystem,
+                        implicit val timeout: Timeout = Timeout(5 seconds)) extends SecuritySupport {
 
-  implicit val params =  OauthParams(
+  implicit val params = OauthParams(
     system.settings.config.getString("github.consumer-key"),
-      system.settings.config.getString("github.consumer-secret"))
+    system.settings.config.getString("github.consumer-secret"))
 
   private val github = http.oauth.Oauth[com.github.scribejava.apis.GitHubApi]
 
-  val route = githubRoute()
+  val route = allRoute()
 
-  private def githubRoute(): Route =
+  private def allRoute(): Route =
     pathPrefix(pref) {
       path("login-github") {
         val service = github.oAuthService
@@ -39,7 +39,6 @@ class GitHubLoginRouter(override val host: String, override val httpPort: Int,
             system.log.info(s"frontend-login-github from: $host")
             //FIXME port 9000 put address in the params
             val service = github.oAuthService.callback(s"http://$host:$httpPort/github-callback").build(GitHubApi.instance)
-            //val requestToken = service.getRequestToken
             val url = service.getAuthorizationUrl()
             system.log.info(s"frontend-login-github url: $url")
             redirect(akka.http.scaladsl.model.Uri(url), StatusCodes.PermanentRedirect)
