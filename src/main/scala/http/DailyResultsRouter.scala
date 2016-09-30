@@ -71,7 +71,7 @@ class DailyResultsRouter(override val host: String, override val httpPort: Int,
       (get & path(httpPrefixAddress / Segment)) { day ⇒
         withUri { url ⇒
           requiredHttpSession(ec) { session ⇒
-            system.log.info(s"[user:${session.user}] access $url")
+            system.log.info(s"[user:${session.user}] accesses $url")
             get(complete(searchResults(url, day)))
           }
         }
