@@ -5,23 +5,24 @@ import javax.ws.rs.Path
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.HttpResponse
 import akka.http.scaladsl.server._
-import http.PtsLeadersRouter.LeadersProtocol
-import spark.{SparkQuerySupervisor, SparkJob}
-import SparkJob.{PtsLeadersView, RebLeadersQueryArgs, RebLeadersView}
+import http.{ SparkJobHttpResponse, TypedAsk }
+import http.routes.PtsLeadersRouter.LeadersProtocol
+import spark.{ SparkQuerySupervisor, SparkJob }
+import SparkJob.{ PtsLeadersView, RebLeadersQueryArgs, RebLeadersView }
 import io.swagger.annotations._
 import org.apache.spark.SparkContext
 
 import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 
 @io.swagger.annotations.Api(value = "rebounds leaders", produces = "application/json")
 @Path("/api/leaders/reb")
 class RebLeadersRouter(override val host: String, override val httpPort: Int,
-                       override val intervals: scala.collection.mutable.LinkedHashMap[org.joda.time.Interval, String],
-                       override val teams: scala.collection.mutable.HashMap[String, String],
-                       override val httpPrefixAddress: String = "leaders",
-                       arenas: scala.collection.immutable.Vector[(String, String)], context: SparkContext)
-                      (implicit val ec: ExecutionContext, val system: ActorSystem) extends SecuritySupport with LeadersProtocol with TypedAsk with ParamsValidation {
+  override val intervals: scala.collection.mutable.LinkedHashMap[org.joda.time.Interval, String],
+  override val teams: scala.collection.mutable.HashMap[String, String],
+  override val httpPrefixAddress: String = "leaders",
+  arenas: scala.collection.immutable.Vector[(String, String)], context: SparkContext)(implicit val ec: ExecutionContext, val system: ActorSystem) extends SecuritySupport with LeadersProtocol
+    with TypedAsk with ParamsValidation {
   private val defaultDepth = 10
   private val jobSupervisor = system.actorOf(SparkQuerySupervisor.props)
   override implicit val timeout = akka.util.Timeout(10.seconds)

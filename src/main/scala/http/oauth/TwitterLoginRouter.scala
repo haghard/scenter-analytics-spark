@@ -8,17 +8,17 @@ import com.github.scribejava.core.model.Verb
 import http.routes.SecuritySupport
 
 import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 
 //http://[host]:[port]/api/login-twitter
 class TwitterLoginRouter(override val host: String, override val httpPort: Int,
-                         override val httpPrefixAddress: String = "login-twitter", pref: String)
-                        (implicit val ec: ExecutionContext, val system: ActorSystem) extends SecuritySupport {
+    override val httpPrefixAddress: String = "login-twitter", pref: String)(implicit val ec: ExecutionContext, val system: ActorSystem) extends SecuritySupport {
   private val referer = "Referer"
 
-  implicit val params =  OauthParams(
+  implicit val params = OauthParams(
     system.settings.config.getString("twitter.consumer-key"),
-    system.settings.config.getString("twitter.consumer-secret"))
+    system.settings.config.getString("twitter.consumer-secret")
+  )
 
   private val twitterOauth = http.oauth.Oauth[com.github.scribejava.apis.TwitterApi]
 
@@ -52,15 +52,15 @@ class TwitterLoginRouter(override val host: String, override val httpPort: Int,
             (oauthToken, oauthVerifier) ⇒
 
               /**
-                * Converting the request token to an access token
-                * To render the request token into a usable access token,
-                * your application must make a request to the POST oauth / access_token endpoint,
-                * containing the oauth_verifier value obtained in prev step.
-                * The request token is also passed in the oauth_token portion of the header,
-                * but this will have been added by the signing process.
-                *
-                * Source https://dev.twitter.com/web/sign-in/implementing
-                */
+               * Converting the request token to an access token
+               * To render the request token into a usable access token,
+               * your application must make a request to the POST oauth / access_token endpoint,
+               * containing the oauth_verifier value obtained in prev step.
+               * The request token is also passed in the oauth_token portion of the header,
+               * but this will have been added by the signing process.
+               *
+               * Source https://dev.twitter.com/web/sign-in/implementing
+               */
               import spray.json._
               complete {
                 Future {

@@ -7,15 +7,15 @@ import http._
 import http.routes.ResultsRouter.TeamsHttpProtocols
 import org.apache.spark.SparkContext
 import spark.SparkJob._
-import spark.{SparkJob, SparkQuerySupervisor}
-import spray.json.{JsonWriter, _}
+import spark.{ SparkJob, SparkQuerySupervisor }
+import spray.json.{ JsonWriter, _ }
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 
 object StandingRouter {
 
-  case class SparkJobHttpResponse(url: String,view: Option[String] = None,
-                                  body: Option[SparkQueryView] = None,  error: Option[String] = None) extends DefaultHttpResponse
+  case class SparkJobHttpResponse(url: String, view: Option[String] = None,
+    body: Option[SparkQueryView] = None, error: Option[String] = None) extends DefaultHttpResponse
 
   trait StandingHttpProtocols extends TeamsHttpProtocols {
     implicit val standingFormat = jsonFormat7(Standing.apply)
@@ -23,33 +23,41 @@ object StandingRouter {
     implicit object ResultsResponseWriter extends JsonWriter[SparkJobHttpResponse] {
       override def write(obj: SparkJobHttpResponse): spray.json.JsValue = {
         val url = JsString(obj.url.toString)
-        val v = obj.view.fold(JsString("none")) { view ⇒ JsString(view)}
-        val error = obj.error.fold(JsString("none")) { error ⇒ JsString(error)}
+        val v = obj.view.fold(JsString("none")) { view ⇒ JsString(view) }
+        val error = obj.error.fold(JsString("none")) { error ⇒ JsString(error) }
         obj.body match {
           case Some(SeasonStandingView(c, west, east, latency, _)) ⇒
-            JsObject("western conference" -> JsArray(west.map(_.toJson)),
-                     "eastern conference" -> JsArray(east.map(_.toJson)),
-                     "url" -> url, "view" -> v, "latency" -> JsNumber(latency),
-                     "body" -> JsObject("count" -> JsNumber(c)),
-                     "error" -> error)
+            JsObject(
+              "western conference" -> JsArray(west.map(_.toJson)),
+              "eastern conference" -> JsArray(east.map(_.toJson)),
+              "url" -> url, "view" -> v, "latency" -> JsNumber(latency),
+              "body" -> JsObject("count" -> JsNumber(c)),
+              "error" -> error
+            )
           case Some(PlayoffStandingView(c, table, latency, _)) ⇒
-            JsObject("playoff" -> JsArray(table.map(_.toJson)),
-                     "url" -> url, "view" -> v,
-                     "latency" -> JsNumber(latency),
-                     "body" -> JsObject("count" -> JsNumber(c)),
-                     "error" -> error)
+            JsObject(
+              "playoff" -> JsArray(table.map(_.toJson)),
+              "url" -> url, "view" -> v,
+              "latency" -> JsNumber(latency),
+              "body" -> JsObject("count" -> JsNumber(c)),
+              "error" -> error
+            )
           case Some(FilteredView(c, results, latency, _)) ⇒
-            JsObject("url" -> url,
-                     "view" -> JsArray(results.map(_.toJson)),
-                     "latency" -> JsNumber(latency),
-                     "body" -> JsObject("count" -> JsNumber(c)),
-                     "error" -> error)
+            JsObject(
+              "url" -> url,
+              "view" -> JsArray(results.map(_.toJson)),
+              "latency" -> JsNumber(latency),
+              "body" -> JsObject("count" -> JsNumber(c)),
+              "error" -> error
+            )
           case Some(FilteredAllView(c, results, latency, _)) ⇒
-            JsObject("url" -> url,
-                     "view" -> JsArray(results.map(_.toJson)),
-                     "latency" -> JsNumber(latency),
-                     "body" -> JsObject("count" -> JsNumber(c)),
-                     "error" -> error)
+            JsObject(
+              "url" -> url,
+              "view" -> JsArray(results.map(_.toJson)),
+              "latency" -> JsNumber(latency),
+              "body" -> JsObject("count" -> JsNumber(c)),
+              "error" -> error
+            )
           case None ⇒ JsObject("url" -> url, "view" -> v, "error" -> error)
         }
       }
@@ -66,11 +74,10 @@ import scala.concurrent.duration._
 @io.swagger.annotations.Api(value = "standings", produces = "application/json")
 @Path("/api/standing/")
 class StandingRouter(override val host: String, override val httpPort: Int,
-                     override val intervals: scala.collection.mutable.LinkedHashMap[org.joda.time.Interval, String],
-                     override val teams: scala.collection.mutable.HashMap[String, String],
-                     override val httpPrefixAddress: String = "standing",
-                     arenas: scala.collection.immutable.Vector[(String, String)], context: SparkContext)
-                     (implicit val ec: ExecutionContext, val system: ActorSystem) extends SecuritySupport with TypedAsk with ParamsValidation with StandingHttpProtocols {
+    override val intervals: scala.collection.mutable.LinkedHashMap[org.joda.time.Interval, String],
+    override val teams: scala.collection.mutable.HashMap[String, String],
+    override val httpPrefixAddress: String = "standing",
+    arenas: scala.collection.immutable.Vector[(String, String)], context: SparkContext)(implicit val ec: ExecutionContext, val system: ActorSystem) extends SecuritySupport with TypedAsk with ParamsValidation with StandingHttpProtocols {
   private val querySupervisor = system.actorOf(SparkQuerySupervisor.props)
   override implicit val timeout = akka.util.Timeout(10.seconds)
 

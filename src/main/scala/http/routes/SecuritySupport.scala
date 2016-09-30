@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import com.softwaremill.session.SessionDirectives._
 import com.softwaremill.session.SessionOptions._
 import com.softwaremill.session._
-import http.{DefaultRestMicroservice, ServerSession}
+import http.{ DefaultRestMicroservice, ServerSession }
 import org.mindrot.jbcrypt.BCrypt
 
 import scala.concurrent.ExecutionContext

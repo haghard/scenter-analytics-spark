@@ -4,22 +4,22 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Route
 import akka.util.Timeout
-import com.github.scribejava.apis.{GitHubApi, GoogleApi}
-import com.github.scribejava.core.model.{OAuthRequest, Verb}
+import com.github.scribejava.apis.{ GitHubApi, GoogleApi }
+import com.github.scribejava.core.model.{ OAuthRequest, Verb }
 import http.routes.SecuritySupport
 
 import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 
 //http://[host]:[port]/api/login-github
 class GitHubLoginRouter(override val host: String, override val httpPort: Int,
-                        override val httpPrefixAddress: String = "login-github", pref: String)
-                       (implicit val ec: ExecutionContext, val system: ActorSystem,
-                        implicit val timeout: Timeout = Timeout(5 seconds)) extends SecuritySupport {
+    override val httpPrefixAddress: String = "login-github", pref: String)(implicit val ec: ExecutionContext, val system: ActorSystem,
+    implicit val timeout: Timeout = Timeout(5 seconds)) extends SecuritySupport {
 
   implicit val params = OauthParams(
     system.settings.config.getString("github.consumer-key"),
-    system.settings.config.getString("github.consumer-secret"))
+    system.settings.config.getString("github.consumer-secret")
+  )
 
   private val github = http.oauth.Oauth[com.github.scribejava.apis.GitHubApi]
 

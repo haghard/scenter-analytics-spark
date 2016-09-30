@@ -10,12 +10,12 @@ import http._
 import http.routes.PlayerStatRouter.PlayersProtocol
 import io.swagger.annotations._
 import org.apache.spark.SparkContext
-import spark.SparkJob.{PlayerStatsQueryArgs, PlayerStatsView, Stats}
+import spark.SparkJob.{ PlayerStatsQueryArgs, PlayerStatsView, Stats }
 import spark.SparkQuerySupervisor
 import spray.json._
 
 import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 
 object PlayerStatRouter {
 
@@ -27,8 +27,8 @@ object PlayerStatRouter {
       import spray.json._
       override def write(obj: SparkJobHttpResponse): spray.json.JsValue = {
         val url = JsString(obj.url.toString)
-        val v = obj.view.fold(JsString("none")) { view ⇒ JsString(view)}
-        val error = obj.error.fold(JsString("none")) { error ⇒ JsString(error)}
+        val v = obj.view.fold(JsString("none")) { view ⇒ JsString(view) }
+        val error = obj.error.fold(JsString("none")) { error ⇒ JsString(error) }
         obj.body match {
           case Some(PlayerStatsView(c, stats, latency, _)) ⇒
             JsObject("url" -> url, "view" -> JsArray(stats.map(_.toJson)), "latency" -> JsNumber(latency),
@@ -43,11 +43,10 @@ object PlayerStatRouter {
 @io.swagger.annotations.Api(value = "player stats", produces = "application/json")
 @Path("/api/player/stats")
 class PlayerStatRouter(override val host: String, override val httpPort: Int,
-                       override val intervals: scala.collection.mutable.LinkedHashMap[org.joda.time.Interval, String],
-                       override val teams: scala.collection.mutable.HashMap[String, String],
-                       override val httpPrefixAddress: String = "player",
-                       arenas: scala.collection.immutable.Vector[(String, String)], context: SparkContext)
-                      (implicit val ec: ExecutionContext, val system: ActorSystem) extends SecuritySupport
+  override val intervals: scala.collection.mutable.LinkedHashMap[org.joda.time.Interval, String],
+  override val teams: scala.collection.mutable.HashMap[String, String],
+  override val httpPrefixAddress: String = "player",
+  arenas: scala.collection.immutable.Vector[(String, String)], context: SparkContext)(implicit val ec: ExecutionContext, val system: ActorSystem) extends SecuritySupport
     with ParamsValidation with TypedAsk with PlayersProtocol {
 
   private val enc = "utf-8"

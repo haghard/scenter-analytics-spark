@@ -2,8 +2,8 @@ package http.routes
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.HttpResponse
-import http.{TypedAsk, SparkJobHttpResponse}
-import spark.{SparkQuerySupervisor, SparkJob}
+import http.{ TypedAsk, SparkJobHttpResponse }
+import spark.{ SparkQuerySupervisor, SparkJob }
 import SparkJob._
 import http.routes.ResultsRouter.TeamsHttpProtocols
 

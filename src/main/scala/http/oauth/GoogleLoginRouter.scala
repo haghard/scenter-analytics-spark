@@ -5,20 +5,20 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server._
 import akka.util.Timeout
 import com.github.scribejava.apis.GoogleApi
-import com.github.scribejava.core.model.{OAuthRequest, Verb}
+import com.github.scribejava.core.model.{ OAuthRequest, Verb }
 import http.routes.SecuritySupport
 
 import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 
 class GoogleLoginRouter(override val host: String, override val httpPort: Int,
-                        override val httpPrefixAddress: String = "login-google", pref: String)
-                       (implicit val ec: ExecutionContext, val system: ActorSystem,
-                        implicit val timeout: Timeout = Timeout(5 seconds)) extends SecuritySupport {
+    override val httpPrefixAddress: String = "login-google", pref: String)(implicit val ec: ExecutionContext, val system: ActorSystem,
+    implicit val timeout: Timeout = Timeout(5 seconds)) extends SecuritySupport {
 
   implicit val params = OauthParams(
     system.settings.config.getString("google.consumer-key"),
-    system.settings.config.getString("google.consumer-secret"))
+    system.settings.config.getString("google.consumer-secret")
+  )
 
   private val google = http.oauth.Oauth[com.github.scribejava.apis.GoogleApi20]
 

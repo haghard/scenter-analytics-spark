@@ -293,7 +293,7 @@ package object spark {
         override val name = "[spark-query]: standing-playoff"
 
         override def async(ctx: SparkContext, config: Config, teams: mutable.HashMap[String, String],
-                           period: String): Future[PlayoffStandingView] = {
+          period: String): Future[PlayoffStandingView] = {
           val start = System.currentTimeMillis
           val rdd: RDD[NbaResult] = ctx.cassandraStandingRdd(config, teams.keySet, period).cache()
 

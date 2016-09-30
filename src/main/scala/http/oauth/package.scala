@@ -7,7 +7,7 @@ import java.util.concurrent.ThreadLocalRandom
 
 package object oauth {
 
-  case class OauthParams(apiKey: String, apiSecret:String)
+  case class OauthParams(apiKey: String, apiSecret: String)
 
   trait Oauth[T <: com.github.scribejava.core.builder.api.Api] {
     def protectedUrl: String
@@ -38,7 +38,7 @@ package object oauth {
       override def instance: GoogleApi20 = ???
     }
 
-    implicit def twitter(implicit c:OauthParams) = new Oauth[com.github.scribejava.apis.TwitterApi] {
+    implicit def twitter(implicit c: OauthParams) = new Oauth[com.github.scribejava.apis.TwitterApi] {
       override val protectedUrl =
         "https://api.twitter.com/1.1/account/verify_credentials.json"
 
@@ -50,7 +50,7 @@ package object oauth {
       override def instance: TwitterApi = TwitterApi.instance()
     }
 
-    implicit def github(implicit c:OauthParams) = new Oauth[com.github.scribejava.apis.GitHubApi] {
+    implicit def github(implicit c: OauthParams) = new Oauth[com.github.scribejava.apis.GitHubApi] {
       override val protectedUrl = "https://api.github.com/user"
 
       override def oAuthService() =

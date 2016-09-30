@@ -4,43 +4,54 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.model.HttpResponse
 import akka.http.scaladsl.server.Route
 import http.routes.PlayerStatRouter.PlayersProtocol
+import http.routes.PtsLeadersRouter.LeadersProtocol
+import http.{SparkJobHttpResponse, TypedAsk}
 import org.apache.spark.SparkContext
 import spark.SparkJob._
-import spark.{SparkJob, SparkQuerySupervisor}
+import spark.SparkQuerySupervisor
 import spray.json.JsonWriter
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
 object PtsLeadersRouter {
+
   trait LeadersProtocol extends PlayersProtocol {
-    implicit val ptsLeaderFormat = spray.json.DefaultJsonProtocol.jsonFormat4(PtsLeader.apply)
-    implicit val rebLeaderFormat = spray.json.DefaultJsonProtocol.jsonFormat6(RebLeader.apply)
+    implicit val ptsLeaderFormat = jsonFormat4(PtsLeader.apply)
+    implicit val rebLeaderFormat = jsonFormat6(RebLeader.apply)
 
     implicit object LeadersResponseWriter extends JsonWriter[SparkJobHttpResponse] {
+
       import spray.json._
+
       override def write(obj: SparkJobHttpResponse): spray.json.JsValue = {
         val url = JsString(obj.url.toString)
-        val v = obj.view.fold(JsString("none")) { view ⇒ JsString(view)}
-        val error = obj.error.fold(JsString("none")) { error ⇒ JsString(error)}
+        val v = obj.view.fold(JsString("none")) { view ⇒ JsString(view) }
+        val error = obj.error.fold(JsString("none")) { error ⇒ JsString(error) }
         obj.body match {
           case Some(RebLeadersView(c, leaders, latency, _)) ⇒
-            JsObject("url" -> url,
-                     "view" -> JsArray(leaders.map(_.toJson)),
-                     "latency" -> JsNumber(latency),
-                     "body" -> JsObject("count" -> JsNumber(c)),
-                     "error" -> error)
+            JsObject(
+              "url" -> url,
+              "view" -> JsArray(leaders.map(_.toJson)),
+              "latency" -> JsNumber(latency),
+              "body" -> JsObject("count" -> JsNumber(c)),
+              "error" -> error
+            )
           case Some(PtsLeadersView(c, leaders, latency, _)) ⇒
-            JsObject("url" -> url,
-                     "view" -> JsArray(leaders.map(_.toJson)),
-                     "latency" -> JsNumber(latency),
-                     "body" -> JsObject("count" -> JsNumber(c)),
-                     "error" -> error)
+            JsObject(
+              "url" -> url,
+              "view" -> JsArray(leaders.map(_.toJson)),
+              "latency" -> JsNumber(latency),
+              "body" -> JsObject("count" -> JsNumber(c)),
+              "error" -> error
+            )
           case None ⇒ JsObject("url" -> url, "view" -> v, "error" -> error)
         }
       }
     }
+
   }
+
 }
 
 import javax.ws.rs.Path
@@ -54,7 +65,8 @@ class PtsLeadersRouter(override val host: String, override val httpPort: Int,
                        override val teams: scala.collection.mutable.HashMap[String, String],
                        override val httpPrefixAddress: String = "leaders",
                        arenas: scala.collection.immutable.Vector[(String, String)], context: SparkContext)
-                      (implicit val ec: ExecutionContext, val system: ActorSystem) extends SecuritySupport with LeadersProtocol with TypedAsk with ParamsValidation {
+                      (implicit val ec: ExecutionContext, val system: ActorSystem) extends SecuritySupport with LeadersProtocol
+  with TypedAsk with ParamsValidation {
   private val defaultDepth = 10
   private val jobSupervisor = system.actorOf(SparkQuerySupervisor.props)
   override implicit val timeout = akka.util.Timeout(10.seconds)

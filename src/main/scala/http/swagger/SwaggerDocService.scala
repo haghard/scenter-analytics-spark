@@ -1,6 +1,5 @@
 package http.swagger
 
-import http._
 import http.routes._
 import scala.reflect.runtime.{ universe => ru }
 import akka.actor.ActorSystem

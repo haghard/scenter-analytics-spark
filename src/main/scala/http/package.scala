@@ -1,26 +1,26 @@
-import java.net.{InetAddress, NetworkInterface}
+import java.net.{ InetAddress, NetworkInterface }
 import java.util.Date
 
 import akka.actor._
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.server.{Directive1, Directives, RouteConcatenation}
+import akka.http.scaladsl.server.{ Directive1, Directives, RouteConcatenation }
 import akka.pattern.AskTimeoutException
 import akka.stream.ActorMaterializer
 import akka.util.ByteString
 import com.typesafe.config.ConfigFactory
-import http.oauth.{GoogleLoginRouter, GitHubLoginRouter, TwitterLoginRouter}
-import http.routes.{ResultsRouter, SwaggerDocRouter, LoginRouter, DailyResultsRouter}
+import http.oauth.{ GoogleLoginRouter, GitHubLoginRouter, TwitterLoginRouter }
+import http.routes.{ ResultsRouter, SwaggerDocRouter, LoginRouter, DailyResultsRouter }
 import http.swagger.CorsSupport
 import ingestion.JournalChangesIngestion
 import org.apache.spark.SparkContext
-import org.joda.time.{DateTime, Interval}
-import spark.{SparkJob, SparkQuery}
+import org.joda.time.{ DateTime, Interval }
+import spark.{ SparkJob, SparkQuery }
 
 import scala.collection.JavaConversions._
 import scala.collection.mutable
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 import scala.reflect.ClassTag
-import scala.util.{Failure, Success}
+import scala.util.{ Failure, Success }
 import http.routes._
 import com.github.nscala_time.time.Imports._
 
@@ -62,17 +62,17 @@ package object http {
   case class ResultAdded(team: String, r: NbaResult)
 
   case class NbaResult(homeTeam: String, homeScore: Int, awayTeam: String, awayScore: Int, dt: Date,
-                       homeScoreBox: String = "", awayScoreBox: String = "", homeTotal: Total = Total(), awayTotal: Total = Total(),
-                       homeBox: List[PlayerLine] = Nil, awayBox: List[PlayerLine] = Nil)
+    homeScoreBox: String = "", awayScoreBox: String = "", homeTotal: Total = Total(), awayTotal: Total = Total(),
+    homeBox: List[PlayerLine] = Nil, awayBox: List[PlayerLine] = Nil)
 
   case class Total(min: Int = 0, fgmA: String = "", threePmA: String = "", ftmA: String = "", minusSlashPlus: String = "",
-                   offReb: Int = 0, defReb: Int = 0, totalReb: Int = 0, ast: Int = 0, pf: Int = 0, steels: Int = 0,
-                   to: Int = 0, bs: Int = 0, ba: Int = 0, pts: Int = 0)
+    offReb: Int = 0, defReb: Int = 0, totalReb: Int = 0, ast: Int = 0, pf: Int = 0, steels: Int = 0,
+    to: Int = 0, bs: Int = 0, ba: Int = 0, pts: Int = 0)
 
   case class PlayerLine(name: String = "", pos: String = "", min: String = "", fgmA: String = "",
-                        threePmA: String = "", ftmA: String = "", minusSlashPlus: String = "",
-                        offReb: Int = 0, defReb: Int = 0, totalReb: Int = 0, ast: Int = 0, pf: Int = 0,
-                        steels: Int = 0, to: Int = 0, bs: Int = 0, ba: Int = 0, pts: Int = 0)
+    threePmA: String = "", ftmA: String = "", minusSlashPlus: String = "",
+    offReb: Int = 0, defReb: Int = 0, totalReb: Int = 0, ast: Int = 0, pf: Int = 0,
+    steels: Int = 0, to: Int = 0, bs: Int = 0, ba: Int = 0, pts: Int = 0)
 
   trait DefaultJobArgs {
     def url: String
@@ -115,12 +115,13 @@ package object http {
 
     protected val httpDispatcher = HttpDispatcher
 
-    protected def installApi(context: SparkContext,
-                             intervals: scala.collection.mutable.LinkedHashMap[org.joda.time.Interval, String],
-                             arenas: scala.collection.immutable.Vector[(String, String)],
-                             teams: scala.collection.mutable.HashMap[String, String],
-                             interface: String, httpPort: Int
-                            )(implicit materializer: akka.stream.ActorMaterializer, system: ActorSystem) = {
+    protected def installApi(
+      context: SparkContext,
+      intervals: scala.collection.mutable.LinkedHashMap[org.joda.time.Interval, String],
+      arenas: scala.collection.immutable.Vector[(String, String)],
+      teams: scala.collection.mutable.HashMap[String, String],
+      interface: String, httpPort: Int
+    )(implicit materializer: akka.stream.ActorMaterializer, system: ActorSystem) = {
 
       implicit val _ = system.dispatchers.lookup(httpDispatcher)
 
@@ -216,7 +217,7 @@ package object http {
   }
 
   abstract class MicroKernel(override val httpPort: Int = DefaultHttpPort, override val ethName: String) extends BootableMicroservice
-    with EndpointInstaller with ClusterNetwork with NetworkResolver {
+      with EndpointInstaller with ClusterNetwork with NetworkResolver {
 
     override lazy val system = ActorSystem(ActorSystemName, config)
 
@@ -322,7 +323,7 @@ package object http {
   import spray.json.JsonWriter
 
   case class SparkJobHttpResponse(url: String, view: Option[String] = None,
-                                  body: Option[SparkQueryView] = None, error: Option[String] = None) extends DefaultHttpResponse
+    body: Option[SparkQueryView] = None, error: Option[String] = None) extends DefaultHttpResponse
 
   trait StandingHttpProtocols extends TeamsHttpProtocols {
     implicit val standingFormat = spray.json.DefaultJsonProtocol.jsonFormat7(Standing.apply)
