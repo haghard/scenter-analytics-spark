@@ -125,7 +125,7 @@ class SparkJob(val config: Config) extends Actor with ActorLogging {
 
     case StandingQueryArgs(ctx, _, stage, teams, period) ⇒
       log.info("SELECT team, score, opponent, opponent_score, date FROM results_by_period WHERE period = '{}' and team in ({})",
-        stage, teams.map(t => s"""'$t',""").mkString)
+        stage, teams.keySet.map(t => s"""'$t',""").mkString)
       if (stage contains Season)
         ((StandingQuery[SeasonStandingView] async(ctx, config, teams, period)) to sender()).future
           .onComplete(_ ⇒ context.system.stop(self))
