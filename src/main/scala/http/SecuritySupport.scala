@@ -39,7 +39,6 @@ trait SecuritySupport extends DefaultRestMicroservice /*with Directives*/ {
   /*lazy val (google, twitter, github) = {
     (
       http.oauth.Oauth[com.github.scribejava.apis.GoogleApi20].withKeySecret(googleApiKey, googleApiSecret),
-      http.oauth.Oauth[com.github.scribejava.apis.TwitterApi].withKeySecret(twitterApiKey, twitterApiSecret),
       http.oauth.Oauth[com.github.scribejava.apis.GitHubApi].withKeySecret(githubApiKey, githubApiSecret)
     )
   }*/

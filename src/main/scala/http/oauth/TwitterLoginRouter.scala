@@ -1,18 +1,18 @@
-package http
+package http.oauth
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server._
 import com.github.scribejava.apis.TwitterApi
 import com.github.scribejava.core.model.Verb
-import http.oauth.OauthParams
+import http.SecuritySupport
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
 //http://[host]:[port]/api/login-twitter
 class TwitterLoginRouter(override val host: String, override val httpPort: Int,
-                         override val httpPrefixAddress: String = "login-twitter")
+                         override val httpPrefixAddress: String = "login-twitter", pref: String)
                         (implicit val ec: ExecutionContext, val system: ActorSystem) extends SecuritySupport {
   private val referer = "Referer"
 
@@ -74,7 +74,7 @@ class TwitterLoginRouter(override val host: String, override val httpPort: Int,
                   if (twitterResponse.getCode == 200) {
                     val json = twitterResponse.getBody.parseJson.asJsObject
                     val user = json.getFields("name").head.toString().replace("\"", "")
-                    s""" { "authorization-url": "http://$host:$httpPort/$pathPrefix/login?user=${user}_from_twitter&password=$oauthToken" }"""
+                    s""" { "authorization-url": "http://$host:$httpPort/$pathPrefix/login?user=${user}_oauth-twitter&password=$oauthToken" }"""
                   } else
                     s"""{ "authorization-error": "${twitterResponse.getCode}" } """
                 }(ec)
@@ -83,5 +83,4 @@ class TwitterLoginRouter(override val host: String, override val httpPort: Int,
         }
       }
     }
-
 }
