@@ -5,6 +5,7 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server._
 import com.github.scribejava.apis.TwitterApi
 import com.github.scribejava.core.model.Verb
+import http.oauth.OauthParams
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -13,9 +14,12 @@ import scala.concurrent.{ExecutionContext, Future}
 class TwitterLoginRouter(override val host: String, override val httpPort: Int,
                          override val httpPrefixAddress: String = "login-twitter")
                         (implicit val ec: ExecutionContext, val system: ActorSystem) extends SecuritySupport {
-  val referer = "Referer"
-  implicit val twitterApiKey = system.settings.config.getString("twitter.consumer-key")
-  implicit val twitterApiSecret = system.settings.config.getString("twitter.consumer-secret")
+  private val referer = "Referer"
+
+  implicit val params =  OauthParams(
+    system.settings.config.getString("twitter.consumer-key"),
+    system.settings.config.getString("twitter.consumer-secret"))
+
   private val twitterOauth = http.oauth.Oauth[com.github.scribejava.apis.TwitterApi]
 
   override implicit val timeout = akka.util.Timeout(5.seconds)
