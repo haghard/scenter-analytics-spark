@@ -1,6 +1,6 @@
 package http.swagger
 
-import http.{ PlayersRouter, ResultsRouter, DailyResultsRouter, LoginRouter }
+import http._
 
 import scala.reflect.runtime.{ universe => ru }
 import akka.actor.ActorSystem
@@ -13,7 +13,8 @@ import io.swagger.models.auth.{ ApiKeyAuthDefinition, BasicAuthDefinition }
 class SwaggerDocService(system: ActorSystem, hostLine: String) extends SwaggerHttpService with HasActorSystem {
   override implicit val actorSystem: ActorSystem = system
   override implicit val materializer: ActorMaterializer = ActorMaterializer()
-  override val apiTypes = Seq(ru.typeOf[LoginRouter], ru.typeOf[ResultsRouter], ru.typeOf[DailyResultsRouter], ru.typeOf[PlayersRouter])
+  override val apiTypes = Seq(ru.typeOf[LoginRouter], ru.typeOf[ResultsRouter], ru.typeOf[DailyResultsRouter],
+    ru.typeOf[PlayerStatRouter], ru.typeOf[PtsLeadersRouter])
   override val host = hostLine
   override val info = Info(version = "1.0")
   override val externalDocs = Some(new ExternalDocs("Core Docs", "http://acme.com/docs"))

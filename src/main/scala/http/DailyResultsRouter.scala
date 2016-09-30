@@ -27,7 +27,7 @@ object DailyResultsRouter {
         val v = obj.view.fold(JsString("none")) { view ⇒ JsString(view) }
         val error = obj.error.fold(JsString("none")) { error ⇒ JsString(error) }
         obj.body match {
-          case Some(DailyView(c, results, latency, _)) ⇒
+          case Some(DailyResultsView(c, results, latency, _)) ⇒
             JsObject("url" -> url, "view" -> JsArray(results.map(_.toJson)),
               "body" -> JsObject("count" -> JsNumber(c)), "latency" -> JsNumber(latency), "error" -> error)
           case None ⇒ JsObject("url" -> url, "view" -> v, "error" -> error)
@@ -61,7 +61,7 @@ class DailyResultsRouter(override val host: String, override val httpPort: Int,
     new ApiImplicitParam(name = "Authorization", value = "Authorization token", required = true, dataType = "string", paramType = "header")
   ))
   @ApiResponses(Array(
-    new ApiResponse(code = 200, message = "Ok", response = classOf[DailyView]),
+    new ApiResponse(code = 200, message = "Ok", response = classOf[DailyResultsView]),
     new ApiResponse(code = 403, message = "The supplied authentication is not authorized to access this resource"),
     new ApiResponse(code = 404, message = "Unsupported season or team"),
     new ApiResponse(code = 500, message = "Internal server error")
@@ -71,7 +71,7 @@ class DailyResultsRouter(override val host: String, override val httpPort: Int,
       (get & path(httpPrefixAddress / Segment)) { day ⇒
         withUri { url ⇒
           requiredHttpSession(ec) { session ⇒
-            system.log.info(s"[user:${session.user}] access [$host:$httpPort/$pathPrefix/$httpPrefixAddress/$day]")
+            system.log.info(s"[user:${session.user}] access $url")
             get(complete(searchResults(url, day)))
           }
         }
@@ -96,7 +96,7 @@ class DailyResultsRouter(override val host: String, override val httpPort: Int,
 
   private def searchResults(url: String, day: String): Future[HttpResponse] = {
     parseDay(day).andThen(validatePeriod).fold({ error: String => Future.successful(notFound(s"Invalid parameters: $error")) }, { arg =>
-      fetch[DailyView](DailyResultsQueryArgs(context, url, arg.period, (arg.year, arg.mm, arg.dd), arenas, teams), dailyJobSupervisor).map {
+      fetch[DailyResultsView](DailyResultsQueryArgs(context, url, arg.period, (arg.year, arg.mm, arg.dd), arenas, teams), dailyJobSupervisor).map {
         case cats.data.Xor.Right(res) => success(SparkJobHttpResponse(url, view = Option("daily-results"), body = Option(res), error = res.error))(DailyResultsWriter)
         case cats.data.Xor.Left(ex) => internalError(ex)
       }

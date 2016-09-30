@@ -5,7 +5,7 @@ import java.net.URLDecoder
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.HttpResponse
 import akka.http.scaladsl.server.Route
-import http.PlayersRouter.PlayersProtocol
+import http.PlayerStatRouter.PlayersProtocol
 import http.SparkJob.{ Stats, PlayerStatsView, PlayerStatsQueryArgs }
 import org.apache.spark.SparkContext
 import spray.json._
@@ -14,7 +14,7 @@ import io.swagger.annotations._
 import javax.ws.rs.Path
 import scala.concurrent.duration._
 
-object PlayersRouter {
+object PlayerStatRouter {
 
   trait PlayersProtocol extends StandingHttpProtocols {
 
@@ -49,11 +49,11 @@ object PlayersRouter {
 
 @io.swagger.annotations.Api(value = "player stats", produces = "application/json")
 @Path("/api/player/stats")
-class PlayersRouter(override val host: String, override val httpPort: Int,
-  override val intervals: scala.collection.mutable.LinkedHashMap[org.joda.time.Interval, String],
-  override val teams: scala.collection.mutable.HashMap[String, String],
-  override val httpPrefixAddress: String = "player",
-  arenas: scala.collection.immutable.Vector[(String, String)], context: SparkContext)(implicit val ec: ExecutionContext, val system: ActorSystem) extends SecuritySupport
+class PlayerStatRouter(override val host: String, override val httpPort: Int,
+                       override val intervals: scala.collection.mutable.LinkedHashMap[org.joda.time.Interval, String],
+                       override val teams: scala.collection.mutable.HashMap[String, String],
+                       override val httpPrefixAddress: String = "player",
+                       arenas: scala.collection.immutable.Vector[(String, String)], context: SparkContext)(implicit val ec: ExecutionContext, val system: ActorSystem) extends SecuritySupport
     with ParamsValidation with TypedAsk with PlayersProtocol {
 
   private val enc = "utf-8"
@@ -84,7 +84,6 @@ class PlayersRouter(override val host: String, override val httpPort: Int,
               requiredHttpSession(ec) { session ⇒
                 val decodedUrl = URLDecoder.decode(url, enc)
                 val decodedName = URLDecoder.decode(name, enc)
-                //system.log.info(s"[user:${session.user}] access [$host:$httpPort/$pathPrefix/$httpPrefixAddress/stats?name=${name}&stage=${stage}&team=${team}]")
                 system.log.info(s"[user:${session.user}] access $url")
                 get(complete(playerStats(decodedUrl, decodedName, stage, team)))
               }

@@ -66,11 +66,11 @@ package object spark {
     def apply[T <: SparkQueryView: DailyResultsQuery](implicit ex: ExecutionContext) = implicitly[DailyResultsQuery[T]]
 
     implicit def teamStats(implicit ex: ExecutionContext) =
-      new DailyResultsQuery[DailyView] {
+      new DailyResultsQuery[DailyResultsView] {
         override val name: String = "[spark-query]: daily-results"
 
         override def async(ctx: SparkContext, config: Config, stage: String, yyyyMMDD: (Int, Int, Int),
-          arenas: Seq[(String, String)], teams: mutable.HashMap[String, String]): Future[DailyView] = {
+          arenas: Seq[(String, String)], teams: mutable.HashMap[String, String]): Future[DailyResultsView] = {
           val startTs = System.currentTimeMillis
           val results = ctx.cassandraDailyResults(config, stage, yyyyMMDD._1, yyyyMMDD._2, yyyyMMDD._3).cache()
           results.collectAsync.map { seq =>
@@ -78,7 +78,7 @@ package object spark {
               ResultView(s" ${el._2} @ ${el._1}", s"${el._7}:${el._5} - ${el._6}:${el._4}", cassandra.formatter.format(el._3),
                 arenas.find(_._1 == el._1.trim).map(_._2).getOrElse(el._1))
             }
-            DailyView(results.size, results.toList, System.currentTimeMillis - startTs)
+            DailyResultsView(results.size, results.toList, System.currentTimeMillis - startTs)
           }
         }
       }
@@ -90,10 +90,10 @@ package object spark {
     def apply[T <: SparkQueryView: TeamsResultsQuery](implicit ex: ExecutionContext) = implicitly[TeamsResultsQuery[T]]
 
     implicit def teamStats(implicit ex: ExecutionContext) =
-      new TeamsResultsQuery[TeamStatsView] {
+      new TeamsResultsQuery[ResultsView] {
         override val name: String = "[spark-query]: team-stats"
         override def async(ctx: SparkContext, config: Config, period: String, teams: scala.collection.Seq[String], arenas: Seq[(String, String)],
-          allTeams: mutable.HashMap[String, String]): Future[TeamStatsView] = {
+          allTeams: mutable.HashMap[String, String]): Future[ResultsView] = {
           val sqlContext = new SQLContext(ctx)
           import sqlContext.implicits._
           val startTs = System.currentTimeMillis
@@ -112,7 +112,7 @@ package object spark {
                 cassandra.formatter.format(row.getAs[java.sql.Date]("date")), row.getAs[String]("arena")
               )
             }.collectAsync()
-            .map(res ⇒ TeamStatsView(res.size, res.toList, System.currentTimeMillis - startTs))
+            .map(res ⇒ ResultsView(res.size, res.toList, System.currentTimeMillis - startTs))
         }
       }
   }
@@ -170,7 +170,7 @@ package object spark {
         override val name = "[spark-query]: rebound-leaders"
 
         override def async(ctx: SparkContext, config: Config, period: String, depth: Int): Future[RebLeadersView] = {
-          val start = System.currentTimeMillis()
+          val start = System.currentTimeMillis
           val rdd: RDD[((String, String), (Float, Float, Float))] = ctx.cassandraRebLeadersRdd(config, period).cache()
 
           val array = rdd
@@ -247,7 +247,7 @@ package object spark {
           .map { leaders ⇒ PtsLeadersView(leaders.size, leaders.toList, System.currentTimeMillis() - sc.startTime) }
          */
         override def async(ctx: SparkContext, config: Config, period: String, depth: Int): Future[PtsLeadersView] = {
-          val start = System.currentTimeMillis()
+          val start = System.currentTimeMillis
           val rdd: RDD[((String, String), Float)] = ctx.cassandraPtsLeadersRdd(config, period).cache()
 
           //aggregation
@@ -300,24 +300,16 @@ package object spark {
     @implicitNotFound(
       msg = "Cannot find CassandraStandingTask type class for ${T}"
     )
-    def apply[T <: SparkQueryView: StandingQuery](
-      implicit
-      ex: ExecutionContext
-    ) = implicitly[StandingQuery[T]]
+    def apply[T <: SparkQueryView: StandingQuery](implicit ex: ExecutionContext) = implicitly[StandingQuery[T]]
 
     implicit def playoff(implicit ex: ExecutionContext) =
       new StandingQuery[PlayoffStandingView] {
         override val name = "[spark-query]: standing-playoff"
 
-        override def async(
-          ctx: SparkContext,
-          config: Config,
-          teams: mutable.HashMap[String, String],
-          period: String
-        ): Future[PlayoffStandingView] = {
+        override def async(ctx: SparkContext, config: Config, teams: mutable.HashMap[String, String],
+                           period: String): Future[PlayoffStandingView] = {
           val start = System.currentTimeMillis()
-          val rdd: RDD[NbaResult] =
-            ctx.cassandraStandingRdd(config, teams.keySet, period).cache()
+          val rdd: RDD[NbaResult] = ctx.cassandraStandingRdd(config, teams.keySet, period).cache()
 
           /*
         rdd.keyBy(v ⇒ Set(v.homeTeam, v.awayTeam))

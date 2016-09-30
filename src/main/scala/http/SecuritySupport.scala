@@ -13,7 +13,7 @@ import com.softwaremill.session.SessionDirectives._
 import com.softwaremill.session.CsrfDirectives._
 import com.softwaremill.session.CsrfOptions._
 import com.softwaremill.session.SessionOptions._
-import http.SparkJob.TeamStatsView
+import http.SparkJob.ResultsView
 import io.swagger.annotations._
 
 import scala.concurrent.{ Future, ExecutionContext }
