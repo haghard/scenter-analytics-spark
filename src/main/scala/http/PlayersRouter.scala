@@ -82,10 +82,11 @@ class PlayersRouter(override val host: String, override val httpPort: Int,
           parameters(('name.as[String]), ('stage.as[String]), ('team.as[String])) { (name, stage, team) ⇒
             withUri { url ⇒
               requiredHttpSession(ec) { session ⇒
-                val url = URLDecoder.decode(url, enc)
+                val decodedUrl = URLDecoder.decode(url, enc)
+                val decodedName = URLDecoder.decode(name, enc)
                 //system.log.info(s"[user:${session.user}] access [$host:$httpPort/$pathPrefix/$httpPrefixAddress/stats?name=${name}&stage=${stage}&team=${team}]")
                 system.log.info(s"[user:${session.user}] access $url")
-                get(complete(playerStats(url, URLDecoder.decode(name, enc), stage, team)))
+                get(complete(playerStats(decodedUrl, decodedName, stage, team)))
               }
             }
           }
