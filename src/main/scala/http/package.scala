@@ -130,6 +130,7 @@ package object http {
         new DailyResultsRouter(interface, httpPort, context, intervals, arenas, teams).route ~
         new PlayerStatRouter(interface, httpPort, intervals, teams, arenas = arenas, context = context).route ~
         new PtsLeadersRouter(interface, httpPort, intervals, teams, arenas = arenas, context = context).route ~
+        new PtsLeadersRouter(interface, httpPort, intervals, teams, arenas = arenas, context = context).route ~
         new SwaggerDocRouter(interface, httpPort).route
 
       system.registerOnTermination {
