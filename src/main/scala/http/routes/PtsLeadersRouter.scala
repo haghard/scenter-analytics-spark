@@ -1,15 +1,15 @@
-package http
+package http.routes
 
-import http.SparkJob._
 import akka.actor.ActorSystem
-import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.model.HttpResponse
-import http.PlayerStatRouter.PlayersProtocol
-import http.PtsLeadersRouter.LeadersProtocol
+import akka.http.scaladsl.server.Route
 import org.apache.spark.SparkContext
+import spark.SparkJob._
+import spark.{SparkJob, SparkQuerySupervisor}
 import spray.json.JsonWriter
+
 import scala.concurrent.duration._
-import scala.concurrent.{Future, ExecutionContext}
+import scala.concurrent.{ExecutionContext, Future}
 
 object PtsLeadersRouter {
   trait LeadersProtocol extends PlayersProtocol {
@@ -44,6 +44,7 @@ object PtsLeadersRouter {
 }
 
 import javax.ws.rs.Path
+
 import io.swagger.annotations._
 
 @io.swagger.annotations.Api(value = "pts leaders", produces = "application/json")

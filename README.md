@@ -55,6 +55,10 @@ http GET [host]:[port]/api/leaders/reb/season-15-16 Authorization:...
 
 http GET [host]:[port]/api/standing/playoff-14-15?"teams=cle,okc" Authorization:...
 
+
+### Apache benchmark ###
+ab -n 50 -c 2 -t 10 -H "Authorization:..." [host]:[port]/api/daily/2016-01-14
+
 ### Useful links 
  
 https://www.digitalocean.com/community/tutorials/how-to-set-up-a-host-name-with-digitalocean

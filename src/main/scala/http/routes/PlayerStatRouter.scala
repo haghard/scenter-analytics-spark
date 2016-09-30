@@ -1,18 +1,20 @@
-package http
+package http.routes
 
 import java.net.URLDecoder
+import javax.ws.rs.Path
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.HttpResponse
 import akka.http.scaladsl.server.Route
-import http.PlayerStatRouter.PlayersProtocol
-import http.SparkJob.{ Stats, PlayerStatsView, PlayerStatsQueryArgs }
-import org.apache.spark.SparkContext
-import spray.json._
-import scala.concurrent.{ Future, ExecutionContext }
+import http._
 import io.swagger.annotations._
-import javax.ws.rs.Path
+import org.apache.spark.SparkContext
+import spark.SparkJob.{PlayerStatsQueryArgs, PlayerStatsView, Stats}
+import spark.SparkQuerySupervisor
+import spray.json._
+
 import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContext, Future}
 
 object PlayerStatRouter {
 

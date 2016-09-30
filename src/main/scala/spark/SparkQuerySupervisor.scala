@@ -1,8 +1,9 @@
-package http
+package spark
 
+import akka.actor.SupervisorStrategy.Stop
 import akka.actor._
 import com.typesafe.config.ConfigFactory
-import akka.actor.SupervisorStrategy.Stop
+import http._
 
 object SparkQuerySupervisor {
   def props: Props =
@@ -13,11 +14,8 @@ class SparkQuerySupervisor extends Actor with ActorLogging {
   private val conf = ConfigFactory.load("application.conf")
 
   override val supervisorStrategy = OneForOneStrategy() {
-    case reason: Exception ⇒
-      log.debug(
-        "SparkJobSupervisor has caught unexpected error: {}",
-        reason.getMessage
-      )
+    case reason: Throwable ⇒
+      log.error("SparkJob error: {}", reason)
       Stop
   }
 

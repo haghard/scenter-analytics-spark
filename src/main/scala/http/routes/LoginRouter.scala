@@ -1,4 +1,4 @@
-package http
+package http.routes
 
 import java.util.concurrent.TimeUnit
 import javax.ws.rs.Path
@@ -11,10 +11,11 @@ import com.softwaremill.session.CsrfDirectives._
 import com.softwaremill.session.CsrfOptions._
 import com.softwaremill.session.SessionDirectives._
 import com.softwaremill.session.SessionOptions._
+import http.ServerSession
 import io.swagger.annotations._
 import org.mindrot.jbcrypt.BCrypt
-import spray.json._
 import spray.json.DefaultJsonProtocol._
+import spray.json._
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._

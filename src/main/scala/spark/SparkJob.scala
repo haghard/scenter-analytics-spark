@@ -1,13 +1,12 @@
-package http
+package spark
 
 import java.util.Date
-
 import akka.actor.{Actor, ActorLogging, Props}
 import akka.pattern.pipe
 import com.typesafe.config.Config
+import http._
 import org.apache.spark.SparkContext
 import spark.PtsLeadersQuery._
-import spark._
 
 import scala.collection.mutable
 
@@ -58,7 +57,8 @@ object SparkJob {
   }
 
   case class SeasonStandingView(count: Int = 0, west: List[Standing] = List.empty,
-                                east: List[Standing] = List.empty, latency: Long = 0l, error: Option[String] = None) extends SparkQueryView
+                                east: List[Standing] = List.empty, latency: Long = 0l, error: Option[String] = None)
+    extends SparkQueryView
 
   case class PlayoffStandingView(count: Int = 0, table: List[String], latency: Long = 0l,
                                  error: Option[String] = None) extends SparkQueryView

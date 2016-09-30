@@ -4,7 +4,8 @@ import akka.event.LoggingAdapter
 import cassandra._
 import com.typesafe.config.Config
 import http.NbaResult
-import http.SparkJob._
+import spark.SparkJob
+import SparkJob._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{ Row, SQLContext }
 import org.apache.spark.{ SparkConf, SparkContext }
@@ -267,28 +268,15 @@ package object spark {
             .take(depth)
 
           Future {
-            PtsLeadersView(
-              array.length,
-              array
-              .map(
-                kv ⇒
-                  PtsLeader(
-                    team = kv._1._2,
-                    player = kv._1._1,
-                    pts = kv._2._1.scale(2),
-                    games = kv._2._2
-                  )
-              )
-              .toList,
-              System.currentTimeMillis() - start
-            )
+            PtsLeadersView(array.length, array
+              .map(kv ⇒ PtsLeader(team = kv._1._2, player = kv._1._1, pts = kv._2._1.scale(2), games = kv._2._2))
+              .toList, System.currentTimeMillis - start)
           }
         }
       }
   }
 
   object StandingQuery {
-
     import scala.collection.immutable.TreeMap
     import scala.collection.mutable
 
@@ -297,9 +285,7 @@ package object spark {
     val semifinal = List.range(1, 3).map(_ + ". Conference final")
     val stageNames = first ::: second ::: semifinal ::: List("Final. ")
 
-    @implicitNotFound(
-      msg = "Cannot find CassandraStandingTask type class for ${T}"
-    )
+    @implicitNotFound(msg = "Cannot find CassandraStandingTask type class for ${T}")
     def apply[T <: SparkQueryView: StandingQuery](implicit ex: ExecutionContext) = implicitly[StandingQuery[T]]
 
     implicit def playoff(implicit ex: ExecutionContext) =
@@ -368,15 +354,10 @@ package object spark {
       new StandingQuery[SeasonStandingView] {
         override val name = "[spark-query]: season-standing"
 
-        override def async(
-          ctx: SparkContext,
-          config: Config,
-          teams: mutable.HashMap[String, String],
-          period: String
-        ): Future[SeasonStandingView] = {
+        override def async(ctx: SparkContext, config: Config,
+          teams: mutable.HashMap[String, String], period: String): Future[SeasonStandingView] = {
           val start = System.currentTimeMillis
-          val rdd: RDD[NbaResult] =
-            ctx.cassandraStandingRdd(config, teams.keySet, period).cache()
+          val rdd: RDD[NbaResult] = ctx.cassandraStandingRdd(config, teams.keySet, period).cache()
 
           rdd.flatMap { r ⇒
             if (r.homeScore > r.awayScore)
@@ -411,12 +392,8 @@ package object spark {
                   case "east" ⇒ false
                 }
               }
-              SeasonStandingView(
-                west.size + east.size,
-                west.toList,
-                east.toList,
-                System.currentTimeMillis - start
-              )
+              SeasonStandingView(west.size + east.size, west.toList,
+                east.toList, System.currentTimeMillis - start)
             }
         }
       }

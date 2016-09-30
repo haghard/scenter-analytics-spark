@@ -1,14 +1,15 @@
-package http
+package http.routes
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.HttpResponse
 import akka.http.scaladsl.server.Route
-import http.ResultsRouter.TeamsHttpProtocols
-import http.SparkJob._
+import http._
 import org.apache.spark.SparkContext
-import spray.json.JsonWriter
-import scala.concurrent.{Future, ExecutionContext}
-import spray.json._
+import spark.SparkJob._
+import spark.{SparkJob, SparkQuerySupervisor}
+import spray.json.{JsonWriter, _}
+
+import scala.concurrent.{ExecutionContext, Future}
 
 object StandingRouter {
 
@@ -56,7 +57,9 @@ object StandingRouter {
 }
 
 import javax.ws.rs.Path
+
 import io.swagger.annotations._
+
 import scala.concurrent.duration._
 
 @io.swagger.annotations.Api(value = "standings", produces = "application/json")

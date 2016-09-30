@@ -1,8 +1,9 @@
-package http
+package http.routes
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.HttpResponse
-import http.SparkJob._
+import spark.{SparkQuerySupervisor, SparkJob}
+import SparkJob._
 import http.ResultsRouter.TeamsHttpProtocols
 
 import javax.ws.rs.Path

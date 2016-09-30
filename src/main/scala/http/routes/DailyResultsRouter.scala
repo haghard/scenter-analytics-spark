@@ -1,4 +1,4 @@
-package http
+package http.routes
 
 import javax.ws.rs.Path
 
@@ -6,15 +6,16 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.model.HttpResponse
 import akka.http.scaladsl.server._
 import cats.data.Validated
-import http.DailyResultsRouter.{ Args, DailyResultsProtocol }
-import http.SparkJob._
+import http._
 import io.swagger.annotations._
 import org.apache.spark.SparkContext
 import org.joda.time.DateTime
+import spark.SparkJob._
+import spark.SparkQuerySupervisor
 import spray.json._
 
 import scala.concurrent.duration._
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.{ExecutionContext, Future}
 
 object DailyResultsRouter {
 

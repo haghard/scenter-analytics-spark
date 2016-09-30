@@ -6,7 +6,7 @@ import akka.http.scaladsl.server._
 import akka.util.Timeout
 import com.github.scribejava.apis.GoogleApi
 import com.github.scribejava.core.model.{OAuthRequest, Verb}
-import http.SecuritySupport
+import http.routes.SecuritySupport
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}

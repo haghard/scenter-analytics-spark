@@ -1,10 +1,7 @@
-package http
+package http.routes
 
 trait ParamsValidation {
 
-  import cats.data.Validated
-  import cats.implicits._
-  import cats.data.Xor
   import cats.data.Validated
   import cats.implicits._
 

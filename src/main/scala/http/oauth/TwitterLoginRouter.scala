@@ -5,7 +5,7 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server._
 import com.github.scribejava.apis.TwitterApi
 import com.github.scribejava.core.model.Verb
-import http.SecuritySupport
+import http.routes.SecuritySupport
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}

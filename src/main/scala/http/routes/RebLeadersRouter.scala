@@ -1,4 +1,4 @@
-package http
+package http.routes
 
 import javax.ws.rs.Path
 
@@ -6,7 +6,8 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.model.HttpResponse
 import akka.http.scaladsl.server._
 import http.PtsLeadersRouter.LeadersProtocol
-import http.SparkJob.{PtsLeadersView, RebLeadersQueryArgs, RebLeadersView}
+import spark.{SparkQuerySupervisor, SparkJob}
+import SparkJob.{PtsLeadersView, RebLeadersQueryArgs, RebLeadersView}
 import io.swagger.annotations._
 import org.apache.spark.SparkContext
 

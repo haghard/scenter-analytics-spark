@@ -9,11 +9,12 @@ import akka.stream.ActorMaterializer
 import akka.util.ByteString
 import com.typesafe.config.ConfigFactory
 import http.oauth.{GoogleLoginRouter, GitHubLoginRouter, TwitterLoginRouter}
+import http.routes.{SwaggerDocRouter, LoginRouter, DailyResultsRouter}
 import http.swagger.CorsSupport
 import ingestion.JournalChangesIngestion
 import org.apache.spark.SparkContext
 import org.joda.time.{DateTime, Interval}
-import spark.SparkQuery
+import spark.{SparkJob, SparkQuery}
 
 import scala.collection.JavaConversions._
 import scala.collection.mutable
@@ -49,14 +50,14 @@ package object http {
       callback => { t: Try[A] => \/.fromTryCatchNonFatal(t.get) } andThen callback
   }*/
 
-  private val HttpDispatcher = "akka.http-dispatcher"
-  private[http] val SparkDispatcher = "akka.spark-dispatcher"
-  private[http] val ActorSystemName = "SportCenter"
-  private[http] val DefaultHttpPort = 8012
-  private[http] val SEEDS_ENV = "SEED_NODES"
-  private[http] val HTTP_PORT = "HTTP_PORT"
-  private[http] val NET_INTERFACE = "NET_INTERFACE"
-  private[http] val HOST = "HOST"
+  val HttpDispatcher = "akka.http-dispatcher"
+  val SparkDispatcher = "akka.spark-dispatcher"
+  val ActorSystemName = "SportCenter"
+  val DefaultHttpPort = 8012
+  val SEEDS_ENV = "SEED_NODES"
+  val HTTP_PORT = "HTTP_PORT"
+  val NET_INTERFACE = "NET_INTERFACE"
+  val HOST = "HOST"
 
   case class NbaResultView(homeTeam: String, homeScore: Int, awayTeam: String, awayScore: Int, dt: Date)
 
@@ -320,7 +321,7 @@ package object http {
   }
 
   import http.ResultsRouter.TeamsHttpProtocols
-  import http.SparkJob._
+  import SparkJob._
   import spray.json.JsonWriter
 
   case class SparkJobHttpResponse(url: String, view: Option[String] = None,
