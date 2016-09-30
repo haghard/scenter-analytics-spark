@@ -67,6 +67,7 @@ class StandingRouter(override val host: String, override val httpPort: Int,
                      arenas: scala.collection.immutable.Vector[(String, String)], context: SparkContext)
                      (implicit val ec: ExecutionContext, val system: ActorSystem) extends SecuritySupport with TypedAsk with ParamsValidation with StandingHttpProtocols {
   private val querySupervisor = system.actorOf(SparkQuerySupervisor.props)
+  override implicit val timeout = akka.util.Timeout(10.seconds)
 
   val route = standingRoute()
 
