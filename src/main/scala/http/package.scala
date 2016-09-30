@@ -9,7 +9,7 @@ import akka.stream.ActorMaterializer
 import akka.util.ByteString
 import com.typesafe.config.ConfigFactory
 import http.oauth.{GoogleLoginRouter, GitHubLoginRouter, TwitterLoginRouter}
-import http.routes.{SwaggerDocRouter, LoginRouter, DailyResultsRouter}
+import http.routes.{ResultsRouter, SwaggerDocRouter, LoginRouter, DailyResultsRouter}
 import http.swagger.CorsSupport
 import ingestion.JournalChangesIngestion
 import org.apache.spark.SparkContext
@@ -21,14 +21,12 @@ import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.ClassTag
 import scala.util.{Failure, Success}
-
-//import scalaz.{-\/, \/-, \/}
+import http.routes._
 import com.github.nscala_time.time.Imports._
 
 package object http {
   //import scalaz.concurrent.{Task => ZTask}
   //import scala.concurrent.{ExecutionContext, Future => SFuture, Promise}
-
   //Integration code between Scalaz and Scala standard concurrency libraries
   /*
   object Task2Future {
@@ -314,13 +312,12 @@ package object http {
     }
 
     override def shutdown() = {
-      //uninstallApi(api)
       context.stop
-      system.log.info("Web service has been stopped")
+      system.log.info("Service has been stopped")
     }
   }
 
-  import http.ResultsRouter.TeamsHttpProtocols
+  import http.routes.ResultsRouter.TeamsHttpProtocols
   import SparkJob._
   import spray.json.JsonWriter
 
@@ -328,20 +325,15 @@ package object http {
                                   body: Option[SparkQueryView] = None, error: Option[String] = None) extends DefaultHttpResponse
 
   trait StandingHttpProtocols extends TeamsHttpProtocols {
-    implicit val standingFormat = jsonFormat7(Standing.apply)
+    implicit val standingFormat = spray.json.DefaultJsonProtocol.jsonFormat7(Standing.apply)
 
     implicit object ResultsResponseWriter extends JsonWriter[SparkJobHttpResponse] {
-
       import spray.json._
 
       override def write(obj: SparkJobHttpResponse): spray.json.JsValue = {
         val url = JsString(obj.url.toString)
-        val v = obj.view.fold(JsString("none")) {
-          JsString(_)
-        }
-        val error = obj.error.fold(JsString("none")) {
-          JsString(_)
-        }
+        val v = obj.view.fold(JsString("none"))(JsString(_))
+        val error = obj.error.fold(JsString("none"))(JsString(_))
         obj.body match {
           case Some(SeasonStandingView(c, west, east, latency, _)) ⇒
             JsObject(

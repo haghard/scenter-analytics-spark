@@ -4,6 +4,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.model.HttpResponse
 import akka.http.scaladsl.server.Route
 import http._
+import http.routes.ResultsRouter.TeamsHttpProtocols
 import org.apache.spark.SparkContext
 import spark.SparkJob._
 import spark.{SparkJob, SparkQuerySupervisor}

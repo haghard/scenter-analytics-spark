@@ -3,6 +3,7 @@ package http.routes
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.HttpResponse
 import akka.http.scaladsl.server.Route
+import http.routes.PlayerStatRouter.PlayersProtocol
 import org.apache.spark.SparkContext
 import spark.SparkJob._
 import spark.{SparkJob, SparkQuerySupervisor}
@@ -13,11 +14,10 @@ import scala.concurrent.{ExecutionContext, Future}
 
 object PtsLeadersRouter {
   trait LeadersProtocol extends PlayersProtocol {
-    implicit val ptsLeaderFormat = jsonFormat4(PtsLeader.apply)
-    implicit val rebLeaderFormat = jsonFormat6(RebLeader.apply)
+    implicit val ptsLeaderFormat = spray.json.DefaultJsonProtocol.jsonFormat4(PtsLeader.apply)
+    implicit val rebLeaderFormat = spray.json.DefaultJsonProtocol.jsonFormat6(RebLeader.apply)
 
-    implicit object LeadersResponseWriter
-        extends JsonWriter[SparkJobHttpResponse] {
+    implicit object LeadersResponseWriter extends JsonWriter[SparkJobHttpResponse] {
       import spray.json._
       override def write(obj: SparkJobHttpResponse): spray.json.JsValue = {
         val url = JsString(obj.url.toString)

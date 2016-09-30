@@ -7,6 +7,7 @@ import akka.http.scaladsl.model.HttpResponse
 import akka.http.scaladsl.server._
 import cats.data.Validated
 import http._
+import http.routes.DailyResultsRouter.{Args, DailyResultsProtocol}
 import io.swagger.annotations._
 import org.apache.spark.SparkContext
 import org.joda.time.DateTime
@@ -21,8 +22,7 @@ object DailyResultsRouter {
 
   trait DailyResultsProtocol extends StandingHttpProtocols {
 
-    implicit object DailyResultsWriter
-        extends JsonWriter[SparkJobHttpResponse] {
+    implicit object DailyResultsWriter extends JsonWriter[SparkJobHttpResponse] {
       override def write(obj: SparkJobHttpResponse): JsValue = {
         val url = JsString(obj.url.toString)
         val v = obj.view.fold(JsString("none")) { view ⇒ JsString(view) }
@@ -35,7 +35,6 @@ object DailyResultsRouter {
         }
       }
     }
-
   }
 
   case class Args(period: String, year: Int, mm: Int, dd: Int)
@@ -48,7 +47,8 @@ class DailyResultsRouter(override val host: String, override val httpPort: Int,
     intervals: scala.collection.mutable.LinkedHashMap[org.joda.time.Interval, String],
     arenas: scala.collection.immutable.Vector[(String, String)],
     teams: scala.collection.mutable.HashMap[String, String],
-    override val httpPrefixAddress: String = "daily")(implicit val ec: ExecutionContext, val system: ActorSystem) extends SecuritySupport with TypedAsk with DailyResultsProtocol {
+    override val httpPrefixAddress: String = "daily")(implicit val ec: ExecutionContext, val system: ActorSystem) extends SecuritySupport with TypedAsk
+  with DailyResultsProtocol {
   private val dailyJobSupervisor = system.actorOf(SparkQuerySupervisor.props)
 
   override implicit val timeout = akka.util.Timeout(10.seconds)
