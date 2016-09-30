@@ -23,6 +23,7 @@ class TwitterLoginRouter(override val host: String, override val httpPort: Int,
   private val twitterOauth = http.oauth.Oauth[com.github.scribejava.apis.TwitterApi]
 
   override implicit val timeout = akka.util.Timeout(5.seconds)
+  val route = twitterRoute()
 
   private def twitterRoute(): Route =
     path(httpPrefixAddress) {
