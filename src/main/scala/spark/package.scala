@@ -308,7 +308,7 @@ package object spark {
 
         override def async(ctx: SparkContext, config: Config, teams: mutable.HashMap[String, String],
                            period: String): Future[PlayoffStandingView] = {
-          val start = System.currentTimeMillis()
+          val start = System.currentTimeMillis
           val rdd: RDD[NbaResult] = ctx.cassandraStandingRdd(config, teams.keySet, period).cache()
 
           /*

@@ -92,9 +92,7 @@ object SparkJob {
 }
 
 class SparkJob(val config: Config) extends Actor with ActorLogging {
-
   import SparkJob._
-
   implicit val Ex = context.dispatcher
 
   override def receive: Receive = {
@@ -121,12 +119,13 @@ class SparkJob(val config: Config) extends Actor with ActorLogging {
         .onComplete(_ ⇒ context.system.stop(self))
 
     case RebLeadersQueryArgs(ctx, url, period, depth) ⇒
-      log.info("SELECT name, team, offreb, defreb, totalreb FRO leaders_by_period where period = '{}'", period)
+      log.info("SELECT name, team, offreb, defreb, totalreb FROM leaders_by_period where period = '{}'", period)
       (RebLeadersQuery[RebLeadersView] async(ctx, config, period, depth) to sender()).future
         .onComplete(_ ⇒ context.system.stop(self))
 
     case StandingQueryArgs(ctx, _, stage, teams, period) ⇒
-      log.info("SELECT * FROM results_by_period WHERE period = '{}' and team in ({})", stage, teams.map(t => s"""'$t',""").mkString)
+      log.info("SELECT team, score, opponent, opponent_score, date FROM results_by_period WHERE period = '{}' and team in ({})",
+        stage, teams.map(t => s"""'$t',""").mkString)
       if (stage contains Season)
         ((StandingQuery[SeasonStandingView] async(ctx, config, teams, period)) to sender()).future
           .onComplete(_ ⇒ context.system.stop(self))
