@@ -27,24 +27,22 @@ trait SecuritySupport extends DefaultRestMicroservice /*with Directives*/ {
   implicit def ec: ExecutionContext
   implicit def system: ActorSystem
 
-  val referer = "Referer"
-
-  lazy val googleApiKey = system.settings.config.getString("google.consumer-key")
-  lazy val googleApiSecret = system.settings.config.getString("google.consumer-secret")
-  lazy val twitterApiKey = system.settings.config.getString("twitter.consumer-key")
-  lazy val twitterApiSecret = system.settings.config.getString("twitter.consumer-secret")
+  //lazy val googleApiKey = system.settings.config.getString("google.consumer-key")
+  //lazy val googleApiSecret = system.settings.config.getString("google.consumer-secret")
+  //lazy val twitterApiKey = system.settings.config.getString("twitter.consumer-key")
+  //lazy val twitterApiSecret = system.settings.config.getString("twitter.consumer-secret")
   lazy val githubApiKey = system.settings.config.getString("github.consumer-key")
   lazy val githubApiSecret = system.settings.config.getString("github.consumer-secret")
 
   val salt = BCrypt.gensalt()
 
-  lazy val (google, twitter, github) = {
+  /*lazy val (google, twitter, github) = {
     (
       http.oauth.Oauth[com.github.scribejava.apis.GoogleApi20].withKeySecret(googleApiKey, googleApiSecret),
       http.oauth.Oauth[com.github.scribejava.apis.TwitterApi].withKeySecret(twitterApiKey, twitterApiSecret),
       http.oauth.Oauth[com.github.scribejava.apis.GitHubApi].withKeySecret(githubApiKey, githubApiSecret)
     )
-  }
+  }*/
 
   implicit def serializer: SessionSerializer[ServerSession, String] =
     new SingleValueSessionSerializer({ session: ServerSession ⇒ (session.user + "-" + session.password) }, { v: (String) ⇒
@@ -64,14 +62,7 @@ trait SecuritySupport extends DefaultRestMicroservice /*with Directives*/ {
   def requiredHttpSession(implicit ec: ExecutionContext) =
     requiredSession(oneOff, usingHeaders)
 
-  //https://github.com/softwaremill/akka-http-session
-
   /*
-  abstract override def configureApi() =
-    super.configureApi() ~ Api(route = Option { ec: ExecutionContext ⇒ login(ec) },
-      postAction = Option(() ⇒ system.log.info(s"\n★ ★ ★ [$httpPrefixAddress/login|logout] routes was stopped on $httpPrefixAddress ★ ★ ★")),
-      urls = s"[$httpPrefixAddress/$pathPrefix/login, $httpPrefixAddress/$pathPrefix/login-twitter, $httpPrefixAddress/$pathPrefix/login-github, $httpPrefixAddress/$pathPrefix/login-google, $httpPrefixAddress/$pathPrefix/logout]")*/
-
   private def githubR(implicit ec: ExecutionContext): Route =
     path("login-github") {
       val service = github.oAuthService
@@ -150,7 +141,7 @@ trait SecuritySupport extends DefaultRestMicroservice /*with Directives*/ {
               if (response.getCode == 200) {
                 val googleResponse = response.getBody
                 val json = googleResponse.parseJson.asJsObject
-                val user = json.fields("displayName").toString().replace("\"", "")
+                val user = json.fields("displayName").toString.replace("\"", "")
                 s"$user has been authorized by google\nAuthorizationUrl: http://$host:$httpPort/$pathPrefix/login?user=$user:google&password=$token"
               } else response.getBody
             }(ec)
@@ -158,62 +149,7 @@ trait SecuritySupport extends DefaultRestMicroservice /*with Directives*/ {
         }
       }
     }
-
-  private def twitterR(implicit ec: ExecutionContext): Route =
-    path("login-twitter") {
-      get {
-        val service = twitter.oAuthService.callback(s"http://$host:$httpPort/$pathPrefix/twitter-sign-in").build(twitter.instance)
-        val requestToken = service.getRequestToken
-        val url = service.getAuthorizationUrl(requestToken)
-        redirect(akka.http.scaladsl.model.Uri(url), StatusCodes.PermanentRedirect)
-      }
-    } ~ path("frontend-login-twitter") {
-      get {
-        headerValueByName(referer) { frontEndSegment ⇒
-          system.log.info(s"frontend-login-from-twitter from:$frontEndSegment")
-          val service = twitter.oAuthService
-            .callback(s"${frontEndSegment}twitter-callback")
-            .build(twitter.instance)
-          val requestToken = service.getRequestToken
-          val url = service.getAuthorizationUrl(requestToken)
-          redirect(akka.http.scaladsl.model.Uri(url), StatusCodes.PermanentRedirect)
-        }
-      }
-    } ~ path("twitter-sign-in") {
-      get {
-        parameters(('oauth_token.as[String]), ('oauth_verifier.as[String])) {
-          (oauthToken, oauthVerifier) ⇒
-            /**
-             * Converting the request token to an access token
-             * To render the request token into a usable access token,
-             * your application must make a request to the POST oauth / access_token endpoint,
-             * containing the oauth_verifier value obtained in prev step.
-             * The request token is also passed in the oauth_token portion of the header,
-             * but this will have been added by the signing process.
-             *
-             * Source https://dev.twitter.com/web/sign-in/implementing
-             */
-            import spray.json._
-            complete {
-              Future {
-                val service = twitter.oAuthService.build(TwitterApi.instance())
-                val requestToken = new com.github.scribejava.core.model.Token(oauthToken, oauthVerifier)
-                val verifier = new com.github.scribejava.core.model.Verifier(oauthVerifier)
-                val accessToken = service.getAccessToken(requestToken, verifier)
-                val oAuthRequest = new com.github.scribejava.core.model.OAuthRequest(Verb.GET, twitter.protectedUrl, service)
-                service.signRequest(accessToken, oAuthRequest)
-                val twitterResponse = oAuthRequest.send()
-                if (twitterResponse.getCode == 200) {
-                  val json = twitterResponse.getBody.parseJson.asJsObject
-                  val user = json.getFields("name").head.toString().replace("\"", "")
-                  s""" { "authorization-url": "http://$host:$httpPort/$pathPrefix/login?user=$user:twitter&password=$oauthToken" }"""
-                } else
-                  s"""{ "authorization-error": "${twitterResponse.getCode}" } """
-              }(ec)
-            }
-        }
-      }
-    }
+*/
 
   /*
   def login: Route = {

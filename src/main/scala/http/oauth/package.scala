@@ -8,9 +8,6 @@ import java.util.concurrent.ThreadLocalRandom
 package object oauth {
 
   trait Oauth[T <: com.github.scribejava.core.builder.api.Api] {
-    var apiKey: String = _
-    var apiSecret: String = _
-
     def protectedUrl: String
 
     protected def secretState =
@@ -19,12 +16,6 @@ package object oauth {
     def oAuthService: com.github.scribejava.core.builder.ServiceBuilder
 
     def instance: T
-
-    def withKeySecret(apiKey0: String, apiSecret0: String): Oauth[T] = {
-      apiKey = apiKey0
-      apiSecret = apiSecret0
-      this
-    }
   }
 
   object Oauth {
@@ -32,7 +23,7 @@ package object oauth {
     @implicitNotFound(msg = "Cannot find Oauth type class for ${T}")
     def apply[T <: com.github.scribejava.core.builder.api.Api: Oauth]: Oauth[T] = implicitly[Oauth[T]]
 
-    implicit def google = new Oauth[com.github.scribejava.apis.GoogleApi20] {
+    implicit def google(implicit apiKey: String, apiSecret: String) = new Oauth[com.github.scribejava.apis.GoogleApi20] {
       override val protectedUrl =
         "https://www.googleapis.com/plus/v1/people/me"
 
@@ -46,7 +37,7 @@ package object oauth {
       override def instance: GoogleApi20 = ???
     }
 
-    implicit def twitter = new Oauth[com.github.scribejava.apis.TwitterApi] {
+    implicit def twitter(implicit apiKey: String, apiSecret: String) = new Oauth[com.github.scribejava.apis.TwitterApi] {
       override val protectedUrl =
         "https://api.twitter.com/1.1/account/verify_credentials.json"
 
@@ -58,7 +49,7 @@ package object oauth {
       override def instance: TwitterApi = TwitterApi.instance()
     }
 
-    implicit def github = new Oauth[com.github.scribejava.apis.GitHubApi] {
+    implicit def github(implicit apiKey: String, apiSecret: String) = new Oauth[com.github.scribejava.apis.GitHubApi] {
       override val protectedUrl = "https://api.github.com/user"
 
       override def oAuthService() =

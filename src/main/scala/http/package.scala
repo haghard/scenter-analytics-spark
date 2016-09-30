@@ -132,6 +132,7 @@ package object http {
         new PtsLeadersRouter(interface, httpPort, intervals, teams, arenas = arenas, context = context).route ~
         new RebLeadersRouter(interface, httpPort, intervals, teams, arenas = arenas, context = context).route ~
         new StandingRouter(interface, httpPort, intervals, teams, arenas = arenas, context = context).route ~
+        new TwitterLoginRouter(interface, httpPort).route ~
         new SwaggerDocRouter(interface, httpPort).route
 
       system.registerOnTermination {

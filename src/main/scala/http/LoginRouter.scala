@@ -17,12 +17,12 @@ import spray.json._
 import spray.json.DefaultJsonProtocol._
 
 import scala.concurrent.ExecutionContext
+import scala.concurrent.duration._
 
 @io.swagger.annotations.Api(value = "/login", produces = "application/json")
 @Path("/api/login")
-class LoginRouter(override val host: String, override val httpPort: Int, override val httpPrefixAddress: String = "login")(implicit val ec: ExecutionContext, val system: ActorSystem) extends SecuritySupport {
-
-  import scala.concurrent.duration._
+class LoginRouter(override val host: String, override val httpPort: Int, override val httpPrefixAddress: String = "login")
+                 (implicit val ec: ExecutionContext, val system: ActorSystem) extends SecuritySupport {
   override implicit val timeout = akka.util.Timeout(3.seconds)
   private val age = system.settings.config.getDuration("akka.http.session.max-age", TimeUnit.SECONDS)
 
@@ -47,9 +47,7 @@ class LoginRouter(override val host: String, override val httpPort: Int, overrid
                 setNewCsrfToken(checkHeader) { ctx ⇒
                   //system.log.info(s"$user $password")
                   ctx.complete {
-                    HttpResponse(
-                      StatusCodes.OK,
-                      scala.collection.immutable.Seq[HttpHeader](),
+                    HttpResponse(StatusCodes.OK, scala.collection.immutable.Seq[HttpHeader](),
                       HttpEntity(ContentTypes.`application/json`, ByteString(s"{user:$user, session-age:$age}".toJson.prettyPrint))
                     )
                   }
