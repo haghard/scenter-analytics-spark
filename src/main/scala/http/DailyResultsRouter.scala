@@ -49,7 +49,6 @@ class DailyResultsRouter(override val host: String, override val httpPort: Int,
                          teams: scala.collection.mutable.HashMap[String, String],
                          override val httpPrefixAddress: String = "daily")
                         (implicit val ec: ExecutionContext, val system: ActorSystem) extends SecuritySupport with TypedAsk with DailyResultsProtocol {
-  private val dailyResultsPath = "daily"
   private val dailyJobSupervisor = system.actorOf(SparkQuerySupervisor.props)
 
   override implicit val timeout = akka.util.Timeout(10.seconds)
@@ -70,10 +69,10 @@ class DailyResultsRouter(override val host: String, override val httpPort: Int,
   ))
   def dailyRoute(): Route =
     pathPrefix(pathPrefix) {
-      (get & path(dailyResultsPath / Segment)) { day ⇒
+      (get & path(httpPrefixAddress / Segment)) { day ⇒
         withUri { url ⇒
           requiredHttpSession(ec) { session ⇒
-            system.log.info(s"[user:${session.user}] access [$pathPrefix/$httpPrefixAddress/$day]")
+            system.log.info(s"[user:${session.user}] access [$host:$httpPort/$pathPrefix/$httpPrefixAddress/$day]")
             get(complete(searchResults(url, day)))
           }
         }
@@ -100,7 +99,7 @@ class DailyResultsRouter(override val host: String, override val httpPort: Int,
     parseDay(day).andThen(validatePeriod).fold({ error: String => Future.successful(notFound(s"Invalid parameters: $error")) }, { arg =>
       fetch[DailyView](DailyResultsQueryArgs(context, url, arg.period, (arg.year, arg.mm, arg.dd) , arenas, teams), dailyJobSupervisor).map {
         case cats.data.Xor.Right(res) => success(SparkJobHttpResponse(url, view = Option("daily-results"), body = Option(res), error = res.error))(DailyResultsWriter)
-        case cats.data.Xor.Left(er) => internalError(er)
+        case cats.data.Xor.Left(ex) => internalError(ex)
       }
     })
   }

@@ -1,6 +1,6 @@
 package http.swagger
 
-import http.{DailyResultsRouter, LoginRouter, ResultsRouter$}
+import http.{ResultsRouter, DailyResultsRouter, LoginRouter}
 
 import scala.reflect.runtime.{ universe => ru }
 import akka.actor.ActorSystem

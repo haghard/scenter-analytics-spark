@@ -1,17 +1,17 @@
-/*
 package http
 
 import java.net.URLDecoder
 
+import akka.actor.ActorSystem
 import akka.http.scaladsl.model.HttpResponse
 import akka.http.scaladsl.server.Route
 import http.PlayersRouter.PlayersProtocol
-import http.StandingRouter.{StandingHttpProtocols, SparkJobHttpResponse}
 import http.SparkJob.{Stats, PlayerStatsView, PlayerStatsQueryArgs}
+import org.apache.spark.SparkContext
 import spray.json._
-
 import scala.concurrent.{Future, ExecutionContext}
-import scalaz.{-\/, \/-}
+import io.swagger.annotations._
+import javax.ws.rs.Path
 
 object PlayersRouter {
 
@@ -44,28 +44,40 @@ object PlayersRouter {
   }
 }
 
-trait PlayersRouter extends LeadersRouter with PlayersProtocol {
-  mixin: MicroKernel ⇒
-
-  lazy val enc = "utf-8"
-  private val playerServicePath = "player"
+@io.swagger.annotations.Api(value = "/player/stats", produces = "application/json")
+@Path("/api/player/stats")
+class PlayersRouter(override val host: String, override val httpPort: Int,
+                   context: SparkContext,
+                   intervals: scala.collection.mutable.LinkedHashMap[org.joda.time.Interval, String],
+                   arenas: scala.collection.immutable.Vector[(String, String)],
+                   teams: scala.collection.mutable.HashMap[String, String],
+                   override val httpPrefixAddress: String = "player")
+                  (implicit val ec: ExecutionContext, val system: ActorSystem) extends SecuritySupport with ParamsValidation with TypedAsk with PlayersProtocol {
+  private val enc = "utf-8"
   private val playerJobSupervisor = system.actorOf(SparkQuerySupervisor.props)
 
-  abstract override def configureApi() =
-    super.configureApi() ~
-      Api(route = Option { ec: ExecutionContext ⇒ dailyRoute(ec)},
-          postAction = Option(() ⇒ system.log.info(
-                    s"\n★ ★ ★ [${playerServicePath}-routes] was stopped on $httpPrefixAddress ★ ★ ★")),
-          urls = s"[$httpPrefixAddress/$pathPrefix/$playerServicePath/pts/{stage}?name=...&period=...&team=... Authorization:...']")
-
-  def dailyRoute(implicit ex: ExecutionContext): Route =
+  //http GET [host]:[port]/api/player/stats?"name=S. Curry&period=season-15-16&team=gsw" Authorization:...
+  @ApiOperation(value = "Fetch results by player", notes = "", httpMethod = "GET")
+  @ApiImplicitParams(Array(
+    new ApiImplicitParam(name = "name", value = "Player name", required = true, dataType = "string", paramType = "query"),
+    new ApiImplicitParam(name = "period", value = "Period", required = true, dataType = "string", paramType = "query"),
+    new ApiImplicitParam(name = "team", value = "Team", required = true, dataType = "string", paramType = "query"),
+    new ApiImplicitParam(name = "Authorization", value = "Authorization token", required = true, dataType = "string", paramType = "header")
+  ))
+  @ApiResponses(Array(
+    new ApiResponse(code = 200, message = "Ok", response = classOf[PlayerStatsView]),
+    new ApiResponse(code = 403, message = "The supplied authentication is not authorized to access this resource"),
+    new ApiResponse(code = 404, message = "Unsupported season or team"),
+    new ApiResponse(code = 500, message = "Internal server error")
+  ))
+  def dailyRoute(): Route =
     pathPrefix(pathPrefix) {
-      path(playerServicePath / "stats") {
+      path(httpPrefixAddress / "stats") {
         get {
           parameters(('name.as[String]), ('period.as[String]), ('team.as[String])) { (name, period, team) ⇒
             withUri { url ⇒
-              requiredHttpSession(ex) { session ⇒
-                system.log.info(s"[user:${session.user}] access [$httpPrefixAddress/$pathPrefix/$playerServicePath/stats]")
+              requiredHttpSession(ec) { session ⇒
+                system.log.info(s"[user:${session.user}] access [$host:$httpPort/$pathPrefix/$httpPrefixAddress/stats]")
                 get(complete(playerStats(URLDecoder.decode(url, enc), URLDecoder.decode(name, enc), period, team)))
               }
             }
@@ -74,12 +86,17 @@ trait PlayersRouter extends LeadersRouter with PlayersProtocol {
       }
     }
 
-  private def playerStats(url: String, name: String, period: String, team: String)(implicit ex: ExecutionContext): Future[HttpResponse] = {
-    system.log.info(s"incoming http GET on $url")
-    fetch[PlayerStatsView](PlayerStatsQueryArgs(context, url, name, period, team), playerJobSupervisor).map {
-      case \/-(res) ⇒ success(SparkJobHttpResponse(url, view = Option("player-stats"), body = Option(res), error = res.error))(PlayersResponseWriter)
-      case -\/(error) ⇒ fail(error)
-    }
+  private def playerStats(url: String, name: String, period: String, team: String)
+                         (implicit ex: ExecutionContext): Future[HttpResponse] = {
+    val validation = cats.Apply[cats.data.Validated[String, ?]].map2(
+      validateTeam(team), validatePeriod(period)
+    ) { case (_, _) => PlayerStatsQueryArgs(context, url, name, period, team) }
+
+    validation.fold({ error => Future.successful(notFound(s"Invalid parameters: $error")) }, { arg =>
+      fetch[PlayerStatsView](arg, playerJobSupervisor).map {
+        case cats.data.Xor.Right(res) ⇒ success(SparkJobHttpResponse(url, view = Option("player-stats"), body = Option(res), error = res.error))(PlayersResponseWriter)
+        case cats.data.Xor.Left(ex) ⇒ internalError(ex)
+      }
+    })
   }
 }
-*/
