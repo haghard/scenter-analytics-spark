@@ -74,7 +74,7 @@ class StandingRouter(override val host: String, override val httpPort: Int,
   @ApiOperation(value = "Search rebounds leaders by stage", notes = "", httpMethod = "GET")
   @ApiImplicitParams(Array(
     new ApiImplicitParam(name = "Authorization", value = "Authorization token", required = true, dataType = "string", paramType = "header"),
-    new ApiImplicitParam(name = "stage", value = "Stage of results. Examples: season-14-15,playoff-15-16", required = true, dataType = "string", paramType = "path"),
+    new ApiImplicitParam(name = "stage", value = "Stage of results. Examples: season-14-15,playoff-15-16", required = true, dataType = "string", paramType = "path")
   ))
   @ApiResponses(Array(
     new ApiResponse(code = 200, message = "Ok", response = classOf[PtsLeadersView]),
