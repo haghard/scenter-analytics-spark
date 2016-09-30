@@ -57,6 +57,7 @@ object StandingRouter {
 
 import javax.ws.rs.Path
 import io.swagger.annotations._
+import scala.concurrent.duration._
 
 @io.swagger.annotations.Api(value = "standings", produces = "application/json")
 @Path("/api/standing/")
