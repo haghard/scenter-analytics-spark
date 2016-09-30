@@ -135,7 +135,7 @@ package object http {
         new StandingRouter(interface, httpPort, intervals, teams, arenas = arenas, context = context).route ~
         new TwitterLoginRouter(interface, httpPort, pref = pathPrefix).route ~
         new GitHubLoginRouter(interface, httpPort, pref = pathPrefix).route ~
-        new GoogleLoginRouter(interface, httpPort, pref = pathPrefix).route ~
+        //new GoogleLoginRouter(interface, httpPort, pref = pathPrefix).route ~
         new SwaggerDocRouter(interface, httpPort).route
 
       system.registerOnTermination {
