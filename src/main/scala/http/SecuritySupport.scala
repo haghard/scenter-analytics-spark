@@ -26,7 +26,6 @@ trait SecuritySupport extends DefaultRestMicroservice /*with Directives*/ {
 
   implicit def ec: ExecutionContext
   implicit def system: ActorSystem
-  //mixin: MicroKernel ⇒
 
   val referer = "Referer"
 

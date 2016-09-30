@@ -106,9 +106,11 @@ package object spark {
           ((keyTeamsDF join (resultsDF, resultsDF("home-team") === keyTeamsDF("team") || resultsDF("away-team") === keyTeamsDF("team"))) join (arenasDF, "home-team"))
             .sort(resultsDF("date"))
             .map { row: Row ⇒
-              ResultView(s"${row.getAs[String]("away-team")} @ ${row.getAs[String]("home-team")}",
+              ResultView(
+                s"${row.getAs[String]("away-team")} @ ${row.getAs[String]("home-team")}",
                 s"${row.getAs[Int]("away-score")} : ${row.getAs[Int]("home-score")}",
-                cassandra.formatter.format(row.getAs[java.sql.Date]("date")), row.getAs[String]("arena"))
+                cassandra.formatter.format(row.getAs[java.sql.Date]("date")), row.getAs[String]("arena")
+              )
             }.collectAsync()
             .map(res ⇒ TeamStatsView(res.size, res.toList, System.currentTimeMillis - startTs))
         }

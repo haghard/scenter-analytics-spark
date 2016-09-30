@@ -28,9 +28,9 @@ object Journal {
    """.stripMargin
 
   /**
-    *
-    *
-    */
+   *
+   *
+   */
   def maxSeqNumber =
     s"""SELECT seq_number FROM results_by_period WHERE
         | period = ? AND
@@ -40,11 +40,11 @@ object Journal {
 }
 
 class Journal(
-               config: Config,
-               cassandraHosts: Array[InetSocketAddress],
-               teams: scala.collection.mutable.HashMap[String, String],
-               gameIntervals: java.util.LinkedHashMap[Period, String]
-             ) extends Actor with ActorHelper {
+    config: Config,
+    cassandraHosts: Array[InetSocketAddress],
+    teams: scala.collection.mutable.HashMap[String, String],
+    gameIntervals: java.util.LinkedHashMap[Period, String]
+) extends Actor with ActorHelper {
 
   import GraphDSL.Implicits._
   import Journal._
@@ -55,9 +55,9 @@ class Journal(
   val cassandraPageSize = 1024
 
   /**
-    * Target number of entries per partition
-    * The value from akka-persistence-cassandra cassandra-journal.target-partition-size
-    */
+   * Target number of entries per partition
+   * The value from akka-persistence-cassandra cassandra-journal.target-partition-size
+   */
   val targetPartitionSize = 500000l
 
   val decider: Supervision.Decider = {
@@ -126,7 +126,7 @@ class Journal(
     GraphDSL.create() { implicit b ⇒
       val merge = b.add(Merge[ResultAddedEvent](teams.size))
       teams.foreach { kv ⇒
-        (eventlog.Log[CassandraSource] from(queryByKey(journal), kv._1, kv._2, targetPartitionSize)).source.map {
+        (eventlog.Log[CassandraSource] from (queryByKey(journal), kv._1, kv._2, targetPartitionSize)).source.map {
           row ⇒
             cassandra.deserialize(row.getBytes("event"))
         } ~> merge
@@ -138,7 +138,7 @@ class Journal(
   private def teamsJournal(teams: Map[String, Long]): Graph[ClosedShape, akka.NotUsed] = {
     GraphDSL.create() { implicit b ⇒
       //flow(teams)
-       asyncFlow(teams) ~> Sink.actorRef[ResultAddedEvent](self, 'UpdateCompleted)
+      asyncFlow(teams) ~> Sink.actorRef[ResultAddedEvent](self, 'UpdateCompleted)
       ClosedShape
     }
   }

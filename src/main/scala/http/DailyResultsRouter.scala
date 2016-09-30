@@ -6,7 +6,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.model.HttpResponse
 import akka.http.scaladsl.server._
 import cats.data.Validated
-import http.DailyResultsRouter.{Args, DailyResultsProtocol}
+import http.DailyResultsRouter.{ Args, DailyResultsProtocol }
 import http.SparkJob._
 import io.swagger.annotations._
 import org.apache.spark.SparkContext
@@ -14,14 +14,14 @@ import org.joda.time.DateTime
 import spray.json._
 
 import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 
 object DailyResultsRouter {
 
   trait DailyResultsProtocol extends StandingHttpProtocols {
 
     implicit object DailyResultsWriter
-      extends JsonWriter[SparkJobHttpResponse] {
+        extends JsonWriter[SparkJobHttpResponse] {
       override def write(obj: SparkJobHttpResponse): JsValue = {
         val url = JsString(obj.url.toString)
         val v = obj.view.fold(JsString("none")) { view ⇒ JsString(view) }
@@ -43,12 +43,11 @@ object DailyResultsRouter {
 @io.swagger.annotations.Api(value = "/daily", produces = "application/json")
 @Path("/api/daily")
 class DailyResultsRouter(override val host: String, override val httpPort: Int,
-                         context: SparkContext,
-                         intervals: scala.collection.mutable.LinkedHashMap[org.joda.time.Interval, String],
-                         arenas: scala.collection.immutable.Vector[(String, String)],
-                         teams: scala.collection.mutable.HashMap[String, String],
-                         override val httpPrefixAddress: String = "daily")
-                        (implicit val ec: ExecutionContext, val system: ActorSystem) extends SecuritySupport with TypedAsk with DailyResultsProtocol {
+    context: SparkContext,
+    intervals: scala.collection.mutable.LinkedHashMap[org.joda.time.Interval, String],
+    arenas: scala.collection.immutable.Vector[(String, String)],
+    teams: scala.collection.mutable.HashMap[String, String],
+    override val httpPrefixAddress: String = "daily")(implicit val ec: ExecutionContext, val system: ActorSystem) extends SecuritySupport with TypedAsk with DailyResultsProtocol {
   private val dailyJobSupervisor = system.actorOf(SparkQuerySupervisor.props)
 
   override implicit val timeout = akka.util.Timeout(10.seconds)
@@ -97,7 +96,7 @@ class DailyResultsRouter(override val host: String, override val httpPort: Int,
 
   private def searchResults(url: String, day: String): Future[HttpResponse] = {
     parseDay(day).andThen(validatePeriod).fold({ error: String => Future.successful(notFound(s"Invalid parameters: $error")) }, { arg =>
-      fetch[DailyView](DailyResultsQueryArgs(context, url, arg.period, (arg.year, arg.mm, arg.dd) , arenas, teams), dailyJobSupervisor).map {
+      fetch[DailyView](DailyResultsQueryArgs(context, url, arg.period, (arg.year, arg.mm, arg.dd), arenas, teams), dailyJobSupervisor).map {
         case cats.data.Xor.Right(res) => success(SparkJobHttpResponse(url, view = Option("daily-results"), body = Option(res), error = res.error))(DailyResultsWriter)
         case cats.data.Xor.Left(ex) => internalError(ex)
       }

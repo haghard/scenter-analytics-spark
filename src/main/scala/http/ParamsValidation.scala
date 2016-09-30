@@ -4,6 +4,9 @@ trait ParamsValidation {
 
   import cats.data.Validated
   import cats.implicits._
+  import cats.data.Xor
+  import cats.data.Validated
+  import cats.implicits._
 
   def teams: scala.collection.mutable.HashMap[String, String]
 
@@ -21,7 +24,7 @@ trait ParamsValidation {
   }
 
   def validatePeriod(season: String): Validated[String, Unit] = {
-    (for {(k, v) ← intervals if (v == season)} yield k).headOption
+    (for { (k, v) ← intervals if (v == season) } yield k).headOption
       .fold(Validated.invalid[String, Unit](s"\n Could'n find season $season"))(_ => Validated.valid[String, Unit](()))
   }
 }

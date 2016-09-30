@@ -91,8 +91,7 @@ package object http {
   trait TypedAsk {
     import akka.pattern.ask
 
-    def fetch[T <: DefaultResponseBody](message: DefaultJobArgs, target: ActorRef)
-                                       (implicit ec: ExecutionContext, fetchTimeout: akka.util.Timeout, tag: ClassTag[T]): Future[cats.data.Xor[String, T]] =
+    def fetch[T <: DefaultResponseBody](message: DefaultJobArgs, target: ActorRef)(implicit ec: ExecutionContext, fetchTimeout: akka.util.Timeout, tag: ClassTag[T]): Future[cats.data.Xor[String, T]] =
       target.ask(message).mapTo[T].map(cats.data.Xor.right(_))
         .recoverWith {
           case ex: ClassCastException ⇒ Future.successful(cats.data.Xor.left(s"Class cast error: ${ex.getMessage}"))
@@ -120,8 +119,9 @@ package object http {
 
       import RouteConcatenation._
       val route = new LoginRouter(interface, httpPort).route ~
-        new ResultsRouter(interface, httpPort, context, intervals, arenas, teams).route ~
+        new ResultsRouter(interface, httpPort, intervals, teams, arenas = arenas, context = context).route ~
         new DailyResultsRouter(interface, httpPort, context, intervals, arenas, teams).route ~
+        new PlayersRouter(interface, httpPort, intervals, teams, arenas = arenas, context = context).route ~
         new SwaggerDocRouter(interface, httpPort).route
 
       system.registerOnTermination { system.log.info("Http server was stopped") }

@@ -49,12 +49,12 @@ object ResultsRouter {
 @io.swagger.annotations.Api(value = "/results", produces = "application/json")
 @Path("/api/results")
 class ResultsRouter(override val host: String, override val httpPort: Int,
-                    context: SparkContext,
-                    intervals: scala.collection.mutable.LinkedHashMap[org.joda.time.Interval, String],
-                    arenas: scala.collection.immutable.Vector[(String, String)],
-                    teams: scala.collection.mutable.HashMap[String, String],
-                    override val httpPrefixAddress: String = "teams")(implicit val ec: ExecutionContext, val system: ActorSystem) extends SecuritySupport
-  with TypedAsk with ParamsValidation with TeamsHttpProtocols {
+  override val intervals: scala.collection.mutable.LinkedHashMap[org.joda.time.Interval, String],
+  override val teams: scala.collection.mutable.HashMap[String, String],
+  override val httpPrefixAddress: String = "results",
+  arenas: scala.collection.immutable.Vector[(String, String)],
+  context: SparkContext)(implicit val ec: ExecutionContext, val system: ActorSystem) extends SecuritySupport
+    with TypedAsk with ParamsValidation with TeamsHttpProtocols {
 
   import cats.data.Xor
   import cats.data.Validated
@@ -63,13 +63,10 @@ class ResultsRouter(override val host: String, override val httpPort: Int,
 
   override implicit val timeout = akka.util.Timeout(10.seconds)
 
-  //val T = implicitly[cats.Traverse[List]]
-
   private val jobSupervisor = system.actorOf(SparkQuerySupervisor.props)
 
   val route = teamsRoute
 
-  //season-15-16?"teams=cle,okc" Authorization:...
   import akka.http.scaladsl.server._
 
   @Path("/{stage}")
@@ -98,18 +95,6 @@ class ResultsRouter(override val host: String, override val httpPort: Int,
         }
       }
     }
-
-  /*private def validateTeams(searchTeams: String): Validated[String, List[String]] = {
-    val teamsFilter = searchTeams.split(",").toList
-    T.traverseU(teamsFilter) { team =>
-      teams.get(team).fold(Validated.invalid[String, String](s"\n Could'n find team $team"))(r=>Validated.valid[String, String](r))
-    }
-  }
-
-  private def validatePeriod(season: String): Validated[String, Unit] = {
-    (for { (k, v) ← intervals if (v == season) } yield k).headOption
-      .fold(Validated.invalid[String, Unit](s"\n Could'n find season $season"))(_ => Validated.valid[String, Unit](()))
-  }*/
 
   private def search(url: String, season: String, searchTeams: String): Future[HttpResponse] = {
     val validation = cats.Apply[Validated[String, ?]].map2(

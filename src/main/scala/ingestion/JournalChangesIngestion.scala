@@ -143,7 +143,7 @@ object JournalChangesIngestion extends CassandraSchema {
 
     journal
       .map(event ⇒ transformResult(event._1, event._2))
-        .saveToCassandra(keySpace, resultsTable, resultColumns, writeConf = wrConfig)
+      .saveToCassandra(keySpace, resultsTable, resultColumns, writeConf = wrConfig)
 
     journal
       .map(event ⇒ transformLeaders(event._1))

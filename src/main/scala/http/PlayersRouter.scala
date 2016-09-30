@@ -6,12 +6,13 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.model.HttpResponse
 import akka.http.scaladsl.server.Route
 import http.PlayersRouter.PlayersProtocol
-import http.SparkJob.{Stats, PlayerStatsView, PlayerStatsQueryArgs}
+import http.SparkJob.{ Stats, PlayerStatsView, PlayerStatsQueryArgs }
 import org.apache.spark.SparkContext
 import spray.json._
-import scala.concurrent.{Future, ExecutionContext}
+import scala.concurrent.{ Future, ExecutionContext }
 import io.swagger.annotations._
 import javax.ws.rs.Path
+import scala.concurrent.duration._
 
 object PlayersRouter {
 
@@ -32,11 +33,13 @@ object PlayersRouter {
         }
         obj.body match {
           case Some(PlayerStatsView(c, stats, latency, _)) ⇒
-            JsObject("url" -> url,
-                     "view" -> JsArray(stats.map(_.toJson)),
-                     "latency" -> JsNumber(latency),
-                     "body" -> JsObject("count" -> JsNumber(c)),
-                     "error" -> error)
+            JsObject(
+              "url" -> url,
+              "view" -> JsArray(stats.map(_.toJson)),
+              "latency" -> JsNumber(latency),
+              "body" -> JsObject("count" -> JsNumber(c)),
+              "error" -> error
+            )
           case None ⇒ JsObject("url" -> url, "view" -> v, "error" -> error)
         }
       }
@@ -47,20 +50,22 @@ object PlayersRouter {
 @io.swagger.annotations.Api(value = "/player/stats", produces = "application/json")
 @Path("/api/player/stats")
 class PlayersRouter(override val host: String, override val httpPort: Int,
-                   context: SparkContext,
-                   intervals: scala.collection.mutable.LinkedHashMap[org.joda.time.Interval, String],
-                   arenas: scala.collection.immutable.Vector[(String, String)],
-                   teams: scala.collection.mutable.HashMap[String, String],
-                   override val httpPrefixAddress: String = "player")
-                  (implicit val ec: ExecutionContext, val system: ActorSystem) extends SecuritySupport with ParamsValidation with TypedAsk with PlayersProtocol {
+  override val intervals: scala.collection.mutable.LinkedHashMap[org.joda.time.Interval, String],
+  override val teams: scala.collection.mutable.HashMap[String, String],
+  override val httpPrefixAddress: String = "player",
+  arenas: scala.collection.immutable.Vector[(String, String)], context: SparkContext)(implicit val ec: ExecutionContext, val system: ActorSystem) extends SecuritySupport
+    with ParamsValidation with TypedAsk with PlayersProtocol {
+
   private val enc = "utf-8"
   private val playerJobSupervisor = system.actorOf(SparkQuerySupervisor.props)
+  override implicit val timeout = akka.util.Timeout(10.seconds)
+  val route = dailyRoute()
 
   //http GET [host]:[port]/api/player/stats?"name=S. Curry&period=season-15-16&team=gsw" Authorization:...
-  @ApiOperation(value = "Fetch results by player", notes = "", httpMethod = "GET")
+  @ApiOperation(value = "Search player statistics by name stage and team", notes = "", httpMethod = "GET")
   @ApiImplicitParams(Array(
     new ApiImplicitParam(name = "name", value = "Player name", required = true, dataType = "string", paramType = "query"),
-    new ApiImplicitParam(name = "period", value = "Period", required = true, dataType = "string", paramType = "query"),
+    new ApiImplicitParam(name = "stage", value = "Stage", required = true, dataType = "string", paramType = "query"),
     new ApiImplicitParam(name = "team", value = "Team", required = true, dataType = "string", paramType = "query"),
     new ApiImplicitParam(name = "Authorization", value = "Authorization token", required = true, dataType = "string", paramType = "header")
   ))
@@ -86,8 +91,8 @@ class PlayersRouter(override val host: String, override val httpPort: Int,
       }
     }
 
-  private def playerStats(url: String, name: String, period: String, team: String)
-                         (implicit ex: ExecutionContext): Future[HttpResponse] = {
+  private def playerStats(url: String, name: String, period: String, team: String): Future[HttpResponse] = {
+    import cats.implicits._
     val validation = cats.Apply[cats.data.Validated[String, ?]].map2(
       validateTeam(team), validatePeriod(period)
     ) { case (_, _) => PlayerStatsQueryArgs(context, url, name, period, team) }
