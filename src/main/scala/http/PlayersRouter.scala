@@ -47,7 +47,7 @@ object PlayersRouter {
   }
 }
 
-@io.swagger.annotations.Api(value = "/player/stats", produces = "application/json")
+@io.swagger.annotations.Api(value = "player stats", produces = "application/json")
 @Path("/api/player/stats")
 class PlayersRouter(override val host: String, override val httpPort: Int,
   override val intervals: scala.collection.mutable.LinkedHashMap[org.joda.time.Interval, String],
@@ -65,8 +65,8 @@ class PlayersRouter(override val host: String, override val httpPort: Int,
   @ApiOperation(value = "Search player statistics by name stage and team", notes = "", httpMethod = "GET")
   @ApiImplicitParams(Array(
     new ApiImplicitParam(name = "name", value = "Player name", required = true, dataType = "string", paramType = "query"),
-    new ApiImplicitParam(name = "stage", value = "Stage", required = true, dataType = "string", paramType = "query"),
-    new ApiImplicitParam(name = "team", value = "Team", required = true, dataType = "string", paramType = "query"),
+    new ApiImplicitParam(name = "stage", value = "Stage Examples: season-15-16 or playoff-15-16", required = true, dataType = "string", paramType = "query"),
+    new ApiImplicitParam(name = "team", value = "Team Examples: okc, hou", required = true, dataType = "string", paramType = "query"),
     new ApiImplicitParam(name = "Authorization", value = "Authorization token", required = true, dataType = "string", paramType = "header")
   ))
   @ApiResponses(Array(
@@ -79,11 +79,13 @@ class PlayersRouter(override val host: String, override val httpPort: Int,
     pathPrefix(pathPrefix) {
       path(httpPrefixAddress / "stats") {
         get {
-          parameters(('name.as[String]), ('period.as[String]), ('team.as[String])) { (name, period, team) ⇒
+          parameters(('name.as[String]), ('stage.as[String]), ('team.as[String])) { (name, stage, team) ⇒
             withUri { url ⇒
               requiredHttpSession(ec) { session ⇒
-                system.log.info(s"[user:${session.user}] access [$host:$httpPort/$pathPrefix/$httpPrefixAddress/stats]")
-                get(complete(playerStats(URLDecoder.decode(url, enc), URLDecoder.decode(name, enc), period, team)))
+                val url = URLDecoder.decode(url, enc)
+                //system.log.info(s"[user:${session.user}] access [$host:$httpPort/$pathPrefix/$httpPrefixAddress/stats?name=${name}&stage=${stage}&team=${team}]")
+                system.log.info(s"[user:${session.user}] access $url")
+                get(complete(playerStats(url, URLDecoder.decode(name, enc), stage, team)))
               }
             }
           }
