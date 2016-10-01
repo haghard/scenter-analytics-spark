@@ -11,7 +11,7 @@ import http.routes.PlayerStatRouter.PlayersProtocol
 import io.swagger.annotations._
 import org.apache.spark.SparkContext
 import spark.SparkProgram.{ PlayerStatsQueryArgs, PlayerStatsView, Stats }
-import spark.SparkProgramGuardian
+import spark.{ SparkProgram, SparkSupport, SparkProgramGuardian }
 import spray.json._
 
 import scala.concurrent.duration._
@@ -42,14 +42,15 @@ object PlayerStatRouter {
 @io.swagger.annotations.Api(value = "player stats", produces = "application/json")
 @Path("/api/player/stats")
 class PlayerStatRouter(override val host: String, override val httpPort: Int,
+  override val sparkContext: SparkContext,
   override val intervals: scala.collection.mutable.LinkedHashMap[org.joda.time.Interval, String],
   override val teams: scala.collection.mutable.HashMap[String, String],
   override val httpPrefixAddress: String = "player",
-  arenas: scala.collection.immutable.Vector[(String, String)], context: SparkContext)(implicit val ec: ExecutionContext, val system: ActorSystem) extends SecuritySupport
-    with ParamsValidation with TypedAsk with PlayersProtocol {
+  arenas: scala.collection.immutable.Vector[(String, String)])(implicit val ec: ExecutionContext, val system: ActorSystem) extends SecuritySupport
+    with SparkSupport with ParamsValidation with TypedAsk with PlayersProtocol {
 
   private val enc = "utf-8"
-  private val playerJobSupervisor = system.actorOf(SparkProgramGuardian.props)
+  val config = system.settings.config
   override implicit val timeout = akka.util.Timeout(10.seconds)
   val route = dailyRoute()
 
@@ -88,13 +89,16 @@ class PlayerStatRouter(override val host: String, override val httpPort: Int,
     import cats.implicits._
     val validation = cats.Apply[cats.data.Validated[String, ?]].map2(
       validateTeam(team), validatePeriod(period)
-    ) { case (_, _) => PlayerStatsQueryArgs(context, url, name, period, team) }
+    ) { case (_, _) => PlayerStatsQueryArgs(sparkContext, url, name, period, team) }
 
     validation.fold({ error => Future.successful(notFound(s"Invalid parameters: $error")) }, { arg =>
-      fetch[PlayerStatsView](arg, playerJobSupervisor).map {
-        case cats.data.Xor.Right(res) ⇒ success(SparkJobHttpResponse(url, view = Option("player-stats"), body = Option(res), error = res.error))(PlayersResponseWriter)
-        case cats.data.Xor.Left(ex) ⇒ internalError(ex)
-      }
+      load[PlayerStatsView](
+        arg,
+        system.actorOf(SparkProgram.props(config))
+      ).map {
+          case cats.data.Xor.Right(res) ⇒ success(SparkJobHttpResponse(url, view = Option("player-stats"), body = Option(res), error = res.error))(PlayersResponseWriter)
+          case cats.data.Xor.Left(ex) ⇒ internalError(ex)
+        }
     })
   }
 }

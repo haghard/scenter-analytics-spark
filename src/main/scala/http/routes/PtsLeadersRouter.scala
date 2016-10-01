@@ -10,7 +10,7 @@ import http.routes.PtsLeadersRouter.LeadersProtocol
 import http.{ SparkJobHttpResponse, TypedAsk }
 import org.apache.spark.SparkContext
 import spark.SparkProgram._
-import spark.SparkProgramGuardian
+import spark.{ SparkSupport, SparkProgram, SparkProgramGuardian }
 import spray.json.JsonWriter
 
 import scala.concurrent.duration._
@@ -46,13 +46,15 @@ object PtsLeadersRouter {
 @io.swagger.annotations.Api(value = "pts leaders", produces = "application/json")
 @Path("/api/leaders/pts")
 class PtsLeadersRouter(override val host: String, override val httpPort: Int,
+  override val sparkContext: SparkContext,
   override val intervals: scala.collection.mutable.LinkedHashMap[org.joda.time.Interval, String],
   override val teams: scala.collection.mutable.HashMap[String, String],
   override val httpPrefixAddress: String = "leaders",
-  arenas: scala.collection.immutable.Vector[(String, String)], context: SparkContext)(implicit val ec: ExecutionContext, val system: ActorSystem) extends SecuritySupport with LeadersProtocol
-    with TypedAsk with ParamsValidation {
+  arenas: scala.collection.immutable.Vector[(String, String)])(implicit val ec: ExecutionContext, val system: ActorSystem) extends SecuritySupport with LeadersProtocol
+    with SparkSupport with TypedAsk with ParamsValidation {
   private val defaultDepth = 10
-  private val jobSupervisor = system.actorOf(SparkProgramGuardian.props)
+
+  val config = system.settings.config
   override implicit val timeout = akka.util.Timeout(10.seconds)
 
   val route = ptsLeadersRoute()
@@ -86,11 +88,14 @@ class PtsLeadersRouter(override val host: String, override val httpPort: Int,
 
   private def searchPts(url: String, stage: String, depth: Int): Future[HttpResponse] = {
     validatePeriod(stage).fold({ error => Future.successful(notFound(s"Invalid parameters: $error")) }, { _ =>
-      fetch[PtsLeadersView](PtsLeadersQueryArgs(context, url, teams, stage, depth), jobSupervisor).map {
-        case cats.data.Xor.Right(res) ⇒ success(SparkJobHttpResponse(url, view = Option("pts-leaders"),
-          body = Option(res), error = res.error))(LeadersResponseWriter)
-        case cats.data.Xor.Left(ex) ⇒ internalError(ex)
-      }
+      load[PtsLeadersView](
+        PtsLeadersQueryArgs(sparkContext, url, teams, stage, depth),
+        system.actorOf(SparkProgram.props(config))
+      ).map {
+          case cats.data.Xor.Right(res) ⇒ success(SparkJobHttpResponse(url, view = Option("pts-leaders"),
+            body = Option(res), error = res.error))(LeadersResponseWriter)
+          case cats.data.Xor.Left(ex) ⇒ internalError(ex)
+        }
     })
   }
 }

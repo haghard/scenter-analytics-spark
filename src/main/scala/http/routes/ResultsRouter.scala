@@ -9,7 +9,7 @@ import http.{ SparkJobHttpResponse, TypedAsk }
 import io.swagger.annotations._
 import org.apache.spark.SparkContext
 import spark.SparkProgram.{ ResultView, ResultsView, TeamResultsQueryArgs }
-import spark.{SparkProgram, SparkSupport}
+import spark.{ SparkProgram, SparkSupport }
 import spray.json._
 
 import scala.concurrent.{ ExecutionContext, Future }
@@ -53,7 +53,6 @@ object ResultsRouter {
 @io.swagger.annotations.Api(value = "/results", produces = "application/json")
 @Path("/api/results")
 class ResultsRouter(
-  override val guardian: ActorRef,
   override val host: String, override val httpPort: Int,
   override val intervals: scala.collection.mutable.LinkedHashMap[org.joda.time.Interval, String],
   override val teams: scala.collection.mutable.HashMap[String, String],
@@ -62,13 +61,13 @@ class ResultsRouter(
   arenas: scala.collection.immutable.Vector[(String, String)]
 )(implicit val ec: ExecutionContext, val system: ActorSystem) extends SparkSupport with SecuritySupport with TypedAsk
     with ParamsValidation with TeamsHttpProtocols {
-
   import cats.data.{ Validated, Xor }
   import cats.implicits._
 
   import scala.concurrent.duration._
   import akka.http.scaladsl.server._
 
+  val config = system.settings.config
   override implicit val timeout = akka.util.Timeout(10.seconds)
 
   val route = teamsRoute
@@ -107,11 +106,13 @@ class ResultsRouter(
     ) { case (_, _) => TeamResultsQueryArgs(sparkContext, url, season, searchTeams.split(",").toSeq, arenas, teams) }
 
     validation.fold({ error => Future.successful(notFound(s"Invalid parameters: $error")) }, { arg =>
-      val query = system.actorOf(SparkProgram.props(system.settings.config)) //name
-      fetch[ResultsView](arg, query).map {
-        case Xor.Right(res) => success(SparkJobHttpResponse(url, view = Option("team-results"), body = Option(res), error = res.error))
-        case Xor.Left(er) => internalError(er)
-      }
+      load[ResultsView](
+        arg,
+        system.actorOf(SparkProgram.props(config))
+      ).map {
+          case Xor.Right(res) => success(SparkJobHttpResponse(url, view = Option("team-results"), body = Option(res), error = res.error))
+          case Xor.Left(er) => internalError(er)
+        }
     })
   }
 }

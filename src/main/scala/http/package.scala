@@ -76,7 +76,6 @@ package object http {
 
   trait DefaultJobArgs {
     def url: String
-    //def uuid: String
     def ctx: SparkContext
   }
 
@@ -95,11 +94,9 @@ package object http {
   }
 
   trait TypedAsk {
-
     import akka.pattern.ask
-
-    def fetch[T <: DefaultResponseBody](message: DefaultJobArgs, target: ActorRef)(implicit ec: ExecutionContext, fetchTimeout: akka.util.Timeout, tag: ClassTag[T]): Future[cats.data.Xor[String, T]] =
-      target.ask(message).mapTo[T].map(cats.data.Xor.right(_))
+    def load[T <: DefaultResponseBody](message: DefaultJobArgs, source: ActorRef)(implicit ec: ExecutionContext, fetchTimeout: akka.util.Timeout, tag: ClassTag[T]): Future[cats.data.Xor[String, T]] =
+      source.ask(message).mapTo[T].map(cats.data.Xor.right(_))
         .recoverWith {
           case ex: ClassCastException ⇒ Future.successful(cats.data.Xor.left(s"Class cast error: ${ex.getMessage}"))
           case ex: AskTimeoutException ⇒ Future.successful(cats.data.Xor.left(s"Request timeout: ${ex.getMessage}"))
@@ -125,19 +122,16 @@ package object http {
 
       implicit val _ = system.dispatchers.lookup(httpDispatcher)
 
-      val guardian = null //system.actorOf(SparkProgramGuardian.props, "spark-guardian")
-
       import RouteConcatenation._
       val route = new LoginRouter(interface, httpPort).route ~
-        new ResultsRouter(guardian, interface, httpPort, intervals, teams, arenas = arenas, sparkContext = context).route ~
-        new DailyResultsRouter(guardian, interface, httpPort, sparkContext = context, intervals = intervals, arenas = arenas, teams = teams).route ~
-        /*
-        new PlayerStatRouter(guardian, interface, httpPort, intervals, teams, arenas = arenas, context = context).route ~
-        new PtsLeadersRouter(guardian, interface, httpPort, intervals, teams, arenas = arenas, context = context).route ~
-        new RebLeadersRouter(guardian, interface, httpPort, intervals, teams, arenas = arenas, context = context).route ~
-        new StandingRouter(guardian, interface, httpPort, intervals, teams, arenas = arenas, context = context).route ~
+        new ResultsRouter(interface, httpPort, intervals, teams, arenas = arenas, sparkContext = context).route ~
+        new DailyResultsRouter(interface, httpPort, sparkContext = context, intervals = intervals, arenas = arenas, teams = teams).route ~
+        new PlayerStatRouter(interface, httpPort, sparkContext = context, intervals = intervals, arenas = arenas, teams = teams).route ~
+        new PtsLeadersRouter(interface, httpPort, sparkContext = context, intervals = intervals, arenas = arenas, teams = teams).route ~
+        new RebLeadersRouter(interface, httpPort, sparkContext = context, intervals = intervals, arenas = arenas, teams = teams).route ~
+        new StandingRouter(interface, httpPort, sparkContext = context, intervals = intervals, arenas = arenas, teams = teams).route ~
         new TwitterLoginRouter(interface, httpPort, pref = pathPrefix).route ~
-        new GitHubLoginRouter(interface, httpPort, pref = pathPrefix).route ~*/
+        new GitHubLoginRouter(interface, httpPort, pref = pathPrefix).route ~
         //new GoogleLoginRouter(interface, httpPort, pref = pathPrefix).route ~
         new SwaggerDocRouter(interface, httpPort).route
 

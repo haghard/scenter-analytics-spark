@@ -7,7 +7,7 @@ import http._
 import http.routes.ResultsRouter.TeamsHttpProtocols
 import org.apache.spark.SparkContext
 import spark.SparkProgram._
-import spark.{ SparkProgram, SparkProgramGuardian }
+import spark.{ SparkSupport, SparkProgram, SparkProgramGuardian }
 import spray.json.{ JsonWriter, _ }
 
 import scala.concurrent.{ ExecutionContext, Future }
@@ -73,12 +73,17 @@ import scala.concurrent.duration._
 
 @io.swagger.annotations.Api(value = "standings", produces = "application/json")
 @Path("/api/standing/")
-class StandingRouter(override val host: String, override val httpPort: Int,
-    override val intervals: scala.collection.mutable.LinkedHashMap[org.joda.time.Interval, String],
-    override val teams: scala.collection.mutable.HashMap[String, String],
-    override val httpPrefixAddress: String = "standing",
-    arenas: scala.collection.immutable.Vector[(String, String)], context: SparkContext)(implicit val ec: ExecutionContext, val system: ActorSystem) extends SecuritySupport with TypedAsk with ParamsValidation with StandingHttpProtocols {
-  private val querySupervisor = system.actorOf(SparkProgramGuardian.props)
+class StandingRouter(
+  override val host: String, override val httpPort: Int,
+  override val sparkContext: SparkContext,
+  override val httpPrefixAddress: String = "standing",
+  override val intervals: scala.collection.mutable.LinkedHashMap[org.joda.time.Interval, String],
+  override val teams: scala.collection.mutable.HashMap[String, String],
+  arenas: scala.collection.immutable.Vector[(String, String)]
+)(implicit val ec: ExecutionContext, val system: ActorSystem) extends SecuritySupport with SparkSupport
+    with TypedAsk with ParamsValidation with StandingHttpProtocols {
+
+  val config = system.settings.config
   override implicit val timeout = akka.util.Timeout(10.seconds)
 
   val route = standingRoute()
@@ -109,10 +114,13 @@ class StandingRouter(override val host: String, override val httpPort: Int,
 
   private def searchResults(url: String, stage: String): Future[HttpResponse] = {
     validatePeriod(stage).fold({ error => Future.successful(notFound(s"Invalid parameters: $error")) }, { _ =>
-      fetch[SparkQueryView](StandingQueryArgs(context, url, stage, teams, stage), querySupervisor).map {
-        case cats.data.Xor.Right(res) ⇒ success(SparkJobHttpResponse(url, view = Option("standing"), body = Option(res), error = res.error))
-        case cats.data.Xor.Left(ex) ⇒ internalError(ex)
-      }
+      load[SparkQueryView](
+        StandingQueryArgs(sparkContext, url, stage, teams, stage),
+        system.actorOf(SparkProgram.props(config))
+      ).map {
+          case cats.data.Xor.Right(res) ⇒ success(SparkJobHttpResponse(url, view = Option("standing"), body = Option(res), error = res.error))
+          case cats.data.Xor.Left(ex) ⇒ internalError(ex)
+        }
     })
   }
 }

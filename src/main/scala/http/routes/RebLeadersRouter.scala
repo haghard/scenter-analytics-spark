@@ -7,7 +7,7 @@ import akka.http.scaladsl.model.HttpResponse
 import akka.http.scaladsl.server._
 import http.{ SparkJobHttpResponse, TypedAsk }
 import http.routes.PtsLeadersRouter.LeadersProtocol
-import spark.{ SparkProgramGuardian, SparkProgram }
+import spark.{ SparkSupport, SparkProgramGuardian, SparkProgram }
 import SparkProgram.{ PtsLeadersView, RebLeadersQueryArgs, RebLeadersView }
 import io.swagger.annotations._
 import org.apache.spark.SparkContext
@@ -18,13 +18,15 @@ import scala.concurrent.{ ExecutionContext, Future }
 @io.swagger.annotations.Api(value = "rebounds leaders", produces = "application/json")
 @Path("/api/leaders/reb")
 class RebLeadersRouter(override val host: String, override val httpPort: Int,
+  override val sparkContext: SparkContext,
+  override val httpPrefixAddress: String = "leaders",
   override val intervals: scala.collection.mutable.LinkedHashMap[org.joda.time.Interval, String],
   override val teams: scala.collection.mutable.HashMap[String, String],
-  override val httpPrefixAddress: String = "leaders",
-  arenas: scala.collection.immutable.Vector[(String, String)], context: SparkContext)(implicit val ec: ExecutionContext, val system: ActorSystem) extends SecuritySupport with LeadersProtocol
-    with TypedAsk with ParamsValidation {
+  arenas: scala.collection.immutable.Vector[(String, String)])(implicit val ec: ExecutionContext, val system: ActorSystem) extends SecuritySupport with LeadersProtocol
+    with SparkSupport with TypedAsk with ParamsValidation {
   private val defaultDepth = 10
-  private val jobSupervisor = system.actorOf(SparkProgramGuardian.props)
+  val config = system.settings.config
+
   override implicit val timeout = akka.util.Timeout(10.seconds)
 
   val route = rebLeadersRoute()
@@ -58,11 +60,14 @@ class RebLeadersRouter(override val host: String, override val httpPort: Int,
 
   private def searchReb(url: String, stage: String, depth: Int): Future[HttpResponse] = {
     validatePeriod(stage).fold({ error => Future.successful(notFound(s"Invalid parameters: $error")) }, { _ =>
-      fetch[RebLeadersView](RebLeadersQueryArgs(context, url, stage, depth), jobSupervisor).map {
-        case cats.data.Xor.Right(res) ⇒ success(SparkJobHttpResponse(url, view = Option("reb-leaders"),
-          body = Option(res), error = res.error))(LeadersResponseWriter)
-        case cats.data.Xor.Left(ex) ⇒ internalError(ex)
-      }
+      load[RebLeadersView](
+        RebLeadersQueryArgs(sparkContext, url, stage, depth),
+        system.actorOf(SparkProgram.props(config))
+      ).map {
+          case cats.data.Xor.Right(res) ⇒ success(SparkJobHttpResponse(url, view = Option("reb-leaders"),
+            body = Option(res), error = res.error))(LeadersResponseWriter)
+          case cats.data.Xor.Left(ex) ⇒ internalError(ex)
+        }
     })
   }
 }

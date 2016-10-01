@@ -44,7 +44,6 @@ object DailyResultsRouter {
 @io.swagger.annotations.Api(value = "/daily", produces = "application/json")
 @Path("/api/daily")
 class DailyResultsRouter(
-  override val guardian: ActorRef,
   override val host: String, override val httpPort: Int,
   override val sparkContext: SparkContext,
   override val httpPrefixAddress: String = "daily",
@@ -55,6 +54,7 @@ class DailyResultsRouter(
     with SparkSupport with TypedAsk with DailyResultsProtocol {
 
   override implicit val timeout = akka.util.Timeout(10.seconds)
+  val config = system.settings.config
 
   val route = dailyRoute
 
@@ -100,11 +100,13 @@ class DailyResultsRouter(
 
   private def searchResults(url: String, day: String): Future[HttpResponse] = {
     parseDay(day).andThen(validatePeriod).fold({ error: String => Future.successful(notFound(s"Invalid parameters: $error")) }, { arg =>
-      val query = system.actorOf(SparkProgram.props(system.settings.config)) //name
-      fetch[DailyResultsView](DailyResultsQueryArgs(sparkContext, url, arg.period, (arg.year, arg.mm, arg.dd), arenas, teams), query).map {
-        case cats.data.Xor.Right(res) => success(SparkJobHttpResponse(url, view = Option("daily-results"), body = Option(res), error = res.error))(DailyResultsWriter)
-        case cats.data.Xor.Left(ex) => internalError(ex)
-      }
+      load[DailyResultsView](
+        DailyResultsQueryArgs(sparkContext, url, arg.period, (arg.year, arg.mm, arg.dd), arenas, teams),
+        system.actorOf(SparkProgram.props(config))
+      ).map {
+          case cats.data.Xor.Right(res) => success(SparkJobHttpResponse(url, view = Option("daily-results"), body = Option(res), error = res.error))(DailyResultsWriter)
+          case cats.data.Xor.Left(ex) => internalError(ex)
+        }
     })
   }
 }

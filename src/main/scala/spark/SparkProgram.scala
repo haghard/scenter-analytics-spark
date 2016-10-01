@@ -1,7 +1,7 @@
 package spark
 
 import java.util.Date
-import akka.actor.{ ActorRef, Actor, ActorLogging, Props }
+import akka.actor.{ Actor, ActorLogging, Props }
 import com.typesafe.config.Config
 import http._
 import org.apache.spark.SparkContext
@@ -46,7 +46,7 @@ object SparkProgram {
   case class Stats(VS: String, DT: Date, MIN: String, REB_DEF: Int, REB_OFF: Int, REB_TOTAL: Int, FGM_A: String, PM3_A: String,
     FTM_A: String, ASSISTS: Int, BL: Int, STEEL: Int, PLUS_MINUS: String, PTS: Int)
 
-  trait SparkQueryView extends DefaultResponseBody {
+  sealed trait SparkQueryView extends DefaultResponseBody {
     def count: Int
 
     def latency: Long
@@ -95,7 +95,6 @@ class SparkProgram(val config: Config) extends Actor with ActorLogging {
 
   val sys = context.system
   implicit val ex = context.system.dispatchers.lookup(SparkDispatcher)
-    //context.dispatcher
 
   override def preStart = {
     //context.setReceiveTimeout(30 milliseconds)
@@ -105,17 +104,6 @@ class SparkProgram(val config: Config) extends Actor with ActorLogging {
   override def postStop =
     log.info("SparkProgram has been stopped")
 
-  def await(replyTo: ActorRef): Receive = {
-    case r: SparkQueryView =>
-      replyTo ! r
-      context.stop(self)
-    case ex: akka.pattern.AskTimeoutException =>
-    case akka.actor.Status.Failure(ex) =>
-      sys.log.error(ex, "SparkProgram has failed")
-      throw ex
-      context.stop(self)
-  }
-
   import akka.pattern.pipe
   override def receive: Receive = {
     case TeamResultsQueryArgs(ctx, _, period, teams, arenas, allTeams) ⇒
@@ -124,16 +112,14 @@ class SparkProgram(val config: Config) extends Actor with ActorLogging {
         period, teams.map(t => s"""'$t',""").mkString
       )
       val replyTo = sender()
-      (TeamsResultsQuery[ResultsView] async (ctx, config, period, teams, arenas, allTeams) to replyTo).future pipeTo self
-    //(context become await(replyTo))
-    //.onComplete(_ ⇒ context.system.stop(self))
+      (TeamsResultsQuery[ResultsView] async (ctx, config, period, teams, arenas, allTeams) to replyTo).future
+        .onComplete(_ ⇒ context.stop(self))
 
     case DailyResultsQueryArgs(ctx, url, stage, yyyyMMDD, arenas, teams) ⇒
       log.info("SELECT * FROM daily_results WHERE period = '{}' and year={} and month={} and day={}", stage, yyyyMMDD._1, yyyyMMDD._2, yyyyMMDD._3)
       val replyTo = sender()
-      (DailyResultsQuery[DailyResultsView].async(ctx, config, stage, yyyyMMDD, arenas, teams) to replyTo).future  // pipeTo self
-        .onComplete(_ ⇒ context.system.stop(self))
-      //(context become await(replyTo))
+      (DailyResultsQuery[DailyResultsView].async(ctx, config, stage, yyyyMMDD, arenas, teams) to replyTo).future
+        .onComplete(_ ⇒ context.stop(self))
 
     case PlayerStatsQueryArgs(ctx, url, name, period, team) ⇒
       log.info(
@@ -141,20 +127,20 @@ class SparkProgram(val config: Config) extends Actor with ActorLogging {
         name, period, team
       )
       val replyTo = sender()
-      (PlayerStatsQuery[PlayerStatsView] async (ctx, config, name, period, team) to replyTo).future
-        .onComplete(_ ⇒ context.system.stop(self))
+      (spark.PlayerStatsQuery[PlayerStatsView] async (ctx, config, name, period, team) to replyTo).future
+        .onComplete(_ ⇒ context.stop(self))
 
-    case PtsLeadersQueryArgs(ctx, url, /*stage,*/ teams, period, depth) ⇒
+    case PtsLeadersQueryArgs(ctx, url, teams, period, depth) ⇒
       log.info("SELECT name, team, pts FROM leaders_by_period WHERE period = '{}'", period)
       val replyTo = sender()
-      ((PtsLeadersQuery[PtsLeadersView] async (ctx, config, period, depth)) to replyTo).future
-        .onComplete(_ ⇒ context.system.stop(self))
+      (PtsLeadersQuery[PtsLeadersView].async(ctx, config, period, depth) to replyTo).future
+        .onComplete(_ ⇒ context.stop(self))
 
     case RebLeadersQueryArgs(ctx, url, period, depth) ⇒
       log.info("SELECT name, team, offreb, defreb, totalreb FROM leaders_by_period where period = '{}'", period)
       val replyTo = sender()
       (RebLeadersQuery[RebLeadersView] async (ctx, config, period, depth) to replyTo).future
-        .onComplete(_ ⇒ context.system.stop(self))
+        .onComplete(_ ⇒ context.stop(self))
 
     case StandingQueryArgs(ctx, _, stage, teams, period) ⇒
       log.info(
@@ -164,10 +150,10 @@ class SparkProgram(val config: Config) extends Actor with ActorLogging {
       val replyTo = sender()
       if (stage contains Season)
         ((StandingQuery[SeasonStandingView] async (ctx, config, teams, period)) to replyTo).future
-          .onComplete(_ ⇒ context.system.stop(self))
+          .onComplete(_ ⇒ context.stop(self))
       else if (stage contains PlayOff)
         ((StandingQuery[PlayoffStandingView] async (ctx, config, teams, period)) to replyTo).future
-          .onComplete(_ ⇒ context.system.stop(self))
+          .onComplete(_ ⇒ context.stop(self))
 
   }
 }
