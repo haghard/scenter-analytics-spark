@@ -7,8 +7,8 @@ import akka.http.scaladsl.model.HttpResponse
 import akka.http.scaladsl.server._
 import http.{ SparkJobHttpResponse, TypedAsk }
 import http.routes.PtsLeadersRouter.LeadersProtocol
-import spark.{ SparkQuerySupervisor, SparkJob }
-import SparkJob.{ PtsLeadersView, RebLeadersQueryArgs, RebLeadersView }
+import spark.{ SparkProgramSupervisor$, SparkProgram }
+import SparkProgram.{ PtsLeadersView, RebLeadersQueryArgs, RebLeadersView }
 import io.swagger.annotations._
 import org.apache.spark.SparkContext
 
@@ -24,7 +24,7 @@ class RebLeadersRouter(override val host: String, override val httpPort: Int,
   arenas: scala.collection.immutable.Vector[(String, String)], context: SparkContext)(implicit val ec: ExecutionContext, val system: ActorSystem) extends SecuritySupport with LeadersProtocol
     with TypedAsk with ParamsValidation {
   private val defaultDepth = 10
-  private val jobSupervisor = system.actorOf(SparkQuerySupervisor.props)
+  private val jobSupervisor = system.actorOf(SparkProgramSupervisor.props)
   override implicit val timeout = akka.util.Timeout(10.seconds)
 
   val route = rebLeadersRoute()

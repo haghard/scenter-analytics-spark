@@ -9,8 +9,8 @@ import http.routes.PlayerStatRouter.PlayersProtocol
 import http.routes.PtsLeadersRouter.LeadersProtocol
 import http.{SparkJobHttpResponse, TypedAsk}
 import org.apache.spark.SparkContext
-import spark.SparkJob._
-import spark.SparkQuerySupervisor
+import spark.SparkProgram._
+import spark.SparkProgramGuardian
 import spray.json.JsonWriter
 
 import scala.concurrent.duration._
@@ -54,7 +54,7 @@ class PtsLeadersRouter(override val host: String, override val httpPort: Int,
                       (implicit val ec: ExecutionContext, val system: ActorSystem) extends SecuritySupport with LeadersProtocol
   with TypedAsk with ParamsValidation {
   private val defaultDepth = 10
-  private val jobSupervisor = system.actorOf(SparkQuerySupervisor.props)
+  private val jobSupervisor = system.actorOf(SparkProgramGuardian.props)
   override implicit val timeout = akka.util.Timeout(10.seconds)
 
   val route = ptsLeadersRoute()

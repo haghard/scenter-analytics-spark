@@ -10,8 +10,8 @@ import http._
 import http.routes.PlayerStatRouter.PlayersProtocol
 import io.swagger.annotations._
 import org.apache.spark.SparkContext
-import spark.SparkJob.{ PlayerStatsQueryArgs, PlayerStatsView, Stats }
-import spark.SparkQuerySupervisor
+import spark.SparkProgram.{ PlayerStatsQueryArgs, PlayerStatsView, Stats }
+import spark.SparkProgramGuardian
 import spray.json._
 
 import scala.concurrent.duration._
@@ -49,7 +49,7 @@ class PlayerStatRouter(override val host: String, override val httpPort: Int,
     with ParamsValidation with TypedAsk with PlayersProtocol {
 
   private val enc = "utf-8"
-  private val playerJobSupervisor = system.actorOf(SparkQuerySupervisor.props)
+  private val playerJobSupervisor = system.actorOf(SparkProgramGuardian.props)
   override implicit val timeout = akka.util.Timeout(10.seconds)
   val route = dailyRoute()
 

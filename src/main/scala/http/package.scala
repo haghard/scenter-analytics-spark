@@ -14,7 +14,7 @@ import http.swagger.CorsSupport
 import ingestion.JournalChangesIngestion
 import org.apache.spark.SparkContext
 import org.joda.time.{ DateTime, Interval }
-import spark.{ SparkJob, SparkQuery }
+import spark.{ SparkProgram, SparkQuery }
 
 import scala.collection.JavaConversions._
 import scala.collection.mutable
@@ -319,7 +319,7 @@ package object http {
   }
 
   import http.routes.ResultsRouter.TeamsHttpProtocols
-  import SparkJob._
+  import SparkProgram._
   import spray.json.JsonWriter
 
   case class SparkJobHttpResponse(url: String, view: Option[String] = None,

@@ -6,8 +6,8 @@ import akka.http.scaladsl.server.Route
 import http._
 import http.routes.ResultsRouter.TeamsHttpProtocols
 import org.apache.spark.SparkContext
-import spark.SparkJob._
-import spark.{ SparkJob, SparkQuerySupervisor }
+import spark.SparkProgram._
+import spark.{ SparkProgram, SparkProgramGuardian }
 import spray.json.{ JsonWriter, _ }
 
 import scala.concurrent.{ ExecutionContext, Future }
@@ -78,7 +78,7 @@ class StandingRouter(override val host: String, override val httpPort: Int,
     override val teams: scala.collection.mutable.HashMap[String, String],
     override val httpPrefixAddress: String = "standing",
     arenas: scala.collection.immutable.Vector[(String, String)], context: SparkContext)(implicit val ec: ExecutionContext, val system: ActorSystem) extends SecuritySupport with TypedAsk with ParamsValidation with StandingHttpProtocols {
-  private val querySupervisor = system.actorOf(SparkQuerySupervisor.props)
+  private val querySupervisor = system.actorOf(SparkProgramGuardian.props)
   override implicit val timeout = akka.util.Timeout(10.seconds)
 
   val route = standingRoute()

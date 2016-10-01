@@ -4,8 +4,8 @@ import akka.event.LoggingAdapter
 import cassandra._
 import com.typesafe.config.Config
 import http.NbaResult
-import spark.SparkJob
-import SparkJob._
+import spark.SparkProgram
+import SparkProgram._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{ Row, SQLContext }
 import org.apache.spark.{ SparkConf, SparkContext }

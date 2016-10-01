@@ -3,8 +3,8 @@ package http.routes
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.HttpResponse
 import http.{ TypedAsk, SparkJobHttpResponse }
-import spark.{ SparkQuerySupervisor, SparkJob }
-import SparkJob._
+import spark.SparkProgram.{ResultView, TeamResultsQueryArgs, ResultsView}
+import spark.{ SparkProgramGuardian, SparkProgram }
 import http.routes.ResultsRouter.TeamsHttpProtocols
 
 import javax.ws.rs.Path
@@ -62,7 +62,7 @@ class ResultsRouter(override val host: String, override val httpPort: Int,
 
   override implicit val timeout = akka.util.Timeout(10.seconds)
 
-  private val jobSupervisor = system.actorOf(SparkQuerySupervisor.props)
+  private val jobSupervisor = system.actorOf(SparkProgramGuardian.props)
 
   val route = teamsRoute
 

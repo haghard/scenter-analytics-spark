@@ -11,8 +11,8 @@ import http.routes.DailyResultsRouter.{ Args, DailyResultsProtocol }
 import io.swagger.annotations._
 import org.apache.spark.SparkContext
 import org.joda.time.DateTime
-import spark.SparkJob._
-import spark.SparkQuerySupervisor
+import spark.SparkProgram._
+import spark.SparkProgramGuardian
 import spray.json._
 
 import scala.concurrent.duration._
@@ -49,7 +49,7 @@ class DailyResultsRouter(override val host: String, override val httpPort: Int,
   teams: scala.collection.mutable.HashMap[String, String],
   override val httpPrefixAddress: String = "daily")(implicit val ec: ExecutionContext, val system: ActorSystem) extends SecuritySupport with TypedAsk
     with DailyResultsProtocol {
-  private val dailyJobSupervisor = system.actorOf(SparkQuerySupervisor.props)
+  private val dailyJobGuardian = system.actorOf(SparkProgramGuardian.props)
 
   override implicit val timeout = akka.util.Timeout(10.seconds)
 
@@ -97,7 +97,7 @@ class DailyResultsRouter(override val host: String, override val httpPort: Int,
 
   private def searchResults(url: String, day: String): Future[HttpResponse] = {
     parseDay(day).andThen(validatePeriod).fold({ error: String => Future.successful(notFound(s"Invalid parameters: $error")) }, { arg =>
-      fetch[DailyResultsView](DailyResultsQueryArgs(context, url, arg.period, (arg.year, arg.mm, arg.dd), arenas, teams), dailyJobSupervisor).map {
+      fetch[DailyResultsView](DailyResultsQueryArgs(context, url, arg.period, (arg.year, arg.mm, arg.dd), arenas, teams), dailyJobGuardian).map {
         case cats.data.Xor.Right(res) => success(SparkJobHttpResponse(url, view = Option("daily-results"), body = Option(res), error = res.error))(DailyResultsWriter)
         case cats.data.Xor.Left(ex) => internalError(ex)
       }
