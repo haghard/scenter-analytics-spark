@@ -1,18 +1,18 @@
 import java.util.Date
 
-import akka.event.LoggingAdapter
 import cassandra._
 import com.typesafe.config.Config
 import http.NbaResult
-import spark.SparkProgram
-import SparkProgram._
+import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{ Row, SQLContext }
-import org.apache.spark.{ SparkConf, SparkContext }
+import org.apache.spark.sql.{Row, SQLContext}
+import spark.SparkProgram
+import spark.SparkProgram._
 
 import scala.annotation.implicitNotFound
 import scala.collection.mutable
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.forkjoin.ThreadLocalRandom
+import scala.concurrent.{ExecutionContext, Future}
 
 package object spark {
 
@@ -22,7 +22,7 @@ package object spark {
 
   trait StandingQuery[T] extends SparkQuery {
     def async(ctx: SparkContext, config: Config,
-      teams: mutable.HashMap[String, String], period: String): Future[T]
+              teams: mutable.HashMap[String, String], period: String): Future[T]
   }
 
   trait PtsLeadersQuery[T] extends SparkQuery {
@@ -39,27 +39,27 @@ package object spark {
 
   trait TeamsResultsQuery[T] extends SparkQuery {
     def async(ctx: SparkContext, config: Config, period: String, teams: scala.collection.Seq[String],
-      arenas: Seq[(String, String)], allTeams: mutable.HashMap[String, String]): Future[T]
+              arenas: Seq[(String, String)], allTeams: mutable.HashMap[String, String]): Future[T]
   }
 
   trait DailyResultsQuery[T] extends SparkQuery {
     def async(ctx: SparkContext, config: Config, stage: String, yyyyMMDD: (Int, Int, Int),
-      arenas: Seq[(String, String)], allTeams: mutable.HashMap[String, String]): Future[T]
+              arenas: Seq[(String, String)], allTeams: mutable.HashMap[String, String]): Future[T]
   }
 
   object DailyResultsQuery {
     @implicitNotFound(msg = "Cannot find DailyResultsQuery type class for ${T}")
-    def apply[T <: SparkQueryView: DailyResultsQuery](implicit ex: ExecutionContext) = implicitly[DailyResultsQuery[T]]
+    def apply[T <: SparkQueryView : DailyResultsQuery](implicit ex: ExecutionContext) = implicitly[DailyResultsQuery[T]]
 
     implicit def teamStats(implicit ex: ExecutionContext) =
       new DailyResultsQuery[DailyResultsView] {
         override val name: String = "[spark-query]: daily-results"
 
         override def async(ctx: SparkContext, config: Config, stage: String, yyyyMMDD: (Int, Int, Int),
-          arenas: Seq[(String, String)], teams: mutable.HashMap[String, String]): Future[DailyResultsView] = {
+                           arenas: Seq[(String, String)], teams: mutable.HashMap[String, String]): Future[DailyResultsView] = {
           val startTs = System.currentTimeMillis
 
-          throw new Exception("TeamResultsQuery exception")
+          if (ThreadLocalRandom.current().nextInt(1, 10) > 5) throw new Exception("Cassandra unavailable")
 
           val results = ctx.cassandraDailyResults(config, stage, yyyyMMDD._1, yyyyMMDD._2, yyyyMMDD._3).cache()
           results.collectAsync.map { seq =>
@@ -76,13 +76,14 @@ package object spark {
   object TeamsResultsQuery {
 
     @implicitNotFound(msg = "Cannot find TeamsResultsQuery type class for ${T}")
-    def apply[T <: SparkQueryView: TeamsResultsQuery](implicit ex: ExecutionContext) = implicitly[TeamsResultsQuery[T]]
+    def apply[T <: SparkQueryView : TeamsResultsQuery](implicit ex: ExecutionContext) = implicitly[TeamsResultsQuery[T]]
 
     implicit def teamStats(implicit ex: ExecutionContext) =
       new TeamsResultsQuery[ResultsView] {
         override val name: String = "[spark-query]: team-stats"
+
         override def async(ctx: SparkContext, config: Config, period: String, teams: scala.collection.Seq[String], arenas: Seq[(String, String)],
-          allTeams: mutable.HashMap[String, String]): Future[ResultsView] = {
+                           allTeams: mutable.HashMap[String, String]): Future[ResultsView] = {
           val sqlContext = new SQLContext(ctx)
           import sqlContext.implicits._
           val startTs = System.currentTimeMillis
@@ -92,7 +93,7 @@ package object spark {
 
           val resultsDF = ctx.cassandraResultByPeriodRdd(config, allTeams.keySet, period).toDF("home-team", "home-score", "away-team", "away-score", "date")
 
-          ((keyTeamsDF join (resultsDF, resultsDF("home-team") === keyTeamsDF("team") || resultsDF("away-team") === keyTeamsDF("team"))) join (arenasDF, "home-team"))
+          ((keyTeamsDF join(resultsDF, resultsDF("home-team") === keyTeamsDF("team") || resultsDF("away-team") === keyTeamsDF("team"))) join(arenasDF, "home-team"))
             .sort(resultsDF("date"))
             .map { row: Row ⇒
               ResultView(
@@ -109,7 +110,7 @@ package object spark {
   object PlayerStatsQuery {
 
     @implicitNotFound(msg = "Cannot find PlayerStatsQuery type class for ${T}")
-    def apply[T <: SparkQueryView: PlayerStatsQuery](implicit ex: ExecutionContext) = implicitly[PlayerStatsQuery[T]]
+    def apply[T <: SparkQueryView : PlayerStatsQuery](implicit ex: ExecutionContext) = implicitly[PlayerStatsQuery[T]]
 
     /*
     implicit def avg(implicit ex: ExecutionContext) = new PlayerStatsTask[PlayerStatsView] {
@@ -134,7 +135,7 @@ package object spark {
         override val name: String = "[spark-query]: player-stats"
 
         override def async(ctx: SparkContext, config: Config,
-          playerName: String, period: String, team: String): Future[PlayerStatsView] = {
+                           playerName: String, period: String, team: String): Future[PlayerStatsView] = {
           val start = System.currentTimeMillis()
           val rdd: RDD[(String, Date, String, Int, Int, Int, String, String, String, Int, Int, Int, String, Int)] =
             ctx.cassandraPlayerRdd(config, playerName, period, team).cache()
@@ -152,7 +153,7 @@ package object spark {
   object RebLeadersQuery {
 
     @implicitNotFound(msg = "Cannot find RebLeadersQuery type class for ${T}")
-    def apply[T <: SparkQueryView: RebLeadersQuery](implicit ex: ExecutionContext) = implicitly[RebLeadersQuery[T]]
+    def apply[T <: SparkQueryView : RebLeadersQuery](implicit ex: ExecutionContext) = implicitly[RebLeadersQuery[T]]
 
     implicit def instance(implicit ex: ExecutionContext) =
       new RebLeadersQuery[RebLeadersView] {
@@ -166,13 +167,13 @@ package object spark {
             .combineByKey(
               (tuple: (Float, Float, Float)) ⇒ (tuple, 1l),
               (res: ((Float, Float, Float), Long),
-                tuple: (Float, Float, Float)) ⇒
+               tuple: (Float, Float, Float)) ⇒
                 ((res._1._1 + tuple._1,
                   res._1._2 + tuple._2,
                   res._1._3 + tuple._3),
                   res._2 + 1),
               (left: ((Float, Float, Float), Long),
-                right: ((Float, Float, Float), Long)) ⇒
+               right: ((Float, Float, Float), Long)) ⇒
                 ((left._1._1 + right._1._1,
                   left._1._2 + right._1._2,
                   left._1._3 + right._1._3),
@@ -185,7 +186,7 @@ package object spark {
                     (offReb / count).toDouble,
                     (defReb / count).toDouble,
                     (totalReb / count).toDouble
-                  ),
+                    ),
                     count)
                 else ((0.0, 0.0, 0.0), count)
             })
@@ -196,18 +197,18 @@ package object spark {
             RebLeadersView(
               array.length,
               array
-              .map(
-                kv ⇒
-                  RebLeader(
-                    team = kv._1._2,
-                    player = kv._1._1,
-                    offensive = kv._2._1._1.scale(2),
-                    defensive = kv._2._1._2.scale(2),
-                    total = kv._2._1._3.scale(2),
-                    games = kv._2._2
-                  )
-              )
-              .toList,
+                .map(
+                  kv ⇒
+                    RebLeader(
+                      team = kv._1._2,
+                      player = kv._1._1,
+                      offensive = kv._2._1._1.scale(2),
+                      defensive = kv._2._1._2.scale(2),
+                      total = kv._2._1._3.scale(2),
+                      games = kv._2._2
+                    )
+                )
+                .toList,
               System.currentTimeMillis() - start
             )
           }
@@ -218,11 +219,12 @@ package object spark {
   object PtsLeadersQuery {
 
     @implicitNotFound(msg = "Cannot find PtsLeadersQuery type class for ${T}")
-    def apply[T <: SparkQueryView: PtsLeadersQuery](implicit ex: ExecutionContext) = implicitly[PtsLeadersQuery[T]]
+    def apply[T <: SparkQueryView : PtsLeadersQuery](implicit ex: ExecutionContext) = implicitly[PtsLeadersQuery[T]]
 
     implicit def ptsLeaders(implicit ex: ExecutionContext) =
       new PtsLeadersQuery[PtsLeadersView] {
         override val name = "[spark-task]: pts-leaders"
+
         /*
         val sqlContext = new SQLContext(sc)
         import sqlContext.implicits._
@@ -245,7 +247,7 @@ package object spark {
               (pts: Float) ⇒ (pts, 1l),
               (res: (Float, Long), pts: Float) ⇒ (res._1 + pts, res._2 + 1),
               (res1: (Float, Long),
-                res2: (Float, Long)) ⇒ (res1._1 + res2._1, res1._2 + res2._2)
+               res2: (Float, Long)) ⇒ (res1._1 + res2._1, res1._2 + res2._2)
             )
             .mapValues({
               case (sum, count) ⇒
@@ -265,6 +267,7 @@ package object spark {
   }
 
   object StandingQuery {
+
     import scala.collection.immutable.TreeMap
     import scala.collection.mutable
 
@@ -274,14 +277,14 @@ package object spark {
     val stageNames = first ::: second ::: semifinal ::: List("Final. ")
 
     @implicitNotFound(msg = "Cannot find CassandraStandingTask type class for ${T}")
-    def apply[T <: SparkQueryView: StandingQuery](implicit ex: ExecutionContext) = implicitly[StandingQuery[T]]
+    def apply[T <: SparkQueryView : StandingQuery](implicit ex: ExecutionContext) = implicitly[StandingQuery[T]]
 
     implicit def playoff(implicit ex: ExecutionContext) =
       new StandingQuery[PlayoffStandingView] {
         override val name = "[spark-query]: standing-playoff"
 
         override def async(ctx: SparkContext, config: Config, teams: mutable.HashMap[String, String],
-          period: String): Future[PlayoffStandingView] = {
+                           period: String): Future[PlayoffStandingView] = {
           val start = System.currentTimeMillis
           val rdd: RDD[NbaResult] = ctx.cassandraStandingRdd(config, teams.keySet, period).cache()
 
@@ -343,7 +346,7 @@ package object spark {
         override val name = "[spark-query]: season-standing"
 
         override def async(ctx: SparkContext, config: Config,
-          teams: mutable.HashMap[String, String], period: String): Future[SeasonStandingView] = {
+                           teams: mutable.HashMap[String, String], period: String): Future[SeasonStandingView] = {
           val start = System.currentTimeMillis
           val rdd: RDD[NbaResult] = ctx.cassandraStandingRdd(config, teams.keySet, period).cache()
 

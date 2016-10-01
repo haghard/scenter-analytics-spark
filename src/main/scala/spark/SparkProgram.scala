@@ -92,7 +92,10 @@ object SparkProgram {
 
 class SparkProgram(val config: Config) extends Actor with ActorLogging {
   import SparkProgram._
-  implicit val Ex = context.dispatcher
+
+  val sys = context.system
+  implicit val ex = context.system.dispatchers.lookup(SparkDispatcher)
+    //context.dispatcher
 
   override def preStart =
     log.info("SparkProgram has been created")
@@ -100,13 +103,15 @@ class SparkProgram(val config: Config) extends Actor with ActorLogging {
   override def postStop =
     log.info("SparkProgram has been stopped")
 
-  /*def await(replyTo: ActorRef): Receive = {
+  def await(replyTo: ActorRef): Receive = {
     case r: SparkQueryView =>
       replyTo ! r
-      context.system.stop(self)
+      sys.stop(self)
     case scala.util.Failure(ex) =>
-      context.system.stop(self)
-  }*/
+      sys.log.error(ex, "SparkProgram has failed")
+      throw ex
+      sys.stop(self)
+  }
 
   import akka.pattern.pipe
   override def receive: Receive = {
@@ -123,9 +128,9 @@ class SparkProgram(val config: Config) extends Actor with ActorLogging {
     case DailyResultsQueryArgs(ctx, url, stage, yyyyMMDD, arenas, teams) ⇒
       log.info("SELECT * FROM daily_results WHERE period = '{}' and year={} and month={} and day={}", stage, yyyyMMDD._1, yyyyMMDD._2, yyyyMMDD._3)
       val replyTo = sender()
-      (DailyResultsQuery[DailyResultsView] async (ctx, config, stage, yyyyMMDD, arenas, teams) to replyTo).future
-      .onComplete(_ ⇒ context.system.stop(self))
-    //(context become await(replyTo))
+      DailyResultsQuery[DailyResultsView].async(ctx, config, stage, yyyyMMDD, arenas, teams) /*to replyTo).future*/ pipeTo (self)
+      //.onComplete(_ ⇒ context.system.stop(self))
+      (context become await(replyTo))
 
     case PlayerStatsQueryArgs(ctx, url, name, period, team) ⇒
       log.info(
