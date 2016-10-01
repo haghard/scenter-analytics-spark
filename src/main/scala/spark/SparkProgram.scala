@@ -97,31 +97,30 @@ class SparkProgram(val config: Config) extends Actor with ActorLogging {
   implicit val Ex = context.dispatcher
 
   override def preStart = {
-    context.system.log.debug("SparkProgram has been created")
+    log.info("SparkProgram has been created")
   }
 
   override def postStop = {
-    context.system.log.debug("SparkProgram has been stopped")
+    log.info("SparkProgram has been stopped")
   }
 
   override def receive: Receive = {
     case TeamResultsQueryArgs(ctx, _, period, teams, arenas, allTeams) ⇒
-      log.debug(
+      log.info(
         s"SELECT team, score, opponent, opponent_score, date FROM results_by_period WHERE period = '{}' and team in ({})",
         period, teams.map(t => s"""'$t',""").mkString
       )
-      Future.failed(new Exception("TeamResultsQuery exception"))
-      /*
       (TeamsResultsQuery[ResultsView] async (ctx, config, period, teams, arenas, allTeams) to sender()).future
-        .onComplete(_ ⇒ context.system.stop(self))*/
+        .onComplete(_ ⇒ context.system.stop(self))
 
     case DailyResultsQueryArgs(ctx, url, stage, yyyyMMDD, arenas, teams) ⇒
-      log.debug("SELECT * FROM daily_results WHERE period = '{}' and year={} and month={} and day={}", stage, yyyyMMDD._1, yyyyMMDD._2, yyyyMMDD._3)
+      log.info("SELECT * FROM daily_results WHERE period = '{}' and year={} and month={} and day={}", stage, yyyyMMDD._1, yyyyMMDD._2, yyyyMMDD._3)
+      Future.failed(new Exception("TeamResultsQuery exception"))
       (DailyResultsQuery[DailyResultsView] async (ctx, config, stage, yyyyMMDD, arenas, teams) to sender()).future
         .onComplete(_ ⇒ context.system.stop(self))
 
     case PlayerStatsQueryArgs(ctx, url, name, period, team) ⇒
-      log.debug(
+      log.info(
         "SELECT name, pts, team, opponent, time FROM player_by_name WHERE name = '{}' and period = '{}' and team = '{}'",
         name, period, team
       )
@@ -129,17 +128,17 @@ class SparkProgram(val config: Config) extends Actor with ActorLogging {
         .onComplete(_ ⇒ context.system.stop(self))
 
     case PtsLeadersQueryArgs(ctx, url, /*stage,*/ teams, period, depth) ⇒
-      log.debug("SELECT name, team, pts FROM leaders_by_period WHERE period = '{}'", period)
+      log.info("SELECT name, team, pts FROM leaders_by_period WHERE period = '{}'", period)
       ((PtsLeadersQuery[PtsLeadersView] async (ctx, config, period, depth)) to sender()).future
         .onComplete(_ ⇒ context.system.stop(self))
 
     case RebLeadersQueryArgs(ctx, url, period, depth) ⇒
-      log.debug("SELECT name, team, offreb, defreb, totalreb FROM leaders_by_period where period = '{}'", period)
+      log.info("SELECT name, team, offreb, defreb, totalreb FROM leaders_by_period where period = '{}'", period)
       (RebLeadersQuery[RebLeadersView] async (ctx, config, period, depth) to sender()).future
         .onComplete(_ ⇒ context.system.stop(self))
 
     case StandingQueryArgs(ctx, _, stage, teams, period) ⇒
-      log.debug(
+      log.info(
         "SELECT team, score, opponent, opponent_score, date FROM results_by_period WHERE period = '{}' and team in ({})",
         stage, teams.keySet.map(t => s"""'$t',""").mkString
       )

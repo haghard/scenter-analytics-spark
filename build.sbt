@@ -159,8 +159,8 @@ scalacOptions ++= Seq(
   "-language:existentials")
 
 javacOptions ++= Seq(
-  "-source", "1.7",
-  "-target", "1.7",
+  "-source", "1.8",
+  "-target", "1.8",
   "-Xlint:unchecked",
   "-Xlint:deprecation")
 
