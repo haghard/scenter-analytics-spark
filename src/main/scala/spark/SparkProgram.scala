@@ -6,9 +6,7 @@ import com.typesafe.config.Config
 import http._
 import org.apache.spark.SparkContext
 import spark.PtsLeadersQuery._
-
 import scala.collection.mutable
-import scala.concurrent.Future
 
 object SparkProgram {
 
@@ -95,13 +93,11 @@ class SparkProgram(val config: Config) extends Actor with ActorLogging {
   import SparkProgram._
   implicit val Ex = context.dispatcher
 
-  override def preStart = {
+  override def preStart =
     log.info("SparkProgram has been created")
-  }
 
-  override def postStop = {
+  override def postStop =
     log.info("SparkProgram has been stopped")
-  }
 
   import akka.pattern.pipe
   override def receive: Receive = {

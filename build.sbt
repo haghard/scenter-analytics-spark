@@ -74,8 +74,6 @@ resolvers ++= Seq(
 val sparkDependencyScope = "provided"
 
 libraryDependencies ++= Seq(
-  //"org.scalaz"              %% "scalaz-core"                    % "7.2.0",
-
   "org.typelevel"           %% "cats"                           % "0.7.0",
 
   "com.github.nscala-time"  %% "nscala-time"                    % "2.0.0",

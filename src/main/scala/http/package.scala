@@ -14,7 +14,7 @@ import http.swagger.CorsSupport
 import ingestion.JournalChangesIngestion
 import org.apache.spark.SparkContext
 import org.joda.time.{ DateTime, Interval }
-import spark.{ SparkProgram, SparkQuery }
+import spark.{ SparkProgramGuardian, SparkProgram, SparkQuery }
 
 import scala.collection.JavaConversions._
 import scala.collection.mutable
@@ -76,7 +76,7 @@ package object http {
 
   trait DefaultJobArgs {
     def url: String
-
+    //def uuid: String
     def ctx: SparkContext
   }
 
@@ -125,16 +125,19 @@ package object http {
 
       implicit val _ = system.dispatchers.lookup(httpDispatcher)
 
+      val guardian = system.actorOf(SparkProgramGuardian.props, "spark-guardian")
+
       import RouteConcatenation._
       val route = new LoginRouter(interface, httpPort).route ~
-        new ResultsRouter(interface, httpPort, intervals, teams, arenas = arenas, context = context).route ~
-        new DailyResultsRouter(interface, httpPort, context, intervals, arenas, teams).route ~
-        new PlayerStatRouter(interface, httpPort, intervals, teams, arenas = arenas, context = context).route ~
-        new PtsLeadersRouter(interface, httpPort, intervals, teams, arenas = arenas, context = context).route ~
-        new RebLeadersRouter(interface, httpPort, intervals, teams, arenas = arenas, context = context).route ~
-        new StandingRouter(interface, httpPort, intervals, teams, arenas = arenas, context = context).route ~
+        new ResultsRouter(guardian, interface, httpPort, intervals, teams, arenas = arenas, context = context).route ~
+        /*
+      new DailyResultsRouter(guardian, interface, httpPort, context, intervals, arenas, teams).route ~
+        new PlayerStatRouter(guardian, interface, httpPort, intervals, teams, arenas = arenas, context = context).route ~
+        new PtsLeadersRouter(guardian, interface, httpPort, intervals, teams, arenas = arenas, context = context).route ~
+        new RebLeadersRouter(guardian, interface, httpPort, intervals, teams, arenas = arenas, context = context).route ~
+        new StandingRouter(guardian, interface, httpPort, intervals, teams, arenas = arenas, context = context).route ~
         new TwitterLoginRouter(interface, httpPort, pref = pathPrefix).route ~
-        new GitHubLoginRouter(interface, httpPort, pref = pathPrefix).route ~
+        new GitHubLoginRouter(interface, httpPort, pref = pathPrefix).route ~*/
         //new GoogleLoginRouter(interface, httpPort, pref = pathPrefix).route ~
         new SwaggerDocRouter(interface, httpPort).route
 

@@ -7,14 +7,14 @@ import akka.http.scaladsl.model.HttpResponse
 import akka.http.scaladsl.server.Route
 import http.routes.PlayerStatRouter.PlayersProtocol
 import http.routes.PtsLeadersRouter.LeadersProtocol
-import http.{SparkJobHttpResponse, TypedAsk}
+import http.{ SparkJobHttpResponse, TypedAsk }
 import org.apache.spark.SparkContext
 import spark.SparkProgram._
 import spark.SparkProgramGuardian
 import spray.json.JsonWriter
 
 import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 
 object PtsLeadersRouter {
   trait LeadersProtocol extends PlayersProtocol {
@@ -43,16 +43,14 @@ object PtsLeadersRouter {
   }
 }
 
-
 @io.swagger.annotations.Api(value = "pts leaders", produces = "application/json")
 @Path("/api/leaders/pts")
 class PtsLeadersRouter(override val host: String, override val httpPort: Int,
-                       override val intervals: scala.collection.mutable.LinkedHashMap[org.joda.time.Interval, String],
-                       override val teams: scala.collection.mutable.HashMap[String, String],
-                       override val httpPrefixAddress: String = "leaders",
-                       arenas: scala.collection.immutable.Vector[(String, String)], context: SparkContext)
-                      (implicit val ec: ExecutionContext, val system: ActorSystem) extends SecuritySupport with LeadersProtocol
-  with TypedAsk with ParamsValidation {
+  override val intervals: scala.collection.mutable.LinkedHashMap[org.joda.time.Interval, String],
+  override val teams: scala.collection.mutable.HashMap[String, String],
+  override val httpPrefixAddress: String = "leaders",
+  arenas: scala.collection.immutable.Vector[(String, String)], context: SparkContext)(implicit val ec: ExecutionContext, val system: ActorSystem) extends SecuritySupport with LeadersProtocol
+    with TypedAsk with ParamsValidation {
   private val defaultDepth = 10
   private val jobSupervisor = system.actorOf(SparkProgramGuardian.props)
   override implicit val timeout = akka.util.Timeout(10.seconds)

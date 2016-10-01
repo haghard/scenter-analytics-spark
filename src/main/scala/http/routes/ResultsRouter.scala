@@ -1,38 +1,43 @@
 package http.routes
 
-import akka.actor.ActorSystem
-import akka.http.scaladsl.model.HttpResponse
-import http.{ TypedAsk, SparkJobHttpResponse }
-import spark.SparkProgram.{ResultView, TeamResultsQueryArgs, ResultsView}
-import spark.{ SparkProgramGuardian, SparkProgram }
-import http.routes.ResultsRouter.TeamsHttpProtocols
-
 import javax.ws.rs.Path
 
+import akka.actor.{ ActorRef, ActorSystem }
+import akka.http.scaladsl.model.HttpResponse
+import http.routes.ResultsRouter.TeamsHttpProtocols
+import http.{ SparkJobHttpResponse, TypedAsk }
 import io.swagger.annotations._
 import org.apache.spark.SparkContext
+import spark.SparkProgram.{ ResultView, ResultsView, TeamResultsQueryArgs }
+import spark.SparkSupport
 import spray.json._
 
 import scala.concurrent.{ ExecutionContext, Future }
 
 object ResultsRouter {
+
   trait TeamsHttpProtocols extends DefaultJsonProtocol {
     implicit val resFormat = jsonFormat4(ResultView)
 
     implicit object DateFormatToJson extends JsonFormat[java.util.Date] with DefaultJsonProtocol {
+
       import spray.json._
+
       val formatter = cassandra.extFormatter
+
       override def read(json: JsValue): java.util.Date = formatter.parse(json.convertTo[String])
+
       override def write(date: java.util.Date) = formatter.format(date).toJson
     }
 
     implicit object TeamsResponseWriter extends JsonWriter[SparkJobHttpResponse] {
+
       import spray.json._
 
       override def write(obj: SparkJobHttpResponse): spray.json.JsValue = {
         val url = JsString(obj.url.toString)
-        val v = obj.view.fold(JsString("none")) { JsString(_) }
-        val error = obj.error.fold(JsString("none")) { error ⇒ JsString(error) }
+        val v = obj.view.fold(JsString("none"))(JsString(_))
+        val error = obj.error.fold(JsString("none"))(JsString(_))
         obj.body match {
           case Some(ResultsView(c, results, latency, _)) ⇒
             JsObject("url" -> url, "view" -> JsArray(results.map(_.toJson).toVector),
@@ -47,26 +52,26 @@ object ResultsRouter {
 
 @io.swagger.annotations.Api(value = "/results", produces = "application/json")
 @Path("/api/results")
-class ResultsRouter(override val host: String, override val httpPort: Int,
+class ResultsRouter(
+  override val guardian: ActorRef,
+  override val host: String, override val httpPort: Int,
   override val intervals: scala.collection.mutable.LinkedHashMap[org.joda.time.Interval, String],
   override val teams: scala.collection.mutable.HashMap[String, String],
+  override val context: SparkContext,
   override val httpPrefixAddress: String = "results",
-  arenas: scala.collection.immutable.Vector[(String, String)],
-  context: SparkContext)(implicit val ec: ExecutionContext, val system: ActorSystem) extends SecuritySupport
-    with TypedAsk with ParamsValidation with TeamsHttpProtocols {
+  arenas: scala.collection.immutable.Vector[(String, String)]
+)(implicit val ec: ExecutionContext, val system: ActorSystem) extends SparkSupport with SecuritySupport with TypedAsk
+    with ParamsValidation with TeamsHttpProtocols {
 
-  import cats.data.Xor
-  import cats.data.Validated
+  import cats.data.{ Validated, Xor }
   import cats.implicits._
+
   import scala.concurrent.duration._
+  import akka.http.scaladsl.server._
 
   override implicit val timeout = akka.util.Timeout(10.seconds)
 
-  private val jobSupervisor = system.actorOf(SparkProgramGuardian.props)
-
   val route = teamsRoute
-
-  import akka.http.scaladsl.server._
 
   @Path("/{stage}")
   @ApiOperation(value = "Fetch results by season and teams", notes = "", httpMethod = "GET")
@@ -102,7 +107,7 @@ class ResultsRouter(override val host: String, override val httpPort: Int,
     ) { case (_, _) => TeamResultsQueryArgs(context, url, season, searchTeams.split(",").toSeq, arenas, teams) }
 
     validation.fold({ error => Future.successful(notFound(s"Invalid parameters: $error")) }, { arg =>
-      fetch[ResultsView](arg, jobSupervisor).map {
+      fetch[ResultsView](arg, guardian).map {
         case Xor.Right(res) => success(SparkJobHttpResponse(url, view = Option("team-results"), body = Option(res), error = res.error))
         case Xor.Left(er) => internalError(er)
       }

@@ -20,6 +20,6 @@ class SparkProgramGuardian extends Actor with ActorLogging {
 
   override def receive: Receive = {
     case args: DefaultJobArgs ⇒
-      context.actorOf(SparkProgram.props(conf)) forward args
+      context.actorOf(SparkProgram.props(conf), name = "program") forward args
   }
 }
