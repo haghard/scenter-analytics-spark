@@ -97,8 +97,10 @@ class SparkProgram(val config: Config) extends Actor with ActorLogging {
   implicit val ex = context.system.dispatchers.lookup(SparkDispatcher)
     //context.dispatcher
 
-  override def preStart =
+  override def preStart = {
+    //context.setReceiveTimeout(30 milliseconds)
     log.info("SparkProgram has been created")
+  }
 
   override def postStop =
     log.info("SparkProgram has been stopped")
@@ -106,11 +108,11 @@ class SparkProgram(val config: Config) extends Actor with ActorLogging {
   def await(replyTo: ActorRef): Receive = {
     case r: SparkQueryView =>
       replyTo ! r
-      sys.stop(self)
-    case scala.util.Failure(ex) =>
+      context.stop(self)
+    case akka.actor.Status.Failure(ex) =>
       sys.log.error(ex, "SparkProgram has failed")
       throw ex
-      sys.stop(self)
+      context.stop(self)
   }
 
   import akka.pattern.pipe
@@ -121,14 +123,14 @@ class SparkProgram(val config: Config) extends Actor with ActorLogging {
         period, teams.map(t => s"""'$t',""").mkString
       )
       val replyTo = sender()
-      (TeamsResultsQuery[ResultsView] async (ctx, config, period, teams, arenas, allTeams) to replyTo).future pipeTo (self)
+      (TeamsResultsQuery[ResultsView] async (ctx, config, period, teams, arenas, allTeams) to replyTo).future pipeTo self
     //(context become await(replyTo))
     //.onComplete(_ ⇒ context.system.stop(self))
 
     case DailyResultsQueryArgs(ctx, url, stage, yyyyMMDD, arenas, teams) ⇒
       log.info("SELECT * FROM daily_results WHERE period = '{}' and year={} and month={} and day={}", stage, yyyyMMDD._1, yyyyMMDD._2, yyyyMMDD._3)
       val replyTo = sender()
-      DailyResultsQuery[DailyResultsView].async(ctx, config, stage, yyyyMMDD, arenas, teams) /*to replyTo).future*/ pipeTo (self)
+      DailyResultsQuery[DailyResultsView].async(ctx, config, stage, yyyyMMDD, arenas, teams) /*to replyTo).future*/ pipeTo self
       //.onComplete(_ ⇒ context.system.stop(self))
       (context become await(replyTo))
 
