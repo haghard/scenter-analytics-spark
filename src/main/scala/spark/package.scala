@@ -73,6 +73,9 @@ package object spark {
         override def async(ctx: SparkContext, config: Config, stage: String, yyyyMMDD: (Int, Int, Int),
           arenas: Seq[(String, String)], teams: mutable.HashMap[String, String]): Future[DailyResultsView] = {
           val startTs = System.currentTimeMillis
+
+          throw new Exception("TeamResultsQuery exception")
+
           val results = ctx.cassandraDailyResults(config, stage, yyyyMMDD._1, yyyyMMDD._2, yyyyMMDD._3).cache()
           results.collectAsync.map { seq =>
             val results = seq.map { el =>

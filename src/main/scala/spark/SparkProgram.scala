@@ -2,7 +2,6 @@ package spark
 
 import java.util.Date
 import akka.actor.{ Actor, ActorLogging, Props }
-import akka.pattern.pipe
 import com.typesafe.config.Config
 import http._
 import org.apache.spark.SparkContext
@@ -104,19 +103,22 @@ class SparkProgram(val config: Config) extends Actor with ActorLogging {
     log.info("SparkProgram has been stopped")
   }
 
+  import akka.pattern.pipe
   override def receive: Receive = {
     case TeamResultsQueryArgs(ctx, _, period, teams, arenas, allTeams) ⇒
       log.info(
         s"SELECT team, score, opponent, opponent_score, date FROM results_by_period WHERE period = '{}' and team in ({})",
         period, teams.map(t => s"""'$t',""").mkString
       )
-      (TeamsResultsQuery[ResultsView] async (ctx, config, period, teams, arenas, allTeams) to sender()).future
+      val replyTo = sender()
+      (TeamsResultsQuery[ResultsView] async (ctx, config, period, teams, arenas, allTeams) to replyTo).future
         .onComplete(_ ⇒ context.system.stop(self))
 
     case DailyResultsQueryArgs(ctx, url, stage, yyyyMMDD, arenas, teams) ⇒
       log.info("SELECT * FROM daily_results WHERE period = '{}' and year={} and month={} and day={}", stage, yyyyMMDD._1, yyyyMMDD._2, yyyyMMDD._3)
-      Future.failed(new Exception("TeamResultsQuery exception"))
-      (DailyResultsQuery[DailyResultsView] async (ctx, config, stage, yyyyMMDD, arenas, teams) to sender()).future
+      //Future.failed(new Exception("TeamResultsQuery exception"))
+      val replyTo = sender()
+      (DailyResultsQuery[DailyResultsView] async (ctx, config, stage, yyyyMMDD, arenas, teams) to replyTo).future
         .onComplete(_ ⇒ context.system.stop(self))
 
     case PlayerStatsQueryArgs(ctx, url, name, period, team) ⇒
@@ -124,17 +126,20 @@ class SparkProgram(val config: Config) extends Actor with ActorLogging {
         "SELECT name, pts, team, opponent, time FROM player_by_name WHERE name = '{}' and period = '{}' and team = '{}'",
         name, period, team
       )
-      (PlayerStatsQuery[PlayerStatsView] async (ctx, config, name, period, team) to sender()).future
+      val replyTo = sender()
+      (PlayerStatsQuery[PlayerStatsView] async (ctx, config, name, period, team) to replyTo).future
         .onComplete(_ ⇒ context.system.stop(self))
 
     case PtsLeadersQueryArgs(ctx, url, /*stage,*/ teams, period, depth) ⇒
       log.info("SELECT name, team, pts FROM leaders_by_period WHERE period = '{}'", period)
-      ((PtsLeadersQuery[PtsLeadersView] async (ctx, config, period, depth)) to sender()).future
+      val replyTo = sender()
+      ((PtsLeadersQuery[PtsLeadersView] async (ctx, config, period, depth)) to replyTo).future
         .onComplete(_ ⇒ context.system.stop(self))
 
     case RebLeadersQueryArgs(ctx, url, period, depth) ⇒
       log.info("SELECT name, team, offreb, defreb, totalreb FROM leaders_by_period where period = '{}'", period)
-      (RebLeadersQuery[RebLeadersView] async (ctx, config, period, depth) to sender()).future
+      val replyTo = sender()
+      (RebLeadersQuery[RebLeadersView] async (ctx, config, period, depth) to replyTo).future
         .onComplete(_ ⇒ context.system.stop(self))
 
     case StandingQueryArgs(ctx, _, stage, teams, period) ⇒
@@ -142,11 +147,12 @@ class SparkProgram(val config: Config) extends Actor with ActorLogging {
         "SELECT team, score, opponent, opponent_score, date FROM results_by_period WHERE period = '{}' and team in ({})",
         stage, teams.keySet.map(t => s"""'$t',""").mkString
       )
+      val replyTo = sender()
       if (stage contains Season)
-        ((StandingQuery[SeasonStandingView] async (ctx, config, teams, period)) to sender()).future
+        ((StandingQuery[SeasonStandingView] async (ctx, config, teams, period)) to replyTo).future
           .onComplete(_ ⇒ context.system.stop(self))
       else if (stage contains PlayOff)
-        ((StandingQuery[PlayoffStandingView] async (ctx, config, teams, period)) to sender()).future
+        ((StandingQuery[PlayoffStandingView] async (ctx, config, teams, period)) to replyTo).future
           .onComplete(_ ⇒ context.system.stop(self))
   }
 }
