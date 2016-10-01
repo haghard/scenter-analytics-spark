@@ -100,7 +100,7 @@ class DailyResultsRouter(
 
   private def searchResults(url: String, day: String): Future[HttpResponse] = {
     parseDay(day).andThen(validatePeriod).fold({ error: String => Future.successful(notFound(s"Invalid parameters: $error")) }, { arg =>
-      val p = system.actorOf(SparkProgram.props(system.settings.config), name = "program")
+      val p = system.actorOf(SparkProgram.props(system.settings.config)) //name
       fetch[DailyResultsView](DailyResultsQueryArgs(sparkContext, url, arg.period, (arg.year, arg.mm, arg.dd), arenas, teams), p).map {
         case cats.data.Xor.Right(res) => success(SparkJobHttpResponse(url, view = Option("daily-results"), body = Option(res), error = res.error))(DailyResultsWriter)
         case cats.data.Xor.Left(ex) => internalError(ex)
