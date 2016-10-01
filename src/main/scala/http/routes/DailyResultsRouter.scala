@@ -2,21 +2,21 @@ package http.routes
 
 import javax.ws.rs.Path
 
-import akka.actor.ActorSystem
+import akka.actor.{ActorRef, ActorSystem}
 import akka.http.scaladsl.model.HttpResponse
 import akka.http.scaladsl.server._
 import cats.data.Validated
 import http._
-import http.routes.DailyResultsRouter.{ Args, DailyResultsProtocol }
+import http.routes.DailyResultsRouter.{Args, DailyResultsProtocol}
 import io.swagger.annotations._
 import org.apache.spark.SparkContext
 import org.joda.time.DateTime
 import spark.SparkProgram._
-import spark.SparkProgramGuardian
+import spark.SparkSupport
 import spray.json._
 
 import scala.concurrent.duration._
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.{ExecutionContext, Future}
 
 object DailyResultsRouter {
 
@@ -25,8 +25,8 @@ object DailyResultsRouter {
     implicit object DailyResultsWriter extends JsonWriter[SparkJobHttpResponse] {
       override def write(obj: SparkJobHttpResponse): JsValue = {
         val url = JsString(obj.url.toString)
-        val v = obj.view.fold(JsString("none")) { view ⇒ JsString(view) }
-        val error = obj.error.fold(JsString("none")) { error ⇒ JsString(error) }
+        val v = obj.view.fold(JsString("none"))(JsString(_))
+        val error = obj.error.fold(JsString("none"))(JsString(_))
         obj.body match {
           case Some(DailyResultsView(c, results, latency, _)) ⇒
             JsObject("url" -> url, "view" -> JsArray(results.map(_.toJson)),
@@ -35,6 +35,7 @@ object DailyResultsRouter {
         }
       }
     }
+
   }
 
   case class Args(period: String, year: Int, mm: Int, dd: Int)
@@ -42,14 +43,14 @@ object DailyResultsRouter {
 
 @io.swagger.annotations.Api(value = "/daily", produces = "application/json")
 @Path("/api/daily")
-class DailyResultsRouter(override val host: String, override val httpPort: Int,
-  context: SparkContext,
-  intervals: scala.collection.mutable.LinkedHashMap[org.joda.time.Interval, String],
-  arenas: scala.collection.immutable.Vector[(String, String)],
-  teams: scala.collection.mutable.HashMap[String, String],
-  override val httpPrefixAddress: String = "daily")(implicit val ec: ExecutionContext, val system: ActorSystem) extends SecuritySupport with TypedAsk
-    with DailyResultsProtocol {
-  private val dailyJobGuardian = system.actorOf(SparkProgramGuardian.props)
+class DailyResultsRouter(override val guardian: ActorRef,
+                         override val host: String, override val httpPort: Int,
+                         override val context: SparkContext,
+                         override val httpPrefixAddress: String = "daily",
+                         intervals: scala.collection.mutable.LinkedHashMap[org.joda.time.Interval, String],
+                         arenas: scala.collection.immutable.Vector[(String, String)],
+                         teams: scala.collection.mutable.HashMap[String, String])(implicit val ec: ExecutionContext, val system: ActorSystem) extends SecuritySupport
+  with SparkSupport with TypedAsk with DailyResultsProtocol {
 
   override implicit val timeout = akka.util.Timeout(10.seconds)
 
@@ -97,7 +98,7 @@ class DailyResultsRouter(override val host: String, override val httpPort: Int,
 
   private def searchResults(url: String, day: String): Future[HttpResponse] = {
     parseDay(day).andThen(validatePeriod).fold({ error: String => Future.successful(notFound(s"Invalid parameters: $error")) }, { arg =>
-      fetch[DailyResultsView](DailyResultsQueryArgs(context, url, arg.period, (arg.year, arg.mm, arg.dd), arenas, teams), dailyJobGuardian).map {
+      fetch[DailyResultsView](DailyResultsQueryArgs(context, url, arg.period, (arg.year, arg.mm, arg.dd), arenas, teams), guardian).map {
         case cats.data.Xor.Right(res) => success(SparkJobHttpResponse(url, view = Option("daily-results"), body = Option(res), error = res.error))(DailyResultsWriter)
         case cats.data.Xor.Left(ex) => internalError(ex)
       }

@@ -130,8 +130,8 @@ package object http {
       import RouteConcatenation._
       val route = new LoginRouter(interface, httpPort).route ~
         new ResultsRouter(guardian, interface, httpPort, intervals, teams, arenas = arenas, context = context).route ~
-        /*
-      new DailyResultsRouter(guardian, interface, httpPort, context, intervals, arenas, teams).route ~
+        new DailyResultsRouter(guardian, interface, httpPort, context = context, intervals= intervals, arenas = arenas, teams = teams).route ~
+      /*
         new PlayerStatRouter(guardian, interface, httpPort, intervals, teams, arenas = arenas, context = context).route ~
         new PtsLeadersRouter(guardian, interface, httpPort, intervals, teams, arenas = arenas, context = context).route ~
         new RebLeadersRouter(guardian, interface, httpPort, intervals, teams, arenas = arenas, context = context).route ~
