@@ -1,7 +1,7 @@
 package spark
 
 import java.util.Date
-import akka.actor.{ActorRef, Actor, ActorLogging, Props}
+import akka.actor.{ ActorRef, Actor, ActorLogging, Props }
 import com.typesafe.config.Config
 import http._
 import org.apache.spark.SparkContext
@@ -116,16 +116,16 @@ class SparkProgram(val config: Config) extends Actor with ActorLogging {
         period, teams.map(t => s"""'$t',""").mkString
       )
       val replyTo = sender()
-      (TeamsResultsQuery[ResultsView] async (ctx, config, period, teams, arenas, allTeams) to replyTo).future pipeTo(self)
-      //(context become await(replyTo))
-        //.onComplete(_ ⇒ context.system.stop(self))
+      (TeamsResultsQuery[ResultsView] async (ctx, config, period, teams, arenas, allTeams) to replyTo).future pipeTo (self)
+    //(context become await(replyTo))
+    //.onComplete(_ ⇒ context.system.stop(self))
 
     case DailyResultsQueryArgs(ctx, url, stage, yyyyMMDD, arenas, teams) ⇒
       log.info("SELECT * FROM daily_results WHERE period = '{}' and year={} and month={} and day={}", stage, yyyyMMDD._1, yyyyMMDD._2, yyyyMMDD._3)
       val replyTo = sender()
-      (DailyResultsQuery[DailyResultsView] async (ctx, config, stage, yyyyMMDD, arenas, teams) to replyTo).future pipeTo(self)
-      //(context become await(replyTo))
-        //.onComplete(_ ⇒ context.system.stop(self))
+      (DailyResultsQuery[DailyResultsView] async (ctx, config, stage, yyyyMMDD, arenas, teams) to replyTo).future pipeTo (self)
+    //(context become await(replyTo))
+    //.onComplete(_ ⇒ context.system.stop(self))
 
     case PlayerStatsQueryArgs(ctx, url, name, period, team) ⇒
       log.info(

@@ -2,21 +2,21 @@ package http.routes
 
 import javax.ws.rs.Path
 
-import akka.actor.{ActorRef, ActorSystem}
+import akka.actor.{ ActorRef, ActorSystem }
 import akka.http.scaladsl.model.HttpResponse
 import akka.http.scaladsl.server._
 import cats.data.Validated
 import http._
-import http.routes.DailyResultsRouter.{Args, DailyResultsProtocol}
+import http.routes.DailyResultsRouter.{ Args, DailyResultsProtocol }
 import io.swagger.annotations._
 import org.apache.spark.SparkContext
 import org.joda.time.DateTime
 import spark.SparkProgram._
-import spark.{SparkProgram, SparkSupport}
+import spark.{ SparkProgram, SparkSupport }
 import spray.json._
 
 import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 
 object DailyResultsRouter {
 
@@ -43,14 +43,16 @@ object DailyResultsRouter {
 
 @io.swagger.annotations.Api(value = "/daily", produces = "application/json")
 @Path("/api/daily")
-class DailyResultsRouter(override val guardian: ActorRef,
-                         override val host: String, override val httpPort: Int,
-                         override val sparkContext: SparkContext,
-                         override val httpPrefixAddress: String = "daily",
-                         intervals: scala.collection.mutable.LinkedHashMap[org.joda.time.Interval, String],
-                         arenas: scala.collection.immutable.Vector[(String, String)],
-                         teams: scala.collection.mutable.HashMap[String, String])(implicit val ec: ExecutionContext, val system: ActorSystem) extends SecuritySupport
-  with SparkSupport with TypedAsk with DailyResultsProtocol {
+class DailyResultsRouter(
+  override val guardian: ActorRef,
+  override val host: String, override val httpPort: Int,
+  override val sparkContext: SparkContext,
+  override val httpPrefixAddress: String = "daily",
+  intervals: scala.collection.mutable.LinkedHashMap[org.joda.time.Interval, String],
+  arenas: scala.collection.immutable.Vector[(String, String)],
+  teams: scala.collection.mutable.HashMap[String, String]
+)(implicit val ec: ExecutionContext, val system: ActorSystem) extends SecuritySupport
+    with SparkSupport with TypedAsk with DailyResultsProtocol {
 
   override implicit val timeout = akka.util.Timeout(10.seconds)
 

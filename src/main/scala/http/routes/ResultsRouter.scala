@@ -53,13 +53,13 @@ object ResultsRouter {
 @io.swagger.annotations.Api(value = "/results", produces = "application/json")
 @Path("/api/results")
 class ResultsRouter(
-                     override val guardian: ActorRef,
-                     override val host: String, override val httpPort: Int,
-                     override val intervals: scala.collection.mutable.LinkedHashMap[org.joda.time.Interval, String],
-                     override val teams: scala.collection.mutable.HashMap[String, String],
-                     override val sparkContext: SparkContext,
-                     override val httpPrefixAddress: String = "results",
-                     arenas: scala.collection.immutable.Vector[(String, String)]
+  override val guardian: ActorRef,
+  override val host: String, override val httpPort: Int,
+  override val intervals: scala.collection.mutable.LinkedHashMap[org.joda.time.Interval, String],
+  override val teams: scala.collection.mutable.HashMap[String, String],
+  override val sparkContext: SparkContext,
+  override val httpPrefixAddress: String = "results",
+  arenas: scala.collection.immutable.Vector[(String, String)]
 )(implicit val ec: ExecutionContext, val system: ActorSystem) extends SparkSupport with SecuritySupport with TypedAsk
     with ParamsValidation with TeamsHttpProtocols {
 
