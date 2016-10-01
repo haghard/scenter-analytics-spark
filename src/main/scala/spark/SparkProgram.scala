@@ -109,6 +109,7 @@ class SparkProgram(val config: Config) extends Actor with ActorLogging {
     case r: SparkQueryView =>
       replyTo ! r
       context.stop(self)
+    case ex: akka.pattern.AskTimeoutException =>
     case akka.actor.Status.Failure(ex) =>
       sys.log.error(ex, "SparkProgram has failed")
       throw ex
