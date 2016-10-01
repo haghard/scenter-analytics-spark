@@ -56,20 +56,20 @@ package object spark {
         override val name = "[spark-query]: daily-results"
 
         override def async(ctx: SparkContext, config: Config, stage: String, yyyyMMDD: (Int, Int, Int),
-                           arenas: Seq[(String, String)], teams: mutable.HashMap[String, String]): Future[DailyResultsView] = {
+                           arenas: Seq[(String, String)], teams: mutable.HashMap[String, String]): Future[DailyResultsView] =
           Future {
             if (ThreadLocalRandom.current().nextInt(1, 10) > 5) throw new Exception("Cassandra unavailable")
             val rdd = ctx.cassandraDailyResults(config, stage, yyyyMMDD._1, yyyyMMDD._2, yyyyMMDD._3).cache()
             rdd
-          }.flatMap { _.collectAsync.map { seq =>
-            val results = seq.map { el =>
-              ResultView(s" ${el._2} @ ${el._1}", s"${el._7}:${el._5} - ${el._6}:${el._4}", cassandra.formatter.format(el._3),
-                arenas.find(_._1 == el._1.trim).map(_._2).getOrElse(el._1))
+          }.flatMap {
+            _.collectAsync.map { seq =>
+              val results = seq.map { el =>
+                ResultView(s" ${el._2} @ ${el._1}", s"${el._7}:${el._5} - ${el._6}:${el._4}", cassandra.formatter.format(el._3),
+                  arenas.find(_._1 == el._1.trim).map(_._2).getOrElse(el._1))
+              }
+              DailyResultsView(results.size, results.toList)
             }
-            DailyResultsView(results.size, results.toList)
           }
-        }
-      }
   }
 
   object TeamsResultsQuery {
