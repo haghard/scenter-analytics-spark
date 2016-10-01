@@ -315,7 +315,7 @@ package object http {
 
       system.log.info(message)
 
-      val settings = akka.stream.ActorMaterializerSettings(system).withInputBuffer(32, 64).withDispatcher("akka.stream-dispatcher")
+      val settings = akka.stream.ActorMaterializerSettings(system).withInputBuffer(32, 64).withDispatcher("akka.http-dispatcher")
       implicit val mat = ActorMaterializer(settings)(system)
 
       installApi(context, intervals, arenas, teams,
