@@ -70,6 +70,7 @@ package object spark {
               DailyResultsView(results.size, results.toList)
             }
           }
+      }
   }
 
   object TeamsResultsQuery {
