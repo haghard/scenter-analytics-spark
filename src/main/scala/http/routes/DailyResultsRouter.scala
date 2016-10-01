@@ -12,7 +12,7 @@ import io.swagger.annotations._
 import org.apache.spark.SparkContext
 import org.joda.time.DateTime
 import spark.SparkProgram._
-import spark.SparkSupport
+import spark.{SparkProgram, SparkSupport}
 import spray.json._
 
 import scala.concurrent.duration._
@@ -45,7 +45,7 @@ object DailyResultsRouter {
 @Path("/api/daily")
 class DailyResultsRouter(override val guardian: ActorRef,
                          override val host: String, override val httpPort: Int,
-                         override val context: SparkContext,
+                         override val sparkContext: SparkContext,
                          override val httpPrefixAddress: String = "daily",
                          intervals: scala.collection.mutable.LinkedHashMap[org.joda.time.Interval, String],
                          arenas: scala.collection.immutable.Vector[(String, String)],
@@ -98,7 +98,8 @@ class DailyResultsRouter(override val guardian: ActorRef,
 
   private def searchResults(url: String, day: String): Future[HttpResponse] = {
     parseDay(day).andThen(validatePeriod).fold({ error: String => Future.successful(notFound(s"Invalid parameters: $error")) }, { arg =>
-      fetch[DailyResultsView](DailyResultsQueryArgs(context, url, arg.period, (arg.year, arg.mm, arg.dd), arenas, teams), guardian).map {
+      val p = system.actorOf(SparkProgram.props(system.settings.config), name = "program")
+      fetch[DailyResultsView](DailyResultsQueryArgs(sparkContext, url, arg.period, (arg.year, arg.mm, arg.dd), arenas, teams), p).map {
         case cats.data.Xor.Right(res) => success(SparkJobHttpResponse(url, view = Option("daily-results"), body = Option(res), error = res.error))(DailyResultsWriter)
         case cats.data.Xor.Left(ex) => internalError(ex)
       }

@@ -12,8 +12,8 @@ import io.swagger.models.auth.{ ApiKeyAuthDefinition, BasicAuthDefinition }
 class SwaggerDocService(system: ActorSystem, hostLine: String) extends SwaggerHttpService with HasActorSystem {
   override implicit val actorSystem: ActorSystem = system
   override implicit val materializer: ActorMaterializer = ActorMaterializer()
-  override val apiTypes = Seq(ru.typeOf[LoginRouter], ru.typeOf[ResultsRouter]
-  //ru.typeOf[DailyResultsRouter], ru.typeOf[PlayerStatRouter], ru.typeOf[PtsLeadersRouter], ru.typeOf[RebLeadersRouter], ru.typeOf[StandingRouter]
+  override val apiTypes = Seq(ru.typeOf[LoginRouter], ru.typeOf[ResultsRouter], ru.typeOf[DailyResultsRouter]
+    //, ru.typeOf[PlayerStatRouter], ru.typeOf[PtsLeadersRouter], ru.typeOf[RebLeadersRouter], ru.typeOf[StandingRouter]
   )
   override val host = hostLine
   override val info = Info(version = "1.0")

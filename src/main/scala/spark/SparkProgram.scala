@@ -1,7 +1,7 @@
 package spark
 
 import java.util.Date
-import akka.actor.{ Actor, ActorLogging, Props }
+import akka.actor.{ActorRef, Actor, ActorLogging, Props}
 import com.typesafe.config.Config
 import http._
 import org.apache.spark.SparkContext
@@ -85,8 +85,9 @@ object SparkProgram {
   val Season = "season"
   val PlayOff = "playoff"
 
-  def props(config: Config): Props =
-    Props(new SparkProgram(config)).withDispatcher(SparkDispatcher)
+  def props(config: Config): Props = Props(new SparkProgram(config)).withDispatcher(SparkDispatcher)
+
+  //def props: Props = Props(new SparkProgram()).withDispatcher(SparkDispatcher)
 }
 
 class SparkProgram(val config: Config) extends Actor with ActorLogging {
@@ -99,6 +100,14 @@ class SparkProgram(val config: Config) extends Actor with ActorLogging {
   override def postStop =
     log.info("SparkProgram has been stopped")
 
+  /*def await(replyTo: ActorRef): Receive = {
+    case r: SparkQueryView =>
+      replyTo ! r
+      context.system.stop(self)
+    case scala.util.Failure(ex) =>
+      context.system.stop(self)
+  }*/
+
   import akka.pattern.pipe
   override def receive: Receive = {
     case TeamResultsQueryArgs(ctx, _, period, teams, arenas, allTeams) ⇒
@@ -107,15 +116,16 @@ class SparkProgram(val config: Config) extends Actor with ActorLogging {
         period, teams.map(t => s"""'$t',""").mkString
       )
       val replyTo = sender()
-      (TeamsResultsQuery[ResultsView] async (ctx, config, period, teams, arenas, allTeams) to replyTo).future
-        .onComplete(_ ⇒ context.system.stop(self))
+      (TeamsResultsQuery[ResultsView] async (ctx, config, period, teams, arenas, allTeams) to replyTo).future pipeTo(self)
+      //(context become await(replyTo))
+        //.onComplete(_ ⇒ context.system.stop(self))
 
     case DailyResultsQueryArgs(ctx, url, stage, yyyyMMDD, arenas, teams) ⇒
       log.info("SELECT * FROM daily_results WHERE period = '{}' and year={} and month={} and day={}", stage, yyyyMMDD._1, yyyyMMDD._2, yyyyMMDD._3)
-      //Future.failed(new Exception("TeamResultsQuery exception"))
       val replyTo = sender()
-      (DailyResultsQuery[DailyResultsView] async (ctx, config, stage, yyyyMMDD, arenas, teams) to replyTo).future
-        .onComplete(_ ⇒ context.system.stop(self))
+      (DailyResultsQuery[DailyResultsView] async (ctx, config, stage, yyyyMMDD, arenas, teams) to replyTo).future pipeTo(self)
+      //(context become await(replyTo))
+        //.onComplete(_ ⇒ context.system.stop(self))
 
     case PlayerStatsQueryArgs(ctx, url, name, period, team) ⇒
       log.info(
@@ -150,5 +160,6 @@ class SparkProgram(val config: Config) extends Actor with ActorLogging {
       else if (stage contains PlayOff)
         ((StandingQuery[PlayoffStandingView] async (ctx, config, teams, period)) to replyTo).future
           .onComplete(_ ⇒ context.system.stop(self))
+
   }
 }

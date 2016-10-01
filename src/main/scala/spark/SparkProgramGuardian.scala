@@ -1,9 +1,9 @@
 package spark
 
-import akka.actor.SupervisorStrategy.Stop
-import akka.actor._
-import com.typesafe.config.ConfigFactory
 import http._
+import akka.actor._
+import akka.actor.SupervisorStrategy.Stop
+import com.typesafe.config.ConfigFactory
 
 object SparkProgramGuardian {
   def props: Props = Props(new SparkProgramGuardian).withDispatcher(SparkDispatcher)

@@ -5,5 +5,5 @@ import org.apache.spark.SparkContext
 
 trait SparkSupport {
   def guardian: ActorRef
-  def context: SparkContext
+  def sparkContext: SparkContext
 }

@@ -53,13 +53,13 @@ object ResultsRouter {
 @io.swagger.annotations.Api(value = "/results", produces = "application/json")
 @Path("/api/results")
 class ResultsRouter(
-  override val guardian: ActorRef,
-  override val host: String, override val httpPort: Int,
-  override val intervals: scala.collection.mutable.LinkedHashMap[org.joda.time.Interval, String],
-  override val teams: scala.collection.mutable.HashMap[String, String],
-  override val context: SparkContext,
-  override val httpPrefixAddress: String = "results",
-  arenas: scala.collection.immutable.Vector[(String, String)]
+                     override val guardian: ActorRef,
+                     override val host: String, override val httpPort: Int,
+                     override val intervals: scala.collection.mutable.LinkedHashMap[org.joda.time.Interval, String],
+                     override val teams: scala.collection.mutable.HashMap[String, String],
+                     override val sparkContext: SparkContext,
+                     override val httpPrefixAddress: String = "results",
+                     arenas: scala.collection.immutable.Vector[(String, String)]
 )(implicit val ec: ExecutionContext, val system: ActorSystem) extends SparkSupport with SecuritySupport with TypedAsk
     with ParamsValidation with TeamsHttpProtocols {
 
@@ -104,7 +104,7 @@ class ResultsRouter(
     val validation = cats.Apply[Validated[String, ?]].map2(
       validateTeams(searchTeams),
       validatePeriod(season)
-    ) { case (_, _) => TeamResultsQueryArgs(context, url, season, searchTeams.split(",").toSeq, arenas, teams) }
+    ) { case (_, _) => TeamResultsQueryArgs(sparkContext, url, season, searchTeams.split(",").toSeq, arenas, teams) }
 
     validation.fold({ error => Future.successful(notFound(s"Invalid parameters: $error")) }, { arg =>
       fetch[ResultsView](arg, guardian).map {

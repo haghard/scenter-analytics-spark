@@ -12,7 +12,7 @@ import http.oauth.{ GoogleLoginRouter, GitHubLoginRouter, TwitterLoginRouter }
 import http.routes.{ ResultsRouter, SwaggerDocRouter, LoginRouter, DailyResultsRouter }
 import http.swagger.CorsSupport
 import ingestion.JournalChangesIngestion
-import org.apache.spark.SparkContext
+import org.apache.spark.{SparkConf, SparkContext}
 import org.joda.time.{ DateTime, Interval }
 import spark.{ SparkProgramGuardian, SparkProgram, SparkQuery }
 
@@ -115,8 +115,7 @@ package object http {
 
     protected val httpDispatcher = HttpDispatcher
 
-    protected def installApi(
-      context: SparkContext,
+    protected def installApi(context: SparkContext,
       intervals: scala.collection.mutable.LinkedHashMap[org.joda.time.Interval, String],
       arenas: scala.collection.immutable.Vector[(String, String)],
       teams: scala.collection.mutable.HashMap[String, String],
@@ -129,8 +128,8 @@ package object http {
 
       import RouteConcatenation._
       val route = new LoginRouter(interface, httpPort).route ~
-        new ResultsRouter(guardian, interface, httpPort, intervals, teams, arenas = arenas, context = context).route ~
-        new DailyResultsRouter(guardian, interface, httpPort, context = context, intervals= intervals, arenas = arenas, teams = teams).route ~
+        new ResultsRouter(guardian, interface, httpPort, intervals, teams, arenas = arenas, sparkContext = context).route ~
+        new DailyResultsRouter(guardian, interface, httpPort, sparkContext = context, intervals= intervals, arenas = arenas, teams = teams).route ~
       /*
         new PlayerStatRouter(guardian, interface, httpPort, intervals, teams, arenas = arenas, context = context).route ~
         new PtsLeadersRouter(guardian, interface, httpPort, intervals, teams, arenas = arenas, context = context).route ~
@@ -283,9 +282,19 @@ package object http {
 
     lazy val config = ConfigFactory.load("application")
 
-    lazy val context = new SparkQuery {
-      override val name = "scenter-analytics"
-    }.createSparkContext(config, config.getString("db.cassandra.seeds"))
+    lazy val context = new SparkContext(
+      new SparkConf()
+        .setAppName("analytics")
+        .set("spark.cassandra.connection.host", config.getString("db.cassandra.seeds"))
+        .set("spark.cassandra.connection.timeout_ms", "8000")
+        .set("spark.cleaner.ttl", "3600")
+        .set("spark.eventLog.dir", "spark-logs")
+        .set("spark.akka.frameSize", "50")
+        .set("spark.default.parallelism", "4")
+        .set("spark.streaming.backpressure.enabled", "true")
+        .set("spark.streaming.backpressure.pid.minRate", "1000")
+        .setMaster(config.getString("spark.master")))
+
 
     override def startup(): Unit = {
       system

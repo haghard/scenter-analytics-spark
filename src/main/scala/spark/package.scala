@@ -16,23 +16,8 @@ import scala.concurrent.{ ExecutionContext, Future }
 
 package object spark {
 
-  trait SparkQuery {
+  sealed trait SparkQuery {
     def name: String
-
-    def createSparkContext(config: Config, cassandraHost: String) =
-      new SparkContext(
-        new SparkConf()
-          .setAppName(name)
-          .set("spark.cassandra.connection.host", cassandraHost)
-          .set("spark.cassandra.connection.timeout_ms", "8000")
-          .set("spark.cleaner.ttl", "3600")
-          .set("spark.eventLog.dir", "spark-logs")
-          .set("spark.akka.frameSize", "50")
-          .set("spark.default.parallelism", "4")
-          .set("spark.streaming.backpressure.enabled", "true")
-          .set("spark.streaming.backpressure.pid.minRate", "1000")
-          .setMaster(config.getString("spark.master"))
-      )
   }
 
   trait StandingQuery[T] extends SparkQuery {
@@ -70,11 +55,11 @@ package object spark {
       new DailyResultsQuery[DailyResultsView] {
         override val name: String = "[spark-query]: daily-results"
 
-        override def async(ctx: SparkContext, config: Config, stage: String, yyyyMMDD: (Int, Int, Int),
+        override def async(ctx: SparkContext, /*config: Config,*/ stage: String, yyyyMMDD: (Int, Int, Int),
           arenas: Seq[(String, String)], teams: mutable.HashMap[String, String]): Future[DailyResultsView] = {
           val startTs = System.currentTimeMillis
 
-          throw new Exception("TeamResultsQuery exception")
+          //throw new Exception("TeamResultsQuery exception")
 
           val results = ctx.cassandraDailyResults(config, stage, yyyyMMDD._1, yyyyMMDD._2, yyyyMMDD._3).cache()
           results.collectAsync.map { seq =>
