@@ -9,7 +9,7 @@ import http.{ SparkJobHttpResponse, TypedAsk }
 import io.swagger.annotations._
 import org.apache.spark.SparkContext
 import spark.SparkProgram.{ ResultView, ResultsView, TeamResultsQueryArgs }
-import spark.SparkSupport
+import spark.{SparkProgram, SparkSupport}
 import spray.json._
 
 import scala.concurrent.{ ExecutionContext, Future }
@@ -107,7 +107,8 @@ class ResultsRouter(
     ) { case (_, _) => TeamResultsQueryArgs(sparkContext, url, season, searchTeams.split(",").toSeq, arenas, teams) }
 
     validation.fold({ error => Future.successful(notFound(s"Invalid parameters: $error")) }, { arg =>
-      fetch[ResultsView](arg, guardian).map {
+      val query = system.actorOf(SparkProgram.props(system.settings.config)) //name
+      fetch[ResultsView](arg, query).map {
         case Xor.Right(res) => success(SparkJobHttpResponse(url, view = Option("team-results"), body = Option(res), error = res.error))
         case Xor.Left(er) => internalError(er)
       }

@@ -125,7 +125,7 @@ package object http {
 
       implicit val _ = system.dispatchers.lookup(httpDispatcher)
 
-      val guardian = system.actorOf(SparkProgramGuardian.props, "spark-guardian")
+      val guardian = null //system.actorOf(SparkProgramGuardian.props, "spark-guardian")
 
       import RouteConcatenation._
       val route = new LoginRouter(interface, httpPort).route ~
