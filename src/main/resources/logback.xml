@@ -2,20 +2,30 @@
 
     <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>%date{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n</pattern>
+            <!--<pattern>%date{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n</pattern>-->
+            <pattern>%d{HH:mm:ss.SSS} [%X{sourceThread}] %-5level %logger{36} %X{akkaSource} – %msg%n</pattern>
         </encoder>
     </appender>
 
     <appender name="file" class="ch.qos.logback.core.FileAppender">
         <file>${log-file:-tests.log}</file>
         <encoder>
-            <pattern>%date{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n</pattern>
+            <!--<pattern>%date{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n</pattern>-->
+            <pattern>%d{HH:mm:ss.SSS} [%X{sourceThread}] %-5level %logger{36} %X{akkaSource} – %msg%n</pattern>
         </encoder>
     </appender>
 
-    <root level="ERROR">
-        <appender-ref ref="console"/>
-        <appender-ref ref="file"/>
+    <appender name="asyncFile" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="file" />
+    </appender>
+
+    <appender name="asyncConsole" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="console" />
+    </appender>
+
+    <root level="DEBUG">
+        <appender-ref ref="asyncFile"/>
+        <appender-ref ref="asyncConsole"/>
     </root>
 
 </configuration>

@@ -6,8 +6,7 @@ import com.typesafe.config.ConfigFactory
 import http._
 
 object SparkQuerySupervisor {
-  def props: Props =
-    Props(new SparkQuerySupervisor).withDispatcher(SparkDispatcher)
+  def props: Props = Props(new SparkQuerySupervisor).withDispatcher(SparkDispatcher)
 }
 
 class SparkQuerySupervisor extends Actor with ActorLogging {

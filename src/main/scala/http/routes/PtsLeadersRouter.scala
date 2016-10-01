@@ -1,5 +1,7 @@
 package http.routes
 
+import javax.ws.rs.Path
+import io.swagger.annotations._
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.HttpResponse
 import akka.http.scaladsl.server.Route
@@ -15,48 +17,32 @@ import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
 object PtsLeadersRouter {
-
   trait LeadersProtocol extends PlayersProtocol {
     implicit val ptsLeaderFormat = jsonFormat4(PtsLeader.apply)
     implicit val rebLeaderFormat = jsonFormat6(RebLeader.apply)
 
     implicit object LeadersResponseWriter extends JsonWriter[SparkJobHttpResponse] {
-
       import spray.json._
-
       override def write(obj: SparkJobHttpResponse): spray.json.JsValue = {
         val url = JsString(obj.url.toString)
-        val v = obj.view.fold(JsString("none")) { view ⇒ JsString(view) }
-        val error = obj.error.fold(JsString("none")) { error ⇒ JsString(error) }
+        val v = obj.view.fold(JsString("none"))(JsString(_))
+        val error = obj.error.fold(JsString("none"))(JsString(_))
         obj.body match {
           case Some(RebLeadersView(c, leaders, latency, _)) ⇒
-            JsObject(
-              "url" -> url,
-              "view" -> JsArray(leaders.map(_.toJson)),
-              "latency" -> JsNumber(latency),
-              "body" -> JsObject("count" -> JsNumber(c)),
-              "error" -> error
-            )
+            JsObject("url" -> url, "view" -> JsArray(leaders.map(_.toJson)),
+              "latency" -> JsNumber(latency), "body" -> JsObject("count" -> JsNumber(c)),
+              "error" -> error)
           case Some(PtsLeadersView(c, leaders, latency, _)) ⇒
-            JsObject(
-              "url" -> url,
-              "view" -> JsArray(leaders.map(_.toJson)),
-              "latency" -> JsNumber(latency),
-              "body" -> JsObject("count" -> JsNumber(c)),
-              "error" -> error
-            )
+            JsObject("url" -> url, "view" -> JsArray(leaders.map(_.toJson)),
+              "latency" -> JsNumber(latency), "body" -> JsObject("count" -> JsNumber(c)),
+              "error" -> error)
           case None ⇒ JsObject("url" -> url, "view" -> v, "error" -> error)
         }
       }
     }
-
   }
-
 }
 
-import javax.ws.rs.Path
-
-import io.swagger.annotations._
 
 @io.swagger.annotations.Api(value = "pts leaders", produces = "application/json")
 @Path("/api/leaders/pts")

@@ -22,8 +22,7 @@ object PlayerStatRouter {
   trait PlayersProtocol extends StandingHttpProtocols {
     implicit val statsFormat = spray.json.DefaultJsonProtocol.jsonFormat14(Stats.apply)
 
-    implicit object PlayersResponseWriter
-        extends JsonWriter[SparkJobHttpResponse] {
+    implicit object PlayersResponseWriter extends JsonWriter[SparkJobHttpResponse] {
       import spray.json._
       override def write(obj: SparkJobHttpResponse): spray.json.JsValue = {
         val url = JsString(obj.url.toString)
@@ -54,7 +53,6 @@ class PlayerStatRouter(override val host: String, override val httpPort: Int,
   override implicit val timeout = akka.util.Timeout(10.seconds)
   val route = dailyRoute()
 
-  //http GET [host]:[port]/api/player/stats?"name=S. Curry&period=season-15-16&team=gsw" Authorization:...
   @ApiOperation(value = "Search player statistics by name stage and team", notes = "", httpMethod = "GET")
   @ApiImplicitParams(Array(
     new ApiImplicitParam(name = "name", value = "Player name", required = true, dataType = "string", paramType = "query"),
