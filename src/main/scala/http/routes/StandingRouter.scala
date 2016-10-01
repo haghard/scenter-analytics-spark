@@ -7,7 +7,7 @@ import http._
 import http.routes.ResultsRouter.TeamsHttpProtocols
 import org.apache.spark.SparkContext
 import spark.SparkProgram._
-import spark.{ SparkSupport, SparkProgram, SparkProgramGuardian }
+import spark.{ SparkSupport, SparkProgram }
 import spray.json.{ JsonWriter, _ }
 
 import scala.concurrent.{ ExecutionContext, Future }

@@ -11,7 +11,7 @@ import http.routes.PlayerStatRouter.PlayersProtocol
 import io.swagger.annotations._
 import org.apache.spark.SparkContext
 import spark.SparkProgram.{ PlayerStatsQueryArgs, PlayerStatsView, Stats }
-import spark.{ SparkProgram, SparkSupport, SparkProgramGuardian }
+import spark.{ SparkProgram, SparkSupport }
 import spray.json._
 
 import scala.concurrent.duration._

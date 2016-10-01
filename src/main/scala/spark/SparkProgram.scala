@@ -86,8 +86,6 @@ object SparkProgram {
   val PlayOff = "playoff"
 
   def props(config: Config): Props = Props(new SparkProgram(config)).withDispatcher(SparkDispatcher)
-
-  //def props: Props = Props(new SparkProgram()).withDispatcher(SparkDispatcher)
 }
 
 class SparkProgram(val config: Config) extends Actor with ActorLogging {

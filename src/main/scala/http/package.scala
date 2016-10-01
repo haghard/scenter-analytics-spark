@@ -14,7 +14,7 @@ import http.swagger.CorsSupport
 import ingestion.JournalChangesIngestion
 import org.apache.spark.{ SparkConf, SparkContext }
 import org.joda.time.{ DateTime, Interval }
-import spark.{ SparkProgramGuardian, SparkProgram, SparkQuery }
+import spark.{ SparkProgram, SparkQuery }
 
 import scala.collection.JavaConversions._
 import scala.collection.mutable

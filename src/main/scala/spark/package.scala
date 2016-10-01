@@ -10,7 +10,6 @@ import spark.SparkProgram._
 
 import scala.annotation.implicitNotFound
 import scala.collection.mutable
-import scala.concurrent.forkjoin.ThreadLocalRandom
 import scala.concurrent.{ ExecutionContext, Future }
 
 package object spark {
@@ -57,7 +56,7 @@ package object spark {
         override def async(ctx: SparkContext, config: Config, stage: String, yyyyMMDD: (Int, Int, Int),
           arenas: Seq[(String, String)], teams: mutable.HashMap[String, String]): Future[DailyResultsView] =
           Future {
-            if (ThreadLocalRandom.current().nextInt(1, 10) > 5) throw new Exception("Cassandra unavailable")
+            //if (ThreadLocalRandom.current().nextInt(1, 10) > 5) throw new Exception("Cassandra unavailable")
             val rdd = ctx.cassandraDailyResults(config, stage, yyyyMMDD._1, yyyyMMDD._2, yyyyMMDD._3).cache()
             rdd
           }.flatMap {

@@ -10,7 +10,7 @@ import http.routes.PtsLeadersRouter.LeadersProtocol
 import http.{ SparkJobHttpResponse, TypedAsk }
 import org.apache.spark.SparkContext
 import spark.SparkProgram._
-import spark.{ SparkSupport, SparkProgram, SparkProgramGuardian }
+import spark.{ SparkSupport, SparkProgram }
 import spray.json.JsonWriter
 
 import scala.concurrent.duration._

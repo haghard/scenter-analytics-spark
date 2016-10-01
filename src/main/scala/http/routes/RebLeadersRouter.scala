@@ -7,7 +7,7 @@ import akka.http.scaladsl.model.HttpResponse
 import akka.http.scaladsl.server._
 import http.{ SparkJobHttpResponse, TypedAsk }
 import http.routes.PtsLeadersRouter.LeadersProtocol
-import spark.{ SparkSupport, SparkProgramGuardian, SparkProgram }
+import spark.{ SparkSupport, SparkProgram }
 import SparkProgram.{ PtsLeadersView, RebLeadersQueryArgs, RebLeadersView }
 import io.swagger.annotations._
 import org.apache.spark.SparkContext
