@@ -123,9 +123,9 @@ class SparkProgram(val config: Config) extends Actor with ActorLogging {
     case DailyResultsQueryArgs(ctx, url, stage, yyyyMMDD, arenas, teams) ⇒
       log.info("SELECT * FROM daily_results WHERE period = '{}' and year={} and month={} and day={}", stage, yyyyMMDD._1, yyyyMMDD._2, yyyyMMDD._3)
       val replyTo = sender()
-      (DailyResultsQuery[DailyResultsView] async (ctx, config, stage, yyyyMMDD, arenas, teams) to replyTo).future pipeTo (self)
+      (DailyResultsQuery[DailyResultsView] async (ctx, config, stage, yyyyMMDD, arenas, teams) to replyTo).future
+      .onComplete(_ ⇒ context.system.stop(self))
     //(context become await(replyTo))
-    //.onComplete(_ ⇒ context.system.stop(self))
 
     case PlayerStatsQueryArgs(ctx, url, name, period, team) ⇒
       log.info(
