@@ -112,7 +112,7 @@ package object http {
 
     protected val httpDispatcher = HttpDispatcher
 
-    protected def installApi(
+    def installApi(
       context: SparkContext,
       intervals: scala.collection.mutable.LinkedHashMap[org.joda.time.Interval, String],
       arenas: scala.collection.immutable.Vector[(String, String)],
@@ -284,10 +284,7 @@ package object http {
         .set("spark.cassandra.connection.timeout_ms", "8000")
         .set("spark.cleaner.ttl", "3600")
         .set("spark.eventLog.dir", "spark-logs")
-        .set("spark.akka.frameSize", "50")
         .set("spark.default.parallelism", "4")
-        .set("spark.streaming.backpressure.enabled", "true")
-        .set("spark.streaming.backpressure.pid.minRate", "1000")
         .setMaster(config.getString("spark.master"))
     )
 
@@ -301,7 +298,6 @@ package object http {
         .append('\n')
         .append(s"★ ★ ★ ★ ★ ★  Cassandra contact points: ${system.settings.config.getString("db.cassandra.seeds")}  ★ ★ ★ ★ ★ ★")
         .append('\n')
-        //.append(s"★ ★ ★ ★ ★ ★  Available urls: ${api.urls}")
         .append('\n')
         .append("=====================================================================================================================================")
         .append('\n')
