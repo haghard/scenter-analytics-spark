@@ -83,7 +83,8 @@ libraryDependencies ++= Seq(
 
   "org.mindrot"             %  "jbcrypt"                        % "0.3m",
 
-  "com.haghard"             %% "nosql-join-stream"              % "0.2.+"  changing(),
+  "com.haghard"             %% "nosql-join-stream"              % "[0.2.5,1.0["  changing(),
+  //matches all versions greater or equal to 0.2.5 and lower than 1.0
 
   "com.softwaremill.akka-http-session"  %%  "core"              % "0.2.7",
   "com.github.swagger-akka-http"        %% "swagger-akka-http"  % "0.7.2",
