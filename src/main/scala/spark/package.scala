@@ -8,7 +8,6 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{ Row, SQLContext }
 import spark.SparkProgram._
 
-import scala.annotation.implicitNotFound
 import scala.collection.mutable
 import scala.concurrent.{ ExecutionContext, Future }
 

@@ -281,7 +281,8 @@ package object http {
       new SparkConf()
         .setAppName("analytics")
         .set("spark.cassandra.connection.host", config.getString("db.cassandra.seeds"))
-        .set("spark.cassandra.connection.timeout_ms", "8000")
+        .set("spark.cassandra.connection.timeout_ms", "10000")
+        //.set("spark.cassandra.output.consistency.level", "LOCAL_ONE")  //default value is LOCAL_QUORUM
         .set("spark.cleaner.ttl", "3600")
         .set("spark.eventLog.dir", "spark-logs")
         .set("spark.default.parallelism", "4")
@@ -312,7 +313,7 @@ package object http {
         localAddress, httpPort)(mat, system)
 
       //Streaming
-      //JournalChangesIngestion.start(context, config, teams)
+      JournalChangesIngestion.start(context, config, teams)
     }
 
     override def shutdown() = {
