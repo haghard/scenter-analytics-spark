@@ -46,7 +46,7 @@ package object spark {
   }
 
   object DailyResultsQuery {
-    //not having given simulacrum we were supposed to write apply method by ourself
+    //not having given simulacrum we were supposed to write apply method by yourself
     //@implicitNotFound(msg = "Cannot find DailyResultsQuery type class for ${T}")
     //def apply[T <: SparkQueryView : DailyResultsQuery](implicit ex: ExecutionContext) = implicitly[DailyResultsQuery[T]]
 
