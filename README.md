@@ -1,6 +1,6 @@
 SCenter analytics
 ================
-Analytics application which doesn't part of the cluster from [Sport Center](https://github.com/haghard/sport-center) but allows run Spark jobs using Cassandra as a source of data
+Analytics application which isn't a part of the cluster from [Sport Center](https://github.com/haghard/sport-center) but allows you to run Spark jobs on top of Cassandra
 
 Run in local mode from sbt
 =================
