@@ -143,12 +143,15 @@ libraryDependencies ++= Seq(
     .exclude("com.esotericsoftware.minlog", "minlog")
     .exclude("org.slf4j", "slf4j-log4j12"),
 
+  "com.github.mpilquist"    %%   "simulacrum"  %  "0.8.0",
+
   "org.scalatest"           %% "scalatest"                      % "2.2.6"          %   "test"
 )
 
+
 scalacOptions ++= Seq(
   "-encoding", "UTF-8",
-  "-target:jvm-1.7",
+  "-target:jvm-1.8",
   "-deprecation",
   "-unchecked",
   "-Ywarn-dead-code",
@@ -165,6 +168,8 @@ javacOptions ++= Seq(
 
 
 addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.8.0")
+addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
+
 
 def formattingPreferences = {
   import scalariform.formatter.preferences._
